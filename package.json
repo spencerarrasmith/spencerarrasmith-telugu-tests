@@ -1,5 +1,5 @@
 {
-  "name": "telugu-tests",
+  "name": "spencerarrasmith-telugu-tests",
   "version": "1.0.0",
   "private": true,
   "description": "Regression tests for the Telugu app inside spencerarrasmith.com (kept out of the website repo)",

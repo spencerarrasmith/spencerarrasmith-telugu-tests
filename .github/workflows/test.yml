@@ -3,7 +3,7 @@ name: Telugu app tests
 # Runs in three ways:
 #   - on every push to this repo (tests the website's master),
 #   - by hand from the Actions tab (pick any website branch, tag or commit),
-#   - called from the website's own pipeline (`uses: …/telugu-tests/.github/workflows/test.yml@main`),
+#   - called from the website's own pipeline (`uses: …/spencerarrasmith-telugu-tests/.github/workflows/test.yml@main`),
 #     where it tests the exact commit that pipeline is building.
 on:
   push:
@@ -20,7 +20,7 @@ on:
         default: main
 
 env:
-  TESTS_REPO: spencerarrasmith/telugu-tests
+  TESTS_REPO: spencerarrasmith/spencerarrasmith-telugu-tests
   WEBSITE_REPO: spencerarrasmith/spencerarrasmith.com
   APP_PATH: html/content/lang/telugu
 

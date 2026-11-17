@@ -1,4 +1,4 @@
-# telugu-tests
+# spencerarrasmith-telugu-tests
 
 Regression tests for the Telugu app that lives in
 [spencerarrasmith.com](https://github.com/spencerarrasmith/spencerarrasmith.com) at `html/content/lang/telugu/`.
@@ -6,7 +6,7 @@ They are kept in this separate repo so nothing test-related lands in the website
 
 ## Run it on GitHub
 
-1. Create a **public** repo named `telugu-tests` under your account, push this folder to its `main` branch.
+1. Create a **public** repo named `spencerarrasmith-telugu-tests` under your account, push this folder to its `main` branch.
 2. **Actions → Telugu app tests → Run workflow.** The `ref` box takes any branch, tag or commit of the website (default `master`). It also runs on every push here. The job summary lists each suite and the exact failing checks.
 
 The website is public, so no token is needed to check it out. If you move the app inside the website repo, change `APP_PATH` at the top of `.github/workflows/test.yml`.
@@ -17,7 +17,7 @@ The website is public, so no token is needed to check it out. If you move the ap
 ```yaml
 jobs:
   test:
-    uses: spencerarrasmith/telugu-tests/.github/workflows/test.yml@main
+    uses: spencerarrasmith/spencerarrasmith-telugu-tests/.github/workflows/test.yml@main
 
   build:
     needs: test            # new line; the rest of the build job is unchanged
