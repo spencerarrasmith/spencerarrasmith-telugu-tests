@@ -1,0 +1,69 @@
+name: Telugu app tests
+
+# Runs in three ways:
+#   - on every push to this repo (tests the website's master),
+#   - by hand from the Actions tab (pick any website branch, tag or commit),
+#   - called from the website's own pipeline (`uses: …/telugu-tests/.github/workflows/test.yml@main`),
+#     where it tests the exact commit that pipeline is building.
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or commit of spencerarrasmith.com to test
+        default: master
+  workflow_call:
+    inputs:
+      tests_ref:
+        description: Branch or tag of this tests repo to run
+        type: string
+        default: main
+
+env:
+  TESTS_REPO: spencerarrasmith/telugu-tests
+  WEBSITE_REPO: spencerarrasmith/spencerarrasmith.com
+  APP_PATH: html/content/lang/telugu
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Called from the website: github.repository is the website, so name this repo explicitly.
+      # Running here: github.repository is this repo, so use the commit that triggered the run.
+      - name: Check out these tests
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.TESTS_REPO }}
+          ref: ${{ github.repository == env.TESTS_REPO && github.sha || inputs.tests_ref }}
+
+      # Called from the website: test the commit being built. Otherwise: the ref you chose, or master.
+      - name: Check out the website
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ env.WEBSITE_REPO }}
+          ref: ${{ github.repository == env.WEBSITE_REPO && github.sha || inputs.ref || 'master' }}
+          path: site
+
+      - name: Show what is being tested
+        run: |
+          echo "Website commit: $(git -C site rev-parse --short HEAD) — $(git -C site log -1 --format=%s)"
+          ls site/${{ env.APP_PATH }} | head -30
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: npm ci
+      - run: pip install fonttools uharfbuzz
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run the tests
+        run: npm test
+        env:
+          SITE_DIR: ${{ github.workspace }}/site/${{ env.APP_PATH }}
