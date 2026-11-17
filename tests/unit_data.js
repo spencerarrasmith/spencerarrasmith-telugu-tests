@@ -14,6 +14,12 @@ ok(D.clusters.filter(c => c.rare).length === 9 && D.clusters.every(c => c.core =
 const j = D.clusters.find(c => c.glyph === 'జ్ఞ');
 ok(j && j.sound === 'dʒɲa' && j.spoken === 'ɡɲa' && j.core, 'జ్ఞ: written /dʒɲa/, spoken /ɡɲa/, in default set');
 ok(D.clusters.find(c => c.glyph === 'క్ష').spoken === null, 'క్ష cluster has no spoken note');
+const cls = g => D.clusters.find(c => c.glyph === g).classes;
+ok(cls('ఙ్క') === 'Nasal + Velar' && cls('క్ష') === 'Velar + Fricative' && cls('క్క') === 'Velar + Velar' && cls('జ్ఞ') === 'Palatal + Nasal' && cls('న్ద్ర') === 'Nasal + Dental + Approx.', 'cluster classes: each consonant\'s class in order (ఙ్క → Nasal + Velar)');
+const KB = D.letterGroups.map(g => g.lbl);
+ok(D.clusters.every(c => c.classes.split(' + ').length === c.parts.length && c.classes.split(' + ').every((k, i) => k === ('ఙఞణనమ'.includes(c.parts[i].ch) ? 'Nasal' : c.parts[i].cat) && (k === 'Nasal' || KB.includes(k)))), 'every cluster: one class per consonant; the five nasals are "Nasal", the rest their keyboard group');
+ok(D.clusters.every(c => !/[\u0C00-\u0C7F]/.test(c.classes) && !/\(|ya|ra\b|la\b|va\b/.test(c.classes)) && D.clusters.some(c => /[\u0C00-\u0C7F]/.test(c.cat)), 'classes never name a letter (the set name, cat, sometimes does: "+ య (ya)")');
+ok(new Set(D.clusters.map(c => c.sound)).size === D.clusters.length, 'no two clusters are written with the same sound (so a sound has one answer in the reverse game)');
 ok(D.pool(D.letters, true).length === 54 && D.pool(D.letters, true) === D.letters, 'pool(items, true) returns everything');
 ok(D.letterGroups.map(g => g.lbl).join() === 'Vowels,Velar,Palatal,Retroflex,Dental,Labial,Approx.,Fricative,Conjunct', 'keyboard groups in order');
 ok(D.letterGroups.reduce((n, g) => n + g.ipa.length, 0) === 54, 'every letter is on the keyboard once');

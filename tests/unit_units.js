@@ -21,16 +21,24 @@ ok(U.sectionOf('vocab-greetings').title === 'Vocabulary' && U.sectionOf('rosetta
 
 // Review names
 ok(U.label('phonemes') === 'Phonemes' && U.label('conjuncts') === 'Conjuncts' && U.label('diacritics') === 'Diacritics', 'label: a game is named by its tile title');
-ok(U.label('phonemes-reverse') === 'Phonemes (IPA → Telugu)' && U.label('diacritics-reverse') === 'Diacritics (IPA → Diacritics)' && U.label('lookalikes') === 'Lookalikes (IPA → Telugu)', 'label: `review` names win (second directions, longer names)');
+ok(U.label('phonemes-reverse') === 'Phonemes (IPA → Telugu)' && U.label('diacritics-reverse') === 'Diacritics (IPA → Diacritics)' && U.label('conjuncts-reverse') === 'Conjuncts (IPA → Conjuncts)' && U.label('lookalikes') === 'Lookalikes (IPA → Telugu)', 'label: `review` names win (second directions, longer names)');
 ok(U.label('grammar-nouns') === 'Nouns: gender & number' && U.label('made_up-game') === 'Made up game', 'label: lessons use their tile title; an unlisted id is tidied up');
 const reviewIds = U.all.flatMap(t => Object.keys(t.review || {}));
 ok(U.all.every(t => Object.keys(t.review || {}).every(g => g === t.id || g.startsWith(t.id + '-'))), 'every `review` id belongs to the tile it sits on: ' + reviewIds.join(' '));
 
 // the ids the built games actually record misses under all have a name here
-const games = { 'alphabet/01_phonemes.html': ['phonemes', 'phonemes-reverse'], 'alphabet/02_diacritics.html': ['diacritics', 'diacritics-reverse'], 'alphabet/03_conjuncts.html': ['conjuncts'], 'alphabet/05_lookalikes.html': ['lookalikes'] };
+const games = { 'alphabet/01_phonemes.html': ['phonemes', 'phonemes-reverse'], 'alphabet/02_diacritics.html': ['diacritics', 'diacritics-reverse'], 'alphabet/03_conjuncts.html': ['conjuncts', 'conjuncts-reverse'], 'alphabet/05_lookalikes.html': ['lookalikes'] };
 ok(Object.entries(games).every(([f, ids]) => { const s = fs.readFileSync(path.join(SITE_DIR, f), 'utf8'); const g = (s.match(/const GAME\s*=\s*'([^']+)'/) || [])[1];
   return ids[0] === g && ids.every(id => U.get(id) || reviewIds.includes(id)) && (ids.length === 1 || /GAME \+ '-reverse'/.test(s)); }), 'each game\'s miss ids (GAME, GAME-reverse) are tiles or `review` names');
 
+// icons: Telugu characters where the page is about the script, otherwise plain object / symbol emojis
+const icon = id => U.get(id).icon, isTe = s => /^[\u0C00-\u0C7Fa-z]+$/.test(s);
+ok(icon('phonemes') === 'క' && icon('diacritics') === 'కా' && icon('conjuncts') === 'క్ష', 'Phonemes, Diacritics and Conjuncts tiles: క, కా, క్ష');
+ok(['rosetta', 'signs-conjuncts', 'phonemes', 'diacritics', 'conjuncts', 'lookalikes', 'alphabet-chart', 'vocab-numbers'].every(id => isTe(icon(id))), 'the script pages (and Numbers) use Telugu characters: ' + ['rosetta', 'signs-conjuncts', 'lookalikes', 'alphabet-chart', 'vocab-numbers'].map(icon).join(' '));
+ok(U.all.filter(t => isTe(t.icon)).every(t => [...t.icon.replace(/[\u0C3E-\u0C4D\u0C55\u0C56\u0C62\u0C63]/g, '')].length <= 2), 'a Telugu icon is at most two letters wide (it has to fit the icon box)');
+const PLAYFUL = /[\u{1F440}\u{1F44B}\u{1F64B}\u{1F9E9}\u{1F3AF}\u{1F600}-\u{1F64E}\u{1F910}-\u{1F92F}\u{1F970}-\u{1F97A}]/u;
+ok(U.all.every(t => !PLAYFUL.test(t.icon)), 'no faces or playful emojis (👀 👋 🙋 🧩 🎯 …) on any tile' + U.all.filter(t => PLAYFUL.test(t.icon)).map(t => ' ' + t.id).join());
+ok(U.all.every(t => [...t.icon.replace(/\uFE0F/g, '')].length <= 4 && t.icon.trim() === t.icon), 'every icon is short');
 ok(Object.isFrozen(U), 'export is frozen');
 const srcText = fs.readFileSync(path.join(SITE_DIR, 'units.js'), 'utf8');
 ok(/throw new Error\('units: duplicate tile id/.test(srcText), 'a duplicate id fails loudly when the file loads');

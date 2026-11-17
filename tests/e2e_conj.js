@@ -16,7 +16,7 @@ const inject = glyphEscaped => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.gly
   let c0 = cur();
   ok(c0.glyph === 'జ్ఞ' && slots().length === 2, 'జ్ఞ card: 2 slots (జ + ఞ)');
   ok($('feedback').classList.contains('hint') && $('feedback').textContent.includes('/ɡɲa/') && $('feedback').textContent.includes('as written'), 'hint warns: pick as written, usually said /ɡɲa/');
-  ok($('cat-badge').textContent === 'Nasal' && $('rare-badge').style.display === 'none', 'category Nasal, no rare badge (it is a classic conjunct)');
+  ok($('cat-badge').textContent === 'Palatal + Nasal' && $('rare-badge').style.display === 'none', 'card label names the classes (Palatal + Nasal), no rare badge (it is a classic conjunct)');
   btn('dʒ').click(); btn('ɲ').click();
   ok($('char-card').classList.contains('correct'), 'picking జ then ఞ is correct');
   ok($('feedback').textContent.trim() === '✓  /dʒɲa/  ·  usually said /ɡɲa/', 'feedback shows written + spoken: ' + $('feedback').textContent.trim());
