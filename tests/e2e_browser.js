@@ -42,8 +42,10 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   for (const id of ['rosetta', 'signs-conjuncts']) { const f = await frameOf(id);
     ok(await css(f, '.g-header', 'position') === 'sticky' && await css(f, 'body', 'overflow-y') === 'auto' && await css(f, '.jump a', 'border-radius') === '999px' && await css(f, '.wrap', 'display') === 'grid', id + ' is styled by reference.css on top of game.css'); }
   ok(await css(await frameOf('signs-conjuncts'), '.wrap', 'row-gap') === '16px' && await css(await frameOf('rosetta'), '.wrap', 'row-gap') === '14px', 'a reference page\'s own <style> still wins over reference.css');
-  fr0 = await frameOf('phonemes');
-  ok(await fr0.evaluate(() => !!window.GameCore && GameCore.current.id === 'phonemes' && GameCore.current.total === 51 && document.querySelectorAll('.kb-btn').length >= 51 && !!document.getElementById('retry-btn')), 'Phonemes runs on game-core.js (51 cards dealt, complete screen in place)');
+  for (const [id, total] of [['phonemes', 51], ['diacritics', 51], ['conjuncts', 40], ['lookalikes', 40]]) { fr0 = await frameOf(id);
+    ok(await fr0.evaluate(([id, total]) => !!window.GameCore && GameCore.current.id === id && GameCore.current.total === total && GameCore.current.deck.length === total && document.querySelectorAll('.kb-btn').length > 1 && !!document.getElementById('retry-btn') && document.getElementById('s-total').textContent === String(total), [id, total]), id + ' runs on game-core.js (' + total + ' cards dealt, complete screen in place)'); }
+  fr0 = await frameOf('lookalike-builder');
+  ok(await fr0.evaluate(() => document.querySelectorAll('#kCons .key').length === TeluguData.consonants.length && document.querySelectorAll('#kDigits .key').length === TeluguData.digits.length && !!LookalikeData.rows), 'the Lookalike Builder draws its keys from TeluguData and has LookalikeData\'s CSV reader');
   // progress still flows from a game in the iframe to the home page's ✓
   await pg.evaluate(() => { location.hash = '#/phonemes'; }); await pg.waitForTimeout(250);
   const fr = pg.frames().find(f => f.url().endsWith('alphabet/01_phonemes.html'));

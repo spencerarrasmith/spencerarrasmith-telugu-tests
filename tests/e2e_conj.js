@@ -1,13 +1,14 @@
 const h = require('./harness')('alphabet/03_conjuncts.html');
 const { w, d, tick, ok, front, $ } = h;
+const G = h.game;                                          // the round: G().deck, .current, .total, .completed
 const btn = ipa => [...d.querySelectorAll('.kb-btn')].find(b => b.dataset.ipa === ipa);
-const cur = () => w.eval('deck[0]');
+const cur = () => G().current;
 const slots = () => [...d.querySelectorAll('#slots .slot')];
 const val = i => slots()[i].querySelector('.slot-val').textContent;
-const inject = glyphEscaped => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${glyphEscaped}');deck.unshift(CLUSTERS[i]);renderCard();})()`);
+const inject = glyphEscaped => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${glyphEscaped}');GameCore.current.put(CLUSTERS[i]);})()`);
 (async () => {
   ok(!$('include-uncommon').checked && $('include-uncommon').parentElement.textContent.includes('Include uncommon clusters'), 'unchecked by default, labelled "Include uncommon clusters"');
-  ok(w.eval('total') === 40 && w.eval('deck.every(c => !c.uncommon)'), 'default session: 40 cards, no uncommon clusters');
+  ok(G().total === 40 && G().deck.every(c => !c.uncommon), 'default session: 40 cards, no uncommon clusters');
   ok(d.querySelectorAll('.kb-btn').length === 34 && !btn('ɽ') && !!btn('ŋ') && !!btn('ɲ'), '34 keys: ఱ hidden, ఙ ఞ kept');
 
   // జ్ఞ with its note

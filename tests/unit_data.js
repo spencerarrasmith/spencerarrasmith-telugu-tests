@@ -18,5 +18,7 @@ ok(D.pool(D.letters, true).length === 54 && D.pool(D.letters, true) === D.letter
 ok(D.letterGroups.map(g => g.lbl).join() === 'Vowels,Velar,Palatal,Retroflex,Dental,Labial,Approx.,Fricative,Conjunct', 'keyboard groups in order');
 ok(D.letterGroups.reduce((n, g) => n + g.ipa.length, 0) === 54, 'every letter is on the keyboard once');
 ok(D.signs.find(s => s.ipa === '∅').sound === '' && D.signs.find(s => s.sign === '').sound === 'a', 'pure consonant sounds as nothing; no-sign sounds "a"');
+ok(D.digits.length === 10 && D.digits.map(g => g.ch).join('') === '౦౧౨౩౪౫౬౭౮౯' && D.digits.every((g, n) => g.value === n && g.kind === 'digit'), 'digits: ౦–౯ with values 0–9');
+ok(D.letters.every(l => !D.digits.some(g => g.ch === l.ch)) && D.pool(D.letters, true).length === 54, 'digits are a set of their own, not letters');
 ok(Object.isFrozen(D), 'export is frozen');
 console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);

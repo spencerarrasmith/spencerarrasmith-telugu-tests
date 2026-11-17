@@ -1,13 +1,14 @@
 const h = require('./harness')('alphabet/02_diacritics.html');
 const { w, d, tick, ok, $ } = h;
+const G = h.game;                                          // the round: G().deck, .current, .total, .completed
 const D = w.TeluguData, P = w.TeluguProgress;
 const kb     = k => [...d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-btn`)];
 const groups = k => d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-group`).length;
 const labels = k => [...d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-label`)].map(x => x.textContent);
 const btn    = (k, ipa) => kb(k).find(b => b.dataset.ipa === ipa);
 const tickBox = id => $(id).click();
-const inject = (cIpa, vIpa) => w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa==='${cIpa}'),v=VOWELS.find(x=>x.ipa==='${vIpa}');deck.unshift({c,v,glyph:c.ch+v.sign,cat:c.cat,rare:c.rare||v.rare});renderCard();})()`);
-const cur = () => w.eval('deck[0]');
+const inject = (cIpa, vIpa) => w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa==='${cIpa}'),v=VOWELS.find(x=>x.ipa==='${vIpa}');GameCore.current.put({c,v,glyph:c.ch+v.sign,cat:c.cat,rare:c.rare||v.rare});})()`);
+const cur = () => G().current;
 const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
 (async () => {
   /* ── the swap button ── */
@@ -16,10 +17,10 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   ok($('g-title').textContent === 'Diacritics → IPA' && !d.querySelector('.kb-btn.te') && !$('tel-char').classList.contains('ipa-face'), 'forward: IPA keys, Telugu syllable on the card');
 
   /* ── switch ── */
-  w.eval('completed = 0'); const fwdDeck = w.eval('deck.length');
+  const fwdDeck = G().deck.length;
   $('rev-btn').click();
   ok($('g-title').textContent === 'IPA → Diacritics' && $('rev-btn').getAttribute('aria-pressed') === 'true', 'title and button state flip');
-  ok(w.eval('completed') === 0 && w.eval('deck.length') === 51 && w.eval('total') === 51 && fwdDeck === 51, 'a fresh round starts (51 cards)');
+  ok(G().completed === 0 && G().deck.length === 51 && G().total === 51 && fwdDeck === 51, 'a fresh round starts (51 cards)');
   const cons = kb('c'), vows = kb('v');
   ok(cons.length === 35 && cons.every(b => b.classList.contains('te') && b.textContent === b.dataset.ch), 'consonant keys: 35 Telugu letters, from the shared keyboard');
   ok(cons[0].textContent === 'క' && cons.at(-1).textContent === 'క్ష', 'in Phonemes\' alphabet order (క … క్ష)');
@@ -51,11 +52,11 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   ok($('slot-v').querySelector('.slot-val').textContent === 'ా', 'vowel pick shows as its key (ా)');
   ok($('char-card').classList.contains('correct') && $('feedback').textContent.trim() === '✓  కా' && $('feedback').classList.contains('te'), 'right: ✓ and the syllable revealed in Telugu: ' + $('feedback').textContent.trim());
   await tick(); await tick();
-  ok(w.eval('completed') === 1, 'counted');
+  ok(G().completed === 1, 'counted');
 
   /* ── wrong answer ── */
   inject('k', AA);
-  const n0 = w.eval('deck.length');
+  const n0 = G().deck.length;
   btn('c', KH).click(); btn('v', II).click();
   ok($('char-card').classList.contains('wrong') && $('feedback').textContent.trim() === '✗  కా' && $('feedback').classList.contains('err'), 'wrong: ✗ and the right syllable shown: ' + $('feedback').textContent.trim());
   ok(btn('c', KH).classList.contains('err') && btn('v', II).classList.contains('err') && btn('c', 'k').classList.contains('ok') && btn('v', AA).classList.contains('ok'), 'wrong keys red, right keys green (both panels)');
@@ -64,7 +65,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   ok(m && m.key === 'కా' && m.prompt === '/kaː/' && m.answer === 'కా' && m.note === 'Long', 'miss logged as its own game: ' + (m && `${m.prompt} → ${m.answer}`));
   ok(!P.misses().some(x => x.game === 'diacritics'), 'and not mixed into forward misses');
   await tick(); await tick();
-  ok(w.eval('deck.length') === n0 && w.eval('deck.some(x => x.glyph === "కా")') && $('slot-c').querySelector('.slot-val').textContent === '–', 'card re-queued; slots clear');
+  ok(G().deck.length === n0 && G().deck.some(x => x.glyph === 'కా') && $('slot-c').querySelector('.slot-val').textContent === '–', 'card re-queued; slots clear');
 
   /* only one half right */
   inject('k', AA);
@@ -85,7 +86,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   tickBox('shuffle-kb');
   const A = kb('c').map(b => b.dataset.ch).join(), V = kb('v').map(b => b.dataset.ipa).join();
   ok(kb('c').length === 35 && kb('v').length === 17 && groups('c') === 1 && A !== w.eval('keys.c.map(c=>c.ch)').join() && kb('c').every(b => b.classList.contains('te')), 'shuffle: both panels random, still Telugu');
-  w.eval('buildKB()'); ok(kb('c').map(b => b.dataset.ch).join() === A && kb('v').map(b => b.dataset.ipa).join() === V, 'order stable within the round');
+  $('show-cat').dispatchEvent(new w.Event('change')); ok(kb('c').map(b => b.dataset.ch).join() === A && kb('v').map(b => b.dataset.ipa).join() === V, 'order stable within the round');
   inject('k', AA); btn('c', 'k').click(); btn('v', AA).click();
   ok($('char-card').classList.contains('correct'), 'plays normally on the shuffled keyboard');
   await tick(); await tick();
@@ -98,7 +99,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
 
   /* ── back to forward ── */
   $('rev-btn').click();
-  ok($('g-title').textContent === 'Diacritics → IPA' && $('rev-btn').getAttribute('aria-pressed') === 'false' && !d.querySelector('.kb-btn.te') && kb('c')[0].textContent === 'k' && !$('tel-char').classList.contains('ipa-face') && w.eval('completed') === 0, 'back: IPA keys, syllable on the card, fresh round');
+  ok($('g-title').textContent === 'Diacritics → IPA' && $('rev-btn').getAttribute('aria-pressed') === 'false' && !d.querySelector('.kb-btn.te') && kb('c')[0].textContent === 'k' && !$('tel-char').classList.contains('ipa-face') && G().completed === 0, 'back: IPA keys, syllable on the card, fresh round');
   inject('k', AA); btn('c', 'k').click();
   ok($('slot-c').querySelector('.slot-val').textContent === 'k' && !$('slot-c').querySelector('.slot-val').classList.contains('te'), 'slots back to IPA');
   btn('v', AA).click(); await tick(); await tick();
@@ -108,7 +109,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   $('rev-btn').click();
   let g = 0;
   while (!$('g-complete').classList.contains('show') && g++ < 400) { const c = cur(); btn('c', c.c.ipa).click(); btn('v', c.v.ipa).click(); await tick(); await tick(); }
-  ok($('g-complete').classList.contains('show') && w.eval('completed') === 51 && $('c-accuracy').textContent === '100%', 'reverse round completes (51 cards, 100%)');
+  ok($('g-complete').classList.contains('show') && G().completed === 51 && $('c-accuracy').textContent === '100%', 'reverse round completes (51 cards, 100%)');
   ok($('c-sub').textContent === 'All 51 sounds correctly written as Telugu syllables.', 'complete text names the direction');
   ok(P.isComplete('diacritics'), 'finishing in reverse ticks the Diacritics tile');
   $('retry-btn').click();

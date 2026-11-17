@@ -1,5 +1,6 @@
 const h = require('./harness')('alphabet/02_diacritics.html');
 const { w, d, tick, ok, front, $ } = h;
+const G = h.game;                                          // the round: G().deck, .current, .total, .completed
 const kb     = k => [...d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-btn`)];
 const groups = k => d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-group`).length;
 const labels = k => d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-label`).length;
@@ -9,8 +10,8 @@ const same   = (a, b) => a.split('|').sort().join() === b.split('|').sort().join
 const tickBox = id => $(id).click();
 const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles: true }));
 const btn = (kind, ipa) => kb(kind).find(b => b.dataset.ipa === ipa);
-const cur = () => w.eval('deck[0]');
-const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa==='${cIpa}'),v=VOWELS.find(x=>x.sign==='${vSign}');deck.unshift({c,v,glyph:c.ch+v.sign,cat:c.cat,rare:c.rare||v.rare});renderCard();})()`); };
+const cur = () => G().current;
+const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa==='${cIpa}'),v=VOWELS.find(x=>x.sign==='${vSign}');GameCore.current.put({c,v,glyph:c.ch+v.sign,cat:c.cat,rare:c.rare||v.rare});})()`); };
 (async () => {
   /* ── the ⋮ menu ── */
   ok(!d.querySelector('.g-controls') && !d.querySelector('.g-controls-sep') && !d.querySelector('.cat-toggle'), 'the old controls bar is gone');
@@ -59,7 +60,7 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   const C = order('c'), V = order('v');
   ok(kb('c').length === 35 && kb('v').length === 17 && same(C, alpha('c')) && same(V, alpha('v')), 'same keys, nothing lost');
   ok(C !== alpha('c') && V !== alpha('v'), 'both panels are in a random order');
-  w.eval('buildKB()'); ok(order('c') === C && order('v') === V, 'the order is stable within a round');
+  $('show-cat').dispatchEvent(new w.Event('change')); ok(order('c') === C && order('v') === V, 'the order is stable within a round');
   tickBox('show-cat');
   ok(!$('show-cat').checked && order('c') === C, 'a disabled "Show categories" ignores taps');
   /* play on the shuffled keyboard, wrong then right */
@@ -72,7 +73,7 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   btn('c', 'k').click(); btn('v', 'aː').click();
   ok($('char-card').classList.contains('correct'), 'right answer on the shuffled keyboard');
   await tick(); await tick();
-  w.eval('initGame()');
+  G().start();
   ok(order('c') !== C && same(order('c'), alpha('c')), 'a new round reshuffles');
   tickBox('include-extra');
   ok(kb('c').length === 36 && kb('v').length === 19 && groups('c') === 1 && !!btn('c', 'ɽ') && !!btn('v', 'l̩'), 'extras join the shuffled keyboard (36 + 19)');
@@ -87,6 +88,6 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   ok(groups('c') > 1 && labels('c') === groups('c') && groups('v') > 1, 'ticking categories regroups');
   tickBox('shuffle-kb'); tickBox('shuffle-kb'); tickBox('show-cat'); tickBox('show-cat');
   ok(h.w.document.querySelectorAll('.kb-btn').length === 52, 'rapid toggling leaves a complete keyboard (35 + 17)');
-  ok(cur() && w.eval('total') === 51, 'game state untouched by option changes (51 cards)');
+  ok(cur() && G().total === 51, 'game state untouched by option changes (51 cards)');
   h.done();
 })();

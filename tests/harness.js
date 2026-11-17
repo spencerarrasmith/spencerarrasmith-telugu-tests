@@ -13,13 +13,9 @@ module.exports = function load(file) {
   const tick = () => new Promise(r => realST(r, 5));
   let fails = 0;
   const ok = (cond, msg) => { console.log((cond ? 'PASS ' : 'FAIL ') + msg); if (!cond) fails++; };
-  // The round's state. Pages built on game-core.js expose it as GameCore.current
-  // ({ deck, current, total, completed, attempts, start(), front() }); the games not
-  // moved onto it yet still keep `deck` and `renderCard` as page globals.
-  const game = () => (w.GameCore && w.GameCore.current) || null;
-  const front = pred => {
-    if (game()) return game().front(pred);
-    w.eval(`(()=>{const i=deck.findIndex(${pred.toString()});if(i<0)throw new Error('no card');deck.unshift(deck.splice(i,1)[0]);renderCard();})()`);
-  };
+  // The round's state. Every game is built on game-core.js and exposes it as GameCore.current:
+  // { deck, current, total, completed, attempts, start(), front(pred), put(card) }.
+  const game = () => w.GameCore.current;
+  const front = pred => game().front(pred);          // bring a dealt card to the front and draw it
   return { w, d, tick, ok, front, game, $: id => d.getElementById(id), done: () => { console.log(fails ? `\n${fails} FAILED` : '\nALL PASSED'); process.exit(fails ? 1 : 0); } };
 };

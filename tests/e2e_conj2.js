@@ -1,5 +1,6 @@
 const h = require('./harness')('alphabet/03_conjuncts.html');
 const { w, d, tick, ok, front, $ } = h;
+const G = h.game;                                          // the round: G().deck, .current, .total, .completed
 const kb     = () => [...d.querySelectorAll('.kb-btn')];
 const groups = () => d.querySelectorAll('#kb-area .kb-group').length;
 const labels = () => d.querySelectorAll('#kb-area .kb-label').length;
@@ -9,8 +10,8 @@ const same   = (a, b) => a.split('|').sort().join() === b.split('|').sort().join
 const tickBox = id => $(id).click();
 const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles: true }));
 const btn = ipa => kb().find(b => b.dataset.ipa === ipa);
-const cur = () => w.eval('deck[0]');
-const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}');deck.unshift(CLUSTERS[i]);renderCard();})()`);
+const cur = () => G().current;
+const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}');GameCore.current.put(CLUSTERS[i]);})()`);
 (async () => {
   /* ── the ⋮ menu ── */
   ok(!d.querySelector('.g-controls') && !d.querySelector('.g-controls-sep') && !d.querySelector('.cat-toggle'), 'the old controls bar is gone');
@@ -53,7 +54,7 @@ const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}'
   ok(groups() === 1 && labels() === 0 && $('cat-badge').style.visibility === 'hidden', 'flat, unlabelled, card label hidden');
   const A = order();
   ok(kb().length === 34 && same(A, alpha()) && A !== alpha(), 'same 34 keys, random order');
-  w.eval('buildKB()'); ok(order() === A, 'the order is stable within a round');
+  $('show-cat').dispatchEvent(new w.Event('change')); ok(order() === A, 'the order is stable within a round');
   tickBox('show-cat'); ok(!$('show-cat').checked, 'a disabled "Show categories" ignores taps');
   /* play on the shuffled keyboard */
   inject('జ్ఞ');
@@ -65,7 +66,7 @@ const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}'
   inject('జ్ఞ'); btn(p[0]).click(); btn(p[1]).click();
   ok($('char-card').classList.contains('correct'), 'right answer on the shuffled keyboard');
   await tick(); await tick();
-  w.eval('initGame()');
+  G().start();
   ok(order() !== A && same(order(), alpha()), 'a new round reshuffles');
   tickBox('include-uncommon');
   ok(kb().length === 35 && groups() === 1 && !!btn('ɽ'), 'uncommon ticked: ఱ joins the shuffled keyboard (35)');
@@ -79,6 +80,6 @@ const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}'
   tickBox('show-cat'); ok(groups() > 1 && labels() === groups(), 'ticking categories regroups');
   tickBox('shuffle-kb'); tickBox('shuffle-kb'); tickBox('show-cat'); tickBox('show-cat');
   ok(kb().length === 34, 'rapid toggling leaves a complete keyboard');
-  ok(w.eval('total') === 40, 'game state untouched by option changes (40 cards)');
+  ok(G().total === 40, 'game state untouched by option changes (40 cards)');
   h.done();
 })();

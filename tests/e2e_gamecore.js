@@ -1,6 +1,6 @@
 const { SITE_DIR } = require('./config');
 // game-core.js on its own, with a bare page and a three-card deck: the round every game plays
-// (deal, judge, re-queue, counters, complete screen, ✓ and Review). The games' own suites cover what each adds.
+// (deal, sample, judge, re-queue, counters, complete screen, ✓ and Review). The games' own suites cover what each adds.
 const { JSDOM } = require('jsdom'); const fs = require('fs');
 const dir = SITE_DIR + '/';
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
@@ -102,11 +102,34 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
   const p4 = page(); let r4 = 0; const g4 = p4.w.GameCore.create({ id: 'none', pool: () => [], render: () => r4++ }); g4.start();
   ok(g4.total === 0 && r4 === 0 && parseFloat(p4.$('prog-fill').style.width) === 0 && p4.$('s-total').textContent === '0', 'an empty pool: nothing drawn, bar at 0 (no divide by zero)');
 
-  /* Phonemes is built on it and keeps no copy of the round */
-  const pho = fs.readFileSync(dir + 'alphabet/01_phonemes.html', 'utf8');
-  ok(/<script src="\.\.\/game-core\.js"><\/script>/.test(pho) && /GameCore\.create\(\{/.test(pho), 'Phonemes loads game-core.js and creates its round with it');
-  ok(!/function (shuffle|updateProg|showComplete|initGame)\b/.test(pho) && !/escHtml/.test(pho) && !/let deck\b/.test(pho) && !/Progress\.(miss|complete)\(/.test(pho) && !/setTimeout/.test(pho), 'Phonemes has no private shuffle, counters, complete screen, timers or progress calls');
-  ok(/<div class="g-complete" id="g-complete"><\/div>/.test(pho) && !/c-attempts|retry-btn|trophy/.test(pho), 'Phonemes leaves the complete screen to the core');
-  ok(!/document\.getElementById/.test(pho), 'Phonemes uses the shared $ helper');
+  /* size: a round is a random sample of the pool */
+  const p5 = page(); const POOL = Array.from({ length: 30 }, (_, k) => ({ k })); const seen = new Set();
+  const g5 = p5.w.GameCore.create({ id: 'sized', size: 8, pool: () => POOL, render() {} });
+  for (let i = 0; i < 12; i++) { g5.start(); g5.deck.forEach(c => seen.add(c.k)); }
+  ok(g5.total === 8 && g5.deck.length === 8 && new Set(g5.deck).size === 8 && p5.$('s-total').textContent === '8', 'size: 8 of the 30 cards are dealt; counters show 8');
+  ok(seen.size > 8 && POOL.length === 30, 'size: each round samples afresh; the pool is left whole');
+  const g6 = p5.w.GameCore.create({ id: 'small', size: 40, pool: () => POOL.slice(0, 5), render() {} }); g6.start();
+  ok(g6.total === 5, 'size larger than the pool: every card is dealt');
+
+  /* onEmpty: told when there is nothing to play */
+  let empties = 0, draws = 0, cards = [];
+  const g7 = p5.w.GameCore.create({ id: 'maybe', pool: () => cards, render: () => draws++, onEmpty: g => { if (g === g7) empties++; } });
+  g7.start(); ok(empties === 1 && draws === 0 && g7.current === null, 'onEmpty runs (with the game) when the pool is empty; nothing is drawn');
+  cards = [{ k: 1 }]; g7.start(); ok(empties === 1 && draws === 1, 'onEmpty does not run when there are cards');
+
+  /* put: a card the round didn't deal */
+  const extra = { k: 99 }; g7.put(extra);
+  ok(g7.current === extra && g7.deck.length === 2 && g7.total === 1 && draws === 2, 'put(card) lays a card on top and draws it; the total is left alone');
+
+  /* every game is built on it and keeps no copy of the round */
+  const GAMES = { Phonemes: 'alphabet/01_phonemes.html', Diacritics: 'alphabet/02_diacritics.html', Conjuncts: 'alphabet/03_conjuncts.html', Lookalikes: 'alphabet/05_lookalikes.html' };
+  for (const [name, file] of Object.entries(GAMES)) {
+    const src = fs.readFileSync(dir + file, 'utf8');
+    ok(/<script src="\.\.\/game-core\.js"><\/script>/.test(src) && /GameCore\.create\(\{/.test(src) && /game\.judge\(/.test(src), name + ' loads game-core.js, creates its round with it and judges answers through it');
+    ok(!/function (shuffle|updateProg|showComplete|initGame)\b/.test(src) && !/escHtml/.test(src) && !/let deck\b/.test(src) && !/\b(completed|attempts)\s*(\+\+|=)/.test(src) && !/Progress\.(miss|complete)\(/.test(src) && !/setTimeout|OK_MS|ERR_MS/.test(src), name + ' has no private shuffle, counters, complete screen, timers or progress calls');
+    ok(/<div class="g-complete" id="g-complete"><\/div>/.test(src) && !/c-attempts|retry-btn|trophy/.test(src), name + ' leaves the complete screen to the core');
+    ok(!/document\.getElementById/.test(src) && !/TEST-END/.test(src), name + ' uses the shared $ helper');
+  }
+  ok(/size:\s*SESSION_SIZE/.test(fs.readFileSync(dir + GAMES.Conjuncts, 'utf8')) && /size:\s*SESSION_SIZE/.test(fs.readFileSync(dir + GAMES.Lookalikes, 'utf8')) && /onEmpty:/.test(fs.readFileSync(dir + GAMES.Lookalikes, 'utf8')), 'Conjuncts and Lookalikes sample a session with `size`; Lookalikes handles an empty pool with `onEmpty`');
   console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
 })();
