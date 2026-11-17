@@ -47,14 +47,17 @@ To run some suites only: `npm test -- e2e_index e2e_signs`.
 
 | Suites | What they cover |
 |---|---|
-| `e2e_links`, `static_css` | Every stylesheet, script and `@import` resolves; no old file names left; pages are numbered `NN_name.html`; shared CSS wiring |
-| `unit_*` | `telugu-data.js`, `lookalikes-data.js`, `progress.js` |
-| `e2e_index`, `e2e_review`, `e2e_lesson` | Home page (sections, tiles, routes, ✓ and counts), Review, the lesson template |
+| `e2e_links`, `static_css` | Every stylesheet, script and `@import` resolves; no old file names left; pages are numbered `NN_name.html`; one stylesheet per kind of page (`home.css`, `game.css`, `shell.css`, `reference.css`); colour tokens, reset and fonts only in `base.css` |
+| `unit_*` | `units.js`, `telugu-data.js`, `lookalikes-data.js`, `progress.js` |
+| `e2e_index`, `e2e_review`, `e2e_lesson`, `e2e_placeholder` | Home page (sections, tiles, routes, ✓ and counts), Review, the lesson template, the 34 "Coming soon" pages drawn from `units.js` |
+| `e2e_gamecore` | `game-core.js` on its own with a three-card deck: deal, judge, re-queue, counters, complete screen, ✓ and Review |
 | `e2e_pho*`, `e2e_dia*`, `e2e_conj*`, `e2e_look`, `e2e_builder` | The games and the Lookalike Builder, click by click |
 | `e2e_rosetta`, `e2e_signs` | The two reference pages |
-| `e2e_browser` | Real Chromium: all 41 tiles open in the iframe, scripts load, no errors or 404s |
+| `e2e_browser` | Real Chromium: all 42 routes open in the iframe, scripts load, no errors or 404s, and each kind of page really gets its stylesheet (jsdom ignores CSS, so this is the only place that is checked) |
 | `verify_notes` | The Signs & Conjuncts notes against Noto Sans Telugu's own shaping data |
 
-Some assertions deliberately pin current content (41 tiles, which pages are live, 5 + 8 + 8 + 12 + 8 per section, the number of notes). When you add a page or turn a tile from "Soon" to live, expect `e2e_index`, `e2e_links` and `e2e_browser` to need their numbers updated; that failure is the reminder.
+Some assertions deliberately pin current content (41 tiles, which pages are live, 5 + 8 + 8 + 12 + 8 per section, 34 placeholders, the number of notes). When you add a page or turn a tile from "Soon" to live, expect `unit_units`, `e2e_index`, `e2e_links`, `e2e_placeholder`, `static_css` and `e2e_browser` to need their numbers updated; that failure is the reminder.
+
+**How the game suites read the round.** A game built on `game-core.js` exposes its round as `GameCore.current` (`deck`, `current`, `total`, `completed`, `start()`, `front()`), and its suites use that through `h.game()` in `tests/harness.js`. Phonemes is on it. Diacritics, Conjuncts and Lookalikes still keep the round in page variables, so their suites read those with `w.eval(…)`; when a game moves onto `game-core.js`, swap its `w.eval('deck…')` calls for `G()` the way the `e2e_pho*` suites do.
 
 `tests/fixtures/` holds a copy of the Lookalike CSV that two suites import.

@@ -58,9 +58,13 @@ const P = w.TeluguProgress, $ = s => d.querySelector(s), click = s => $(s).click
   click('#rv-clear'); ok($('#rv-clear').textContent.includes('Tap again') && P.missCount() > 0, 'Clear list asks for a second tap');
   click('#rv-clear'); ok(P.missCount() === 0 && $('.rv-empty h2').textContent === 'Nothing to review', 'second tap clears everything');
 
-  // an unknown game id still gets a readable name
+  // names come from units.js: a `review` name, else the tile's title, else the id tidied up
   P.miss({ game: 'grammar-nouns', key: 'a', prompt: 'a', answer: 'b' });
-  ok($('.rv-game .name').textContent === 'Grammar nouns', 'unknown game ids get a readable label');
+  ok($('.rv-game .name').textContent === 'Nouns: gender & number', 'a unit with a tile is listed under its tile title');
+  P.clearMisses(); P.miss({ game: 'made_up-game', key: 'a', prompt: 'a', answer: 'b' });
+  ok($('.rv-game .name').textContent === 'Made up game', 'a game id with no tile still gets a readable label');
+  ok(!/const LABELS/.test(fs.readFileSync(dir + 'review.html', 'utf8')) && !!w.TeluguUnits, 'Review keeps no name list of its own (it reads units.js)');
+  P.clearMisses();
   // long (3+ glyph) prompts shrink
   P.miss({ game: 'conjuncts', key: 'క్ష', prompt: 'క్ష', answer: '/kʂa/' });
   d.querySelector('[data-game="conjuncts"]').click(); ok($('#rv-prompt').classList.contains('long'), 'three-glyph prompt uses the smaller size');

@@ -1,5 +1,6 @@
 const h = require('./harness')('alphabet/01_phonemes.html');
 const { w, d, tick, ok, front, $ } = h;
+const G = h.game;                                          // the round: G().deck, .current, .total, .completed
 const D = w.TeluguData;
 const vis    = () => [...d.querySelectorAll('.kb-btn')].filter(b => b.style.display !== 'none');
 const groups = () => d.querySelectorAll('#kb-area .kb-group').length;
@@ -21,16 +22,16 @@ const alpha = D.letters.filter(l => l.core).map(l => l.ch).join('|');
 
   /* reverse + unticked = one plain block */
   front(x => x.ipa === 'k');
-  const before = { deck: w.eval('deck.length'), done: w.eval('completed'), top: w.eval('deck[0].ch') };
+  const before = { deck: G().deck.length, done: G().completed, top: G().current.ch };
   showCat(false);
   ok(groups() === 1 && labels().length === 0 && d.querySelectorAll('#kb-area .kb-row').length === 1, 'reverse + unticked: a single group, no labels, one row');
   ok(vis().length === 51 && vis().every(b => b.classList.contains('te')) && vis().map(b => b.textContent).join('|') === alpha, 'still 51 Telugu keys, still in alphabet order');
-  ok(w.eval('deck.length') === before.deck && w.eval('completed') === before.done && w.eval('deck[0].ch') === before.top, 'regrouping does not restart or change the round');
+  ok(G().deck.length === before.deck && G().completed === before.done && G().current.ch === before.top, 'regrouping does not restart or change the round');
   ok($('cat-badge').style.visibility === 'hidden', 'card category label hidden too');
 
   /* the flat keyboard still plays */
   const right = vis().find(b => b.dataset.ch === 'క'); right.click();
-  ok($('char-card').classList.contains('correct') && w.eval('completed') === before.done + 1, 'answering on the flat keyboard works');
+  ok($('char-card').classList.contains('correct') && G().completed === before.done + 1, 'answering on the flat keyboard works');
   await tick(); await tick();
   front(x => x.ipa === 'ʈ');
   const wrong = vis().find(b => b.dataset.ch === 'క'); wrong.click();

@@ -1,10 +1,11 @@
 const h = require('./harness')('alphabet/01_phonemes.html');
 const { w, d, tick, ok, front, $ } = h;
+const G = h.game;                                          // the round: G().deck, .current, .total, .completed
 const D = w.TeluguData, P = w.TeluguProgress;
 const vis  = () => [...d.querySelectorAll('.kb-btn')].filter(b => b.style.display !== 'none');
 const byCh = ch => vis().find(b => b.dataset.ch === ch);
 const byIpa = ipa => vis().find(b => b.dataset.ipa === ipa);
-const cur  = () => w.eval('deck[0]');
+const cur  = () => G().current;
 const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
 (async () => {
   /* ── controls + defaults ── */
@@ -32,12 +33,12 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   $('highlight-correct').checked = true;
 
   /* ── reverse: switch ── */
-  const doneBefore = w.eval('completed');
+  const doneBefore = G().completed;
   byIpa('a'); front(x => x.ipa === 'a'); byIpa('a').click(); await tick(); await tick();
-  ok(w.eval('completed') === 1, 'one card cleared before switching');
+  ok(G().completed === 1, 'one card cleared before switching');
   $('rev-btn').click();
   ok($('g-title').textContent === 'IPA → Telugu' && $('rev-btn').getAttribute('aria-pressed') === 'true', 'title flips to IPA → Telugu, button pressed');
-  ok(w.eval('completed') === 0 && w.eval('deck.length') === 51 && w.eval('total') === 51, 'switching starts a fresh round (0 cleared, 51 cards)');
+  ok(G().completed === 0 && G().deck.length === 51 && G().total === 51, 'switching starts a fresh round (0 cleared, 51 cards)');
 
   /* ── reverse: keyboard ── */
   const expected = D.letters.filter(l => l.core).map(l => l.ch);
@@ -61,9 +62,9 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
 
   /* ── reverse: answers ── */
   front(x => x.ipa === 'kʰ');
-  const before = w.eval('deck.length');
+  const before = G().deck.length;
   byCh('ఖ').click();
-  ok($('char-card').classList.contains('correct') && w.eval('deck.length') === before - 1, 'correct Telugu key clears the card');
+  ok($('char-card').classList.contains('correct') && G().deck.length === before - 1, 'correct Telugu key clears the card');
   await tick(); await tick();
   front(x => x.ipa === '\u0261');
   const wrong = byCh('క'); wrong.click();
@@ -85,14 +86,14 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
 
   /* extras in reverse */
   $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change'));
-  ok(w.eval('total') === 54 && vis().length === 54 && !!byCh('ఌ') && !!byCh('ఱ') && vis().every(b => b.classList.contains('te')), 'extras on in reverse: 54 Telugu keys incl. ఌ ఱ');
+  ok(G().total === 54 && vis().length === 54 && !!byCh('ఌ') && !!byCh('ఱ') && vis().every(b => b.classList.contains('te')), 'extras on in reverse: 54 Telugu keys incl. ఌ ఱ');
   $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change'));
   ok(vis().length === 51 && vis().every(b => b.classList.contains('te')), 'extras off: back to 51, still Telugu-faced');
 
   /* full reverse session */
   let g = 0;
   while (!$('g-complete').classList.contains('show') && g++ < 600) { byCh(cur().ch).click(); await tick(); await tick(); }
-  ok($('g-complete').classList.contains('show') && w.eval('completed') === 51, 'reverse session completes (51)');
+  ok($('g-complete').classList.contains('show') && G().completed === 51, 'reverse session completes (51)');
   ok($('c-sub').textContent === 'All 51 IPA phonemes correctly matched to their Telugu akshara.', 'complete text mentions the direction: ' + $('c-sub').textContent);
   ok(P.isComplete('phonemes'), 'finishing reverse also ticks the Phonemes tile');
   $('retry-btn').click();
@@ -102,7 +103,7 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   $('rev-btn').click();
   ok($('g-title').textContent === 'Telugu → IPA' && $('rev-btn').getAttribute('aria-pressed') === 'false', 'toggle back: title Telugu → IPA');
   ok(vis().length === 51 && vis().every(b => !b.classList.contains('te')) && vis()[0].textContent === 'a', 'IPA keys restored');
-  ok(!$('tel-char').classList.contains('ipa-face') && w.eval('deck[0].ch') === $('tel-char').textContent, 'card shows the Telugu letter again');
+  ok(!$('tel-char').classList.contains('ipa-face') && G().current.ch === $('tel-char').textContent, 'card shows the Telugu letter again');
 
   /* shared keyboard builder: reusable on its own */
   const host = d.createElement('div'); d.body.appendChild(host);

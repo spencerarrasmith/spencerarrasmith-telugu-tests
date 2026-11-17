@@ -1,5 +1,6 @@
 const h = require('./harness')('alphabet/01_phonemes.html');
 const { w, d, tick, ok, front, $ } = h;
+const G = h.game;                                          // the round: G().deck, .current, .total, .completed
 const D = w.TeluguData;
 const vis    = () => [...d.querySelectorAll('.kb-btn')].filter(b => b.style.display !== 'none');
 const groups = () => d.querySelectorAll('#kb-area .kb-group').length;
@@ -42,8 +43,8 @@ const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles:
   vis().find(b => b.dataset.ipa === 'ɡ').click();
   ok(d.querySelectorAll('.kb-btn.ok').length === 0, 'highlight option works from the menu');
   await tick(); await tick(); tickBox('highlight-correct');
-  tickBox('include-extra'); ok(w.eval('total') === 54 && vis().length === 54, 'extra letters option works from the menu (54)');
-  tickBox('include-extra'); ok(w.eval('total') === 51, '…and off again (51)');
+  tickBox('include-extra'); ok(G().total === 54 && vis().length === 54, 'extra letters option works from the menu (54)');
+  tickBox('include-extra'); ok(G().total === 51, '…and off again (51)');
   tickBox('show-cat'); ok(groups() === 1 && labels() === 0 && $('cat-badge').style.visibility === 'hidden', 'categories option works from the menu (flat, card label hidden)');
   tickBox('show-cat'); ok(groups() === 9 && labels() === 9 && $('cat-badge').style.visibility === '', '…and back');
 
@@ -57,15 +58,15 @@ const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles:
   const A = order();
   ok(vis().length === 51 && same(A, alpha) && A !== alpha, 'IPA keys: all 51, same letters, random order (not alphabetical)');
   ok(vis().every(b => !b.classList.contains('te')), 'IPA face');
-  w.eval('buildKB()');
+  $('show-cat').dispatchEvent(new w.Event('change'));        // the menu asks the page to redraw its keyboard
   ok(order() === A, 'the order is stable within a round (rebuilds keep it)');
   tickBox('highlight-correct'); tickBox('highlight-correct');
   ok(order() === A, 'toggling other options does not reshuffle');
-  const done0 = w.eval('completed');
+  const done0 = G().completed;
   front(x => x.ipa === 'k'); vis().find(b => b.dataset.ipa === 'k').click();
-  ok($('char-card').classList.contains('correct') && w.eval('completed') === done0 + 1, 'the shuffled keyboard plays normally');
+  ok($('char-card').classList.contains('correct') && G().completed === done0 + 1, 'the shuffled keyboard plays normally');
   await tick(); await tick();
-  w.eval('initGame()');
+  G().start();
   const B = order();
   ok(same(B, alpha) && B !== A, 'each new round reshuffles');
 

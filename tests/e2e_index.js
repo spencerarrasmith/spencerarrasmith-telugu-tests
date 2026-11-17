@@ -5,7 +5,10 @@ const html = fs.readFileSync(dir + 'index.html', 'utf8').replace(/<link[^>]*>/g,
 const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost/index.html' });
 const w = dom.window, d = w.document; let fails = 0;
 const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
-const S = w.eval('SECTIONS'), ALL = S.flatMap(s => s.tiles);
+const U = w.TeluguUnits, S = U.sections, ALL = U.tiles;        // the home page draws what units.js lists
+const src = fs.readFileSync(dir + 'index.html', 'utf8');
+ok(/<script src="units\.js"><\/script>/.test(src) && !/\bsrc: ['"]/.test(src) && !/soon: true/.test(src), 'index.html holds no tile list of its own (it loads units.js)');
+ok(/<link rel="stylesheet" href="home\.css">/.test(src) && !/<style/.test(src) && !/fonts\.googleapis/.test(src), 'index.html links home.css: no inline <style>, no font link of its own');
 ok(S.map(s => s.title).join(' · ') === 'Resources · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'section order (Resources first, above Phonemes)');
 ok(S.map(s => s.tiles.length).join(',') === '5,8,8,12,8' && ALL.length === 41, 'tile counts 5/8/8/12/8 = 41');
 ok(new Set(ALL.map(t => t.id)).size === ALL.length, 'tile ids unique');
@@ -46,9 +49,6 @@ ok(d.querySelectorAll('a.tile').length === 42 && d.querySelectorAll('a.tile.soon
   w.location.hash = '#/phonemes'; await wait(); P.miss({ game: 'diacritics', key: 'కా', prompt: 'కా', answer: '/kaː/' });
   w.location.hash = '#/'; await wait();
   ok(d.querySelector('.tile.review .tile-badge').textContent === '3 to revisit', 'returning home picks up changes');
-  // placeholder checks
-  const ph = ALL.filter(t => t.soon);
-  const bad = ph.filter(t => { const s = fs.readFileSync(dir + t.src, 'utf8'); return !s.includes('viewport-fit=cover') || !s.includes('Coming soon') || !s.includes('100dvh') || !s.includes('<title>' + t.title.replace(/&/g,'&amp;')); });
-  ok(bad.length === 0, '34 placeholders: viewport-fit, dvh, "Coming soon", title ' + bad.map(t=>t.id));
+  // placeholder pages themselves: e2e_placeholder
   console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
 })();
