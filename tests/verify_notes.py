@@ -33,12 +33,6 @@ for c in cons: by[kind(c)]+=c
 note=lambda s,key: re.search(key,s)
 ok(set(by['narrow'])==set('కగఠరశ') and set(by['wide'])==set('ఘఝఞణమయఱహ') and set(by['low'])==set('ష'), 'త widths: narrow=%s wide=%s low=%s'%(by['narrow'],by['wide'],by['low']))
 ok(kind('ద')=='plain' and kind('త')=='plain', 'the "usual" example ద్త is the plain form')
-# low subscripts
-low=''.join(c for c in cons if any('lowtelu' in n and not n.startswith('ta') and not n.startswith('rasub') for n in shape(c+'్'+'జ')))
-ok(set(low)==set('ఖఛఢథధఫభ'), 'జ-below drops lower after: '+low)
-for ex in ['ఖ్జ','ఛ్ట','ఢ్డ','థ్ద','ఫ్ల','భ్ద']:
-    ok('low' in shape(ex)[1], ex+' uses a low form')
-for ex in ['క్జ','క్ద']: ok('low' not in shape(ex)[1], ex+' is the usual form')
 # ra: a custom glyph per base
 ras=[shape(c+'్'+'ర')[1] for c in 'కగపమ']; ok(len(set(ras))==4, 'ర-below is a different glyph for each first letter: '+', '.join(ras))
 # special u forms

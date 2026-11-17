@@ -23,12 +23,17 @@ ok(rows().every((r, i) => { const l = cons[i]; return [...r.querySelectorAll('td
 ok(cell('మో') && cell('మో').classList.contains('n') && cell('మో').querySelector('sup').textContent === '1', 'మో is marked with note 1');
 ok(['ఘో', 'ఝొ', 'యౌ', 'మొ'].every(t => cell(t).querySelector('sup').textContent === '1'), 'ఘో ఝొ యౌ మొ share note 1');
 ok(['కో', 'నో', 'లో'].every(t => !cell(t).classList.contains('n')), 'కో నో లో (the usual looped form) are not marked');
-ok(cell('జు').querySelector('sup').textContent === '2' && cell('జె').querySelector('sup').textContent === '5' && cell('జొ').querySelector('sup').textContent === '5' && !cell('జో').classList.contains('n'), 'జు → note 2, జె/జొ → note 5, జో unmarked');
-ok(cell('యి').querySelector('sup').textContent === '3' && cell('హా').querySelector('sup').textContent === '4' && cell('ఖే').querySelector('sup').textContent === '5', 'యి → 3, హా → 4, ఖే → 5');
+ok(cell('జు').querySelector('sup').textContent === '2' && cell('యి').querySelector('sup').textContent === '3' && cell('హా').querySelector('sup').textContent === '4', 'జు → note 2, యి → 3, హా → 4');
+ok(['జె', 'జొ', 'జో', 'ఖే', 'లై', 'బౌ', 'ఱె'].every(t => !cell(t).classList.contains('n') && !cell(t).querySelector('sup')), 'a mark that only sits a little higher is not flagged: జె జొ ఖే లై బౌ ఱె carry no note');
+const marked = [...d.querySelectorAll('#chart td.c.n')];
+ok(marked.length === 12 + 14 + 2 + 1 && marked.every(c => /^[1-4]$/.test(c.querySelector('sup').textContent)), 'the chart marks 29 cells in all, each with one of notes 1–4');
 ok(!cell('కు').classList.contains('n') && !cell('క').classList.contains('n'), 'కు and క have no note');
 /* ── the notes ── */
 const sn = [...d.querySelectorAll('#sign-notes .note')], cn = [...d.querySelectorAll('#conj-notes .note')];
 ok(sn.length === SD.signNotes.length && cn.length === SD.conjNotes.length && sn[0].querySelector('.num').textContent === '1', 'notes render: ' + sn.length + ' + ' + cn.length);
+ok(SD.signNotes.map(n => n.id).join() === 'o-flat,u-own,ya-i,ha-aa,ai-two,vocalic,nasal' && SD.conjNotes.map(n => n.id).join() === 'first-full,kssa,ra,ta', '7 sign notes and 4 conjunct notes');
+ok(![...SD.signNotes, ...SD.conjNotes].some(n => /sit noticeably higher|drawn lower|drop lower/.test(n.title + n.text)), 'no note is only about a mark sitting a little higher or lower');
+ok(sn.map(n => n.querySelector('.num').textContent).join('') === '1234567' && cn.map(n => n.querySelector('.num').textContent).join('') === '1234', 'notes are numbered 1–7 and 1–4, with no gap');
 ok(sn[0].querySelectorAll('.chip:not(.usual)').length === 12 && sn[0].querySelectorAll('.chip.usual').length === 3, 'note 1: 12 combinations + 3 usual ones to compare');
 ok([...sn[0].querySelectorAll('.chip:not(.usual)')].map(c => c.textContent).includes('మో'), 'note 1 lists మో');
 ok(sn[0].querySelector('h4 .te.bare') && /bare/.test(sn[0].querySelector('h4').innerHTML), 'bare signs in a title are wrapped so they cannot attach to the letter before');
@@ -41,7 +46,9 @@ ok(all.every(c => c.querySelector('.ex').firstChild.textContent === SD.HOST + '�
 ok(all.every(c => c.querySelector('.meta .tag:nth-child(2)').textContent === (SD.BELOW.includes(c.dataset.ch) ? 'below' : 'beside')), 'below/beside tags follow the data');
 ok(SD.BELOW.length + SD.BESIDE.length === 35 && [...SD.BELOW].every(c => !SD.BESIDE.includes(c)), 'the two families partition the 35 consonants');
 ok(card('ష').querySelector('.ex').textContent.includes('త్ష') && card('ష').querySelector('sup').textContent === '2', 'ష card also shows its usual below-form, note 2');
-ok(card('ర').querySelector('sup').textContent === '3' && card('త').querySelector('sup').textContent === '4' && card('జ').querySelector('sup').textContent === '5', 'ర → 3, త → 4, జ → 5');
+ok(card('ర').querySelector('sup').textContent === '3' && card('త').querySelector('sup').textContent === '4', 'ర → 3, త → 4');
+ok(['జ', 'ట', 'డ', 'ద', 'ల'].every(ch => !card(ch).querySelector('sup')), 'జ ట డ ద ల carry no note (their below-forms only sit lower after some letters)');
+ok([...d.querySelectorAll('.cj sup')].map(s => s.textContent).sort().join('') === '234' && ![...d.querySelectorAll('sup')].some(s => /\b[05-9]\b/.test(s.textContent)), 'only ష ర త are numbered; no stray 0 or 5 anywhere on the page');
 ok(!card('క').querySelector('sup'), 'క has no note');
 /* ── rare and extra ── */
 $('show-rare').checked = false; $('show-rare').dispatchEvent(new w.Event('change'));
