@@ -51,6 +51,6 @@ const keys = () => vis().length;
   front(x => x.ipa === 'ɽ');
   ok($('rare-badge').style.display !== 'none', 'extra letters carry the "rare" badge');
   $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change'));
-  ok(G().total === 51, 'unticking returns to 51');
+  ok(G().total === 51, 'unchecking returns to 51');
   h.done();
 })();

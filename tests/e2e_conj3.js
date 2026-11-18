@@ -11,7 +11,7 @@ const labels = () => [...d.querySelectorAll('#kb-area .kb-label')].map(x => x.te
 const slots  = () => [...d.querySelectorAll('#slots .slot')];
 const vals   = () => slots().map(s => s.querySelector('.slot-val').textContent).join('|');
 const put    = g => G().put(D.clusters.find(c => c.glyph === g));
-const tickBox = id => $(id).click();
+const clickBox = id => $(id).click();
 const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = 'ఙ్క';
 (async () => {
   /* ── the swap button ── */
@@ -20,8 +20,8 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   ok($('g-title').textContent === 'Conjuncts → IPA' && !d.querySelector('.kb-btn.te') && !$('tel-char').classList.contains('ipa-face') && /IPA to Conjuncts/.test($('rev-btn').getAttribute('aria-label')), 'forward: IPA keys, Telugu conjunct on the card');
 
   /* ── the card label never names a letter (either direction) ── */
-  put('క్య'); ok($('cat-badge').textContent === 'Velar + Approx.', 'forward: క్య is labelled "Velar + Approx.", not "+ య (ya)"');
-  put(NKA);  ok($('cat-badge').textContent === 'Nasal + Velar', 'ఙ్క is labelled "Nasal + Velar"');
+  put('క్య'); ok($('cat-badge').textContent === 'Velar + Approx.', 'forward: క్య is labeled "Velar + Approx.", not "+ య (ya)"');
+  put(NKA);  ok($('cat-badge').textContent === 'Nasal + Velar', 'ఙ్క is labeled "Nasal + Velar"');
   put(STRA); ok($('cat-badge').textContent === 'Fricative + Retroflex + Approx.', 'three letters: three classes');
   const seenLabels = new Set(); D.clusters.forEach(c => { G().put(c); seenLabels.add($('cat-badge').textContent); });
   ok([...seenLabels].every(l => !/[ఀ-౿]/.test(l) && /^[A-Za-z.]+( \+ [A-Za-z.]+){1,2}$/.test(l)), 'no card of the 92 shows a Telugu letter or a set name in its label (' + seenLabels.size + ' different labels)');
@@ -89,23 +89,23 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   await tick(); await tick();
 
   /* ── the options menu still applies ── */
-  tickBox('show-cat');
-  ok(groups() === 1 && labels().length === 0 && kb().length === 34 && $('cat-badge').style.visibility === 'hidden' && kb().map(b => b.dataset.ch).join() === w.eval('keys.map(c => c.ch)').join(), 'unticking categories: one flat block in alphabet order; card label hidden');
-  tickBox('shuffle-kb'); const A = kb().map(b => b.dataset.ch).join();
+  clickBox('show-cat');
+  ok(groups() === 1 && labels().length === 0 && kb().length === 34 && $('cat-badge').style.visibility === 'hidden' && kb().map(b => b.dataset.ch).join() === w.eval('keys.map(c => c.ch)').join(), 'unchecking categories: one flat block in alphabet order; card label hidden');
+  clickBox('shuffle-kb'); const A = kb().map(b => b.dataset.ch).join();
   ok(kb().length === 34 && A !== w.eval('keys.map(c => c.ch)').join() && kb().every(b => b.classList.contains('te')), 'shuffle: random order, still Telugu');
   $('show-cat').dispatchEvent(new w.Event('change')); ok(kb().map(b => b.dataset.ch).join() === A, 'order stable within the round');
-  tickBox('shuffle-kb'); tickBox('show-cat');
-  tickBox('include-uncommon');
+  clickBox('shuffle-kb'); clickBox('show-cat');
+  clickBox('include-uncommon');
   ok(kb().length === 35 && !!key('ఱ') && G().total === 40 && $('g-title').textContent === 'IPA → Conjuncts', 'uncommon clusters on: ఱ joins the keys; still reversed');
   put(NKA); ok($('tel-char').textContent === '/ŋka/' && $('rare-badge').style.display !== 'none', 'an uncommon cluster shows its sound and the rare badge');
-  tickBox('include-uncommon');
+  clickBox('include-uncommon');
 
   /* ── a whole reverse round ── */
   let guard = 0;
   while (!$('g-complete').classList.contains('show') && guard++ < 200) { G().current.parts.forEach(p => key(p.ch).click()); await tick(); await tick(); }
   ok($('g-complete').classList.contains('show') && G().completed === 40 && $('c-accuracy').textContent === '100%', 'reverse round completes (40 cards, 100%)');
   ok($('c-sub').textContent === 'All 40 sounds correctly written as Telugu conjuncts.', 'complete screen names the direction');
-  ok(P.isComplete('conjuncts'), 'finishing the reverse direction ticks the Conjuncts tile');
+  ok(P.isComplete('conjuncts'), 'finishing the reverse direction checks off the Conjuncts tile');
 
   /* ── and back ── */
   $('rev-btn').click();

@@ -41,7 +41,7 @@ const upload = (text, name = 'mine.csv') => new Promise(res => { w.eval('onFile'
   front('వు');
   ok($('rare-badge').style.display === 'none' && $('tel-char').textContent === '/ʋu/' && key('పు') && key('ఘ') && key('మ'), 'వు: /ʋu/ among ఘ మ వు పు, no rare pip');
 
-  /* ── order: shuffled vs as written ── */
+  /* ── order: shuffled versus as written ── */
   front('అ');
   $('shuffle-kb').checked = false; $('shuffle-kb').dispatchEvent(new w.Event('change', { bubbles: true }));
   ok(keys().map(b => b.dataset.text).join('') === 'అఆలత', 'shuffle off: group order as written (అఆలత)');
@@ -57,7 +57,7 @@ const upload = (text, name = 'mine.csv') => new Promise(res => { w.eval('onFile'
   await upload('hello');
   ok($('csv-status').classList.contains('err') && /No lookalike groups/.test($('csv-status').textContent) && w.eval('custom.length') === 0 && $('use-builtin').checked, 'a file with no groups is refused with a message; nothing changes');
   await upload(CSV, 'telugu_lookalikes_groups.csv');
-  ok(w.eval('custom.length') === 3 && $('use-custom').checked && !$('use-custom').disabled && !$('use-builtin').checked, 'upload: 3 groups, "My CSV groups" on, built-in switched off');
+  ok(w.eval('custom.length') === 3 && $('use-custom').checked && !$('use-custom').disabled && !$('use-builtin').checked, 'upload: 3 groups, "My CSV groups" on, built-in turned off');
   ok(/66 characters|3 groups/.test($('custom-note').textContent) && !$('csv-clear').hidden, 'menu shows the count: ' + $('custom-note').textContent);
   ok(/Loaded 3 groups/.test($('csv-status').textContent), 'status: ' + $('csv-status').textContent.slice(0, 70) + '…');
   ok(w.eval('localStorage.getItem(STORE)') === CSV, 'CSV text remembered in the browser');
@@ -75,7 +75,7 @@ const upload = (text, name = 'mine.csv') => new Promise(res => { w.eval('onFile'
 
   /* ── sets ── */
   $('use-custom').checked = false; $('use-custom').dispatchEvent(new w.Event('change', { bubbles: true }));
-  ok($('use-custom').checked, 'the last ticked set cannot be switched off');
+  ok($('use-custom').checked, 'the last checked set cannot be turned off');
   $('use-builtin').checked = true; $('use-builtin').dispatchEvent(new w.Event('change', { bubbles: true }));
   $('use-custom').checked = true;  $('use-custom').dispatchEvent(new w.Event('change', { bubbles: true }));
   ok(G().deck.some(c => w.eval('custom').some(g => g.items.includes(c.item))) && G().deck.some(c => w.eval('BUILTIN').some(g => g.items.includes(c.item))), 'both sets on: cards from both');
@@ -107,7 +107,7 @@ const upload = (text, name = 'mine.csv') => new Promise(res => { w.eval('onFile'
   $('retry-btn').click();
   ok(!$('g-complete').classList.contains('show') && total() === 40, 'Practice Again starts a new session');
 
-  /* ── nothing to practise ── */
+  /* ── nothing to practice ── */
   w.eval('BUILTIN.splice(0, BUILTIN.length)'); G().start();
   ok(total() === 0 && /No lookalike groups/.test($('kb-area').textContent), 'no cards → a helpful message, no crash');
   h.done();

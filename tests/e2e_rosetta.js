@@ -27,7 +27,7 @@ ok(/r̥/.test(find('ఋ').textContent) && /l̥̄/.test(find('ౡ').textContent),
 const wordless = Object.entries(RD.letters).filter(([, r]) => !r.word).map(([k]) => k);
 ok(['ౠ', 'ఌ', 'ౡ', 'ఱ'].every(k => wordless.includes(k)), 'unattested letters have no invented word: ' + wordless.join(' '));
 ok(wordless.every(k => RD.letters[k].note.length > 20) && find('ఌ').textContent.includes('no everyday word'), 'those say so honestly, with a note');
-ok(Object.values(RD.letters).concat(Object.values(RD.signs)).every(r => !r.word || (r.word.length === 3 && r.word.every(Boolean))), 'every given word has Telugu, ISO and meaning');
+ok(Object.values(RD.letters).concat(Object.values(RD.signs)).every(r => !r.word || (r.word.length === 3 && r.word.every(Boolean))), 'every given word has Telugu, ISO, and meaning');
 ok(find('క').textContent.includes('కాకి') && find('క').textContent.includes('crow'), 'క: కాకి kāki crow');
 // each example word actually contains its letter (letters) / sign (signs), except ఙ/ఞ classical + conjunct ok
 const bad = [];
@@ -41,10 +41,10 @@ ok(find('్').querySelector('.g').textContent === 'క్' && find('ా').query
 ok(find('ఙ').classList.contains('rare') && find('ఱ').classList.contains('rare') && !find('క').classList.contains('rare'), 'rare/extra cards dashed');
 const total = entries().length;
 $('show-rare').checked = false; $('show-rare').dispatchEvent(new w.Event('change'));
-ok(!find('ఱ') || find('ఱ').hidden, 'extra hidden when unticked');
+ok(!find('ఱ') || find('ఱ').hidden, 'extra hidden when unchecked');
 ok(find('ఙ').hidden && vis().length < total && /of \d+ characters/.test($('count').textContent), 'rare hidden too; count: ' + $('count').textContent);
 $('show-rare').checked = true; $('show-rare').dispatchEvent(new w.Event('change'));
-ok(vis().length === total && /^\d+ characters$/.test($('count').textContent), 'ticking restores all');
+ok(vis().length === total && /^\d+ characters$/.test($('count').textContent), 'checking restores all');
 // search
 q('sh');
 ok(vis().some(e => e.dataset.key === 'శ') && vis().some(e => e.dataset.key === 'ష') && vis().length < total / 2, 'search "sh" finds ś/ṣ without accents: ' + vis().length);

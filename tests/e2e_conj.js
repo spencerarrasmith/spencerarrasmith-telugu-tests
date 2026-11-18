@@ -7,7 +7,7 @@ const slots = () => [...d.querySelectorAll('#slots .slot')];
 const val = i => slots()[i].querySelector('.slot-val').textContent;
 const inject = glyphEscaped => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${glyphEscaped}');GameCore.current.put(CLUSTERS[i]);})()`);
 (async () => {
-  ok(!$('include-uncommon').checked && $('include-uncommon').parentElement.textContent.includes('Include uncommon clusters'), 'unchecked by default, labelled "Include uncommon clusters"');
+  ok(!$('include-uncommon').checked && $('include-uncommon').parentElement.textContent.includes('Include uncommon clusters'), 'unchecked by default, labeled "Include uncommon clusters"');
   ok(G().total === 40 && G().deck.every(c => !c.uncommon), 'default session: 40 cards, no uncommon clusters');
   ok(d.querySelectorAll('.kb-btn').length === 34 && !btn('ɽ') && !!btn('ŋ') && !!btn('ɲ'), '34 keys: ఱ hidden, ఙ ఞ kept');
 
@@ -46,7 +46,7 @@ const inject = glyphEscaped => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.gly
 
   $('retry-btn').click();
   $('include-uncommon').checked = true; $('include-uncommon').dispatchEvent(new w.Event('change'));
-  ok(d.querySelectorAll('.kb-btn').length === 35 && !!btn('ɽ'), 'ticked: 35 keys, ఱ appears');
-  ok(w.eval('CLUSTERS.filter(c=>!c.core).length') === 9, '9 uncommon clusters available when ticked');
+  ok(d.querySelectorAll('.kb-btn').length === 35 && !!btn('ɽ'), 'checked: 35 keys, ఱ appears');
+  ok(w.eval('CLUSTERS.filter(c=>!c.core).length') === 9, '9 uncommon clusters available when checked');
   h.done();
 })();

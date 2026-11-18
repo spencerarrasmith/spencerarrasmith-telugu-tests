@@ -1,5 +1,5 @@
 const { SITE_DIR } = require('./config');
-// units.js: the one list of sections and tiles that the home page, Review and the placeholder pages all read.
+// units.js: the one list of sections and tiles that the home page, Review, and the placeholder pages all read.
 const fs = require('fs'), path = require('path');
 const U = require(path.join(SITE_DIR, 'units.js'));
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
@@ -8,7 +8,7 @@ ok(U.sections.map(s => s.title).join(' · ') === 'Reference · Alphabet · Gramm
 ok(U.sections.map(s => s.tiles.length).join() === '7,8,8,12,8' && U.tiles.length === 43, 'tile counts 7/8/8/12/8 = 43');
 ok(U.featured.map(t => t.id).join() === 'review' && U.all.length === 44 && U.all[0].id === 'review', 'Review is featured; all = Review + the 43 tiles');
 ok(new Set(U.all.map(t => t.id)).size === 44 && new Set(U.all.map(t => t.src)).size === 44, 'ids and page paths are unique');
-ok(U.all.every(t => t.id && t.icon && t.title && t.desc && t.src && /^[a-z0-9-]+$/.test(t.id)), 'every tile has id, icon, title, desc and src');
+ok(U.all.every(t => t.id && t.icon && t.title && t.desc && t.src && /^[a-z0-9-]+$/.test(t.id)), 'every tile has id, icon, title, desc, and src');
 ok(U.all.every(t => fs.existsSync(path.join(SITE_DIR, t.src))), 'every src is a file');
 const soon = U.tiles.filter(t => t.soon);
 ok(soon.length === 34 && soon.every(t => ['learn', 'practice', 'fits'].every(k => typeof t.soon[k] === 'string' && t.soon[k].length > 10)), '34 placeholders, each with its three lines (learn, practice, fits)');
@@ -29,7 +29,7 @@ ok(/\{sound\} → Telugu/.test(U.get('phonemes').review['phonemes-reverse']) && 
   ok(a === 'Phonemes (IPA → Telugu)' && w.TeluguUnits.label('phonemes-reverse') === 'Phonemes (ISO → Telugu)' && w.TeluguUnits.label('conjuncts-reverse') === 'Conjuncts (ISO → Conjuncts)' && w.TeluguUnits.label('lookalikes') === 'Lookalikes (ISO → Telugu)' && w.TeluguUnits.label('phonemes') === 'Phonemes', 'label: {sound} becomes IPA or ISO, whichever is chosen (re-read each time)');
   ok(U.tiles.every(t => !/\bIPA\b/.test(t.desc) || t.id === 'rosetta') && U.all.every(t => Object.values(t.review || {}).every(n => !/IPA|ISO/.test(n))), 'no tile text is tied to one notation (Rosetta Stone, which shows both, aside)');
 })();
-ok(U.label('grammar-nouns') === 'Nouns: gender & number' && U.label('made_up-game') === 'Made up game', 'label: lessons use their tile title; an unlisted id is tidied up');
+ok(U.label('grammar-nouns') === 'Nouns: gender & number' && U.label('made_up-game') === 'Made up game', 'label: lessons use their tile title; an unlisted id is cleaned up');
 const reviewIds = U.all.flatMap(t => Object.keys(t.review || {}));
 ok(U.all.every(t => Object.keys(t.review || {}).every(g => g === t.id || g.startsWith(t.id + '-'))), 'every `review` id belongs to the tile it sits on: ' + reviewIds.join(' '));
 
@@ -40,7 +40,7 @@ ok(Object.entries(games).every(([f, ids]) => { const s = fs.readFileSync(path.jo
 
 // icons: Telugu characters where the page is about the script, otherwise plain object / symbol emojis
 const icon = id => U.get(id).icon, isTe = s => /^[\u0C00-\u0C7Fa-z]+$/.test(s);
-ok(icon('phonemes') === 'క' && icon('diacritics') === 'కా' && icon('conjuncts') === 'క్ష', 'Phonemes, Diacritics and Conjuncts tiles: క, కా, క్ష');
+ok(icon('phonemes') === 'క' && icon('diacritics') === 'కా' && icon('conjuncts') === 'క్ష', 'Phonemes, Diacritics, and Conjuncts tiles: క, కా, క్ష');
 ok(['rosetta', 'signs-conjuncts', 'phonemes', 'diacritics', 'conjuncts', 'lookalikes', 'alphabet-chart', 'vocab-numbers'].every(id => isTe(icon(id))), 'the script pages (and Numbers) use Telugu characters: ' + ['rosetta', 'signs-conjuncts', 'lookalikes', 'alphabet-chart', 'vocab-numbers'].map(icon).join(' '));
 ok(U.all.filter(t => isTe(t.icon)).every(t => [...t.icon.replace(/[\u0C3E-\u0C4D\u0C55\u0C56\u0C62\u0C63]/g, '')].length <= 2), 'a Telugu icon is at most two letters wide (it has to fit the icon box)');
 const PLAYFUL = /[\u{1F440}\u{1F44B}\u{1F64B}\u{1F9E9}\u{1F3AF}\u{1F600}-\u{1F64E}\u{1F910}-\u{1F92F}\u{1F970}-\u{1F97A}]/u;

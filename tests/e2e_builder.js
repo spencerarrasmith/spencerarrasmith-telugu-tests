@@ -60,12 +60,12 @@ ok(name().startsWith('/k/'), 'consonant with virama: ' + name());
 $('other').value = '౫'; $('otherPrompt').click();
 ok(name().startsWith('5 ') || name().startsWith('5·') || name().startsWith('5'), 'a digit shows its number: ' + name());
 const signs = [...d.querySelectorAll('#signs .key')].map(k => k.querySelector('small').textContent);
-ok(signs.includes('aː') && signs.includes('iː') && signs.includes('none') && !signs.includes('ā'), 'sign keys are labelled in IPA: ' + signs.join(' '));
-/* ── characters, sounds and flags come from telugu-data.js ── */
+ok(signs.includes('aː') && signs.includes('iː') && signs.includes('none') && !signs.includes('ā'), 'sign keys are labeled in IPA: ' + signs.join(' '));
+/* ── characters, sounds, and flags come from telugu-data.js ── */
 const D = w.TeluguData, L = w.LookalikeData;
 const script = raw.split('<script>')[1];
-ok(!/\['[\u0C00-\u0C7F]+','',?1?\]/.test(script) && !/var VOWELS=\[\[/.test(script) && /TD\.vowels/.test(script) && /TD\.consonants/.test(script) && /TD\.signs/.test(script) && /TD\.digits/.test(script), 'no letter, sign or digit list of its own: all four sets are read from TeluguData');
-ok(!/function clean\(/.test(script) && /LD\.clean/.test(script) && /LD\.rows\(/.test(script) && !/split\(\/\\r\?\\n\/\)/.test(script), 'CSV cells are tidied and split by LookalikeData (clean, rows), not by a private copy');
+ok(!/\['[\u0C00-\u0C7F]+','',?1?\]/.test(script) && !/var VOWELS=\[\[/.test(script) && /TD\.vowels/.test(script) && /TD\.consonants/.test(script) && /TD\.signs/.test(script) && /TD\.digits/.test(script), 'no letter, sign, or digit list of its own: all four sets are read from TeluguData');
+ok(!/function clean\(/.test(script) && /LD\.clean/.test(script) && /LD\.rows\(/.test(script) && !/split\(\/\\r\?\\n\/\)/.test(script), 'CSV cells are cleaned and split by LookalikeData (clean, rows), not by a private copy');
 const set = (id, on) => { const e = $(id) || d.querySelector(`[data-set="${id}"]`); e.checked = on; e.dispatchEvent(new w.Event('change', { bubbles: true })); };
 const keysOf = sel => [...d.querySelectorAll(sel)];
 const tiles = () => [...d.querySelectorAll('#tiles .tile')].map(t => t.dataset.goto);
@@ -94,8 +94,8 @@ set('marks', false);
 $('clear').click(); $('clear').click(); $('format').value = 'groups'; $('format').dispatchEvent(new w.Event('change'));
 const messy = '\uFEFFఅ, ఆ ,"ఇ"\r\n\r\nక,,క్\n , \n';
 await new Promise(res => { const f = new w.File([messy], 'm.csv', { type: 'text/csv' }); Object.defineProperty($('importFile'), 'files', { value: [f], configurable: true }); $('importFile').dispatchEvent(new w.Event('change')); setTimeout(res, 40); });
-ok(csv() === 'అ,ఆ,ఇ\nఆ,అ\nఇ,అ\nక,క్' && JSON.stringify(L.rows(messy)) === '[["అ","ఆ","ఇ"],["క","క్"]]', 'import: BOM, spaces, quotes, CRLF, empty cells and blank rows handled as LookalikeData.rows does: ' + JSON.stringify(csv()));
+ok(csv() === 'అ,ఆ,ఇ\nఆ,అ\nఇ,అ\nక,క్' && JSON.stringify(L.rows(messy)) === '[["అ","ఆ","ఇ"],["క","క్"]]', 'import: BOM, spaces, quotes, CRLF, empty cells, and blank rows handled as LookalikeData.rows does: ' + JSON.stringify(csv()));
 $('other').value = ' "ఒ", '; $('otherPrompt').click();
-ok($('glyph').textContent === 'ఒ', 'a typed character is tidied the same way (quotes, comma, spaces dropped)');
+ok($('glyph').textContent === 'ఒ', 'a typed character is cleaned the same way (quotes, comma, spaces dropped)');
 console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
 })();

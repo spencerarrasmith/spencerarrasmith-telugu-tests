@@ -95,7 +95,7 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   while (!$('g-complete').classList.contains('show') && g++ < 600) { byCh(cur().ch).click(); await tick(); await tick(); }
   ok($('g-complete').classList.contains('show') && G().completed === 51, 'reverse session completes (51)');
   ok($('c-sub').textContent === 'All 51 IPA phonemes correctly matched to their Telugu akshara.', 'complete text mentions the direction: ' + $('c-sub').textContent);
-  ok(P.isComplete('phonemes'), 'finishing reverse also ticks the Phonemes tile');
+  ok(P.isComplete('phonemes'), 'finishing reverse also checks off the Phonemes tile');
   $('retry-btn').click();
   ok(!$('g-complete').classList.contains('show') && $('g-title').textContent === 'IPA → Telugu' && vis()[0].textContent === 'అ', 'Practice Again stays in reverse mode');
 

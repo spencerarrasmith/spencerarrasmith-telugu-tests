@@ -23,21 +23,21 @@ PAGES.forEach(f => {
     ok(/<link rel="stylesheet" href="\.\.\/game\.css">\s*<link rel="stylesheet" href="\.\.\/reference\.css">/.test(s), f + ': links reference.css after game.css');
     const rdup = []; rules(inline).forEach((props, sel) => props.forEach((v, p) => { const g = refRules.get(sel); if (g && g.get(p) === v) rdup.push(sel + '{' + p + ':' + v + '}'); }));
     ok(rdup.length === 0, f + ': inline <style> repeats no declaration already in reference.css' + (rdup.length ? ' → ' + rdup.join(' | ') : ''));
-    ok(!/html,\s*body\s*\{/.test(inline) && !/\.jump\b/.test(inline) && !/\.g-header\b/.test(inline), f + ': the scrolling page, sticky header and jump pills are not restyled in the page');
+    ok(!/html,\s*body\s*\{/.test(inline) && !/\.jump\b/.test(inline) && !/\.g-header\b/.test(inline), f + ': the scrolling page, sticky header, and jump pills are not restyled in the page');
   }
   ok(!/cat-toggle|g-controls/.test(s), f + ': no leftover controls-bar / cat-toggle markup');
   if (!SCROLLING.includes(f)) ok(/<script src="\.\.\/game-menu\.js"><\/script>/.test(s) && /GameMenu\.init\(/.test(s), f + ': uses game-menu.js');
   ok(!/function setMenu|syncCategoryControl/.test(s), f + ': no private copy of the menu code');
   [...s.matchAll(/(?:href|src)="([^"#:]+\.(?:css|js))"/g)].forEach(m => ok(fs.existsSync(require('path').resolve(dir, require('path').dirname(f), m[1])), f + ': ' + m[1] + ' exists'));
 });
-ok([game, shell, home].every(c => /@import url\('base\.css'\)/.test(c)), 'game.css, shell.css and home.css all import base.css');
+ok([game, shell, home].every(c => /@import url\('base\.css'\)/.test(c)), 'game.css, shell.css, and home.css all import base.css');
 ok(!/@import/.test(ref) && ['html', 'body', '.g-header', '.wrap', '.hint', '.tools', '.jump a', '.tag', '.tag.flag'].every(sel => refRules.has(sel)), 'reference.css layers on game.css (no import of its own) and holds the shared reference rules');
-ok([game, shell, home, ref].every(c => !/:root\s*\{/.test(c)) && /:root\s*\{/.test(base), 'colour tokens are defined once, in base.css');
-// …and nowhere else: no page or stylesheet in the whole app defines a colour token, a reset or the core font link.
+ok([game, shell, home, ref].every(c => !/:root\s*\{/.test(c)) && /:root\s*\{/.test(base), 'color tokens are defined once, in base.css');
+// …and nowhere else: no page or stylesheet in the whole app defines a color token, a reset, or the core font link.
 (() => { const path = require('path'); const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
   const files = walk(dir).filter(f => /\.(html|css)$/.test(f)).map(f => path.relative(dir, f)).filter(f => f !== 'base.css');
   const tok = files.filter(f => /--(bg|surface|surface-up|border|accent|accent-light|accent-glow|text|text-dim|text-muted|success|error)\s*:/.test(read(f)));
-  ok(tok.length === 0, 'no file but base.css sets a colour token (' + files.length + ' pages and stylesheets checked)' + (tok.length ? ' → ' + tok.join(', ') : ''));
+  ok(tok.length === 0, 'no file but base.css sets a color token (' + files.length + ' pages and stylesheets checked)' + (tok.length ? ' → ' + tok.join(', ') : ''));
   const reset = files.filter(f => /\*\s*,\s*\*::before/.test(read(f)));
   ok(reset.length === 0, 'no file but base.css repeats the reset' + (reset.length ? ' → ' + reset.join(', ') : ''));
   const fonts = files.filter(f => /fonts\.googleapis/.test(read(f)));
@@ -51,7 +51,7 @@ ok(/fonts\.googleapis/.test(base) && [shell, game, home, ref].every(c => !/fonts
 // The Lookalike Builder is a scrolling tool page, not a game: it links the same shared sheet and keeps its own layout inline.
 (() => { const f = 'alphabet/04_lookalike-builder.html', s = read(f), inline = (s.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1];
   ok(/<link rel="stylesheet" href="\.\.\/game\.css">/.test(s), f + ': links game.css');
-  ok(!/:root\s*\{[^}]*--(bg|surface|border|accent):/.test(inline) && !/\*,\s*\*::before/.test(inline), f + ': no colour tokens or reset of its own');
+  ok(!/:root\s*\{[^}]*--(bg|surface|border|accent):/.test(inline) && !/\*,\s*\*::before/.test(inline), f + ': no color tokens or reset of its own');
   const dup = []; rules(inline).forEach((props, sel) => props.forEach((v, p) => { const g = gameRules.get(sel); if (g && g.get(p) === v) dup.push(sel + '{' + p + ':' + v + '}'); }));
   ok(dup.length === 0, f + ': repeats no declaration already in game.css' + (dup.length ? ' → ' + dup.join(' | ') : ''));
   [...s.matchAll(/(?:href|src)="([^"#:]+\.(?:css|js))"/g)].forEach(m => ok(fs.existsSync(require('path').resolve(dir, require('path').dirname(f), m[1])), f + ': ' + m[1] + ' exists'));

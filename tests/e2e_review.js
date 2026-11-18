@@ -58,7 +58,7 @@ const P = w.TeluguProgress, $ = s => d.querySelector(s), click = s => $(s).click
   click('#rv-clear'); ok($('#rv-clear').textContent.includes('Tap again') && P.missCount() > 0, 'Clear list asks for a second tap');
   click('#rv-clear'); ok(P.missCount() === 0 && $('.rv-empty h2').textContent === 'Nothing to review', 'second tap clears everything');
 
-  // names come from units.js: a `review` name, else the tile's title, else the id tidied up
+  // names come from units.js: a `review` name, else the tile's title, else the id cleaned up
   P.miss({ game: 'grammar-nouns', key: 'a', prompt: 'a', answer: 'b' });
   ok($('.rv-game .name').textContent === 'Nouns: gender & number', 'a unit with a tile is listed under its tile title');
   P.clearMisses(); P.miss({ game: 'made_up-game', key: 'a', prompt: 'a', answer: 'b' });

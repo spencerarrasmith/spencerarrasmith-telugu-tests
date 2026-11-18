@@ -7,7 +7,7 @@ const PAGE = 'reference/00_external.html';
 const raw = fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8'), home = fs.readFileSync(path.join(SITE_DIR, 'home.css'), 'utf8');
 const U = require(path.join(SITE_DIR, 'units.js'));
 
-// Wikipedia's API as the page will meet it. `answer` is the JSON it sends back, or an Error to fail with.
+// Wikipedia's API as the page will see it. `answer` is the JSON it sends back, or an Error to fail with.
 const asked = [];
 const wikipedia = answer => win => { win.fetch = url => { asked.push(String(url)); return answer instanceof Error ? Promise.reject(answer) : Promise.resolve({ json: () => Promise.resolve(answer) }); }; };
 const LEAD = 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Lead.svg/480px-Lead.svg.png';
@@ -31,12 +31,12 @@ const ANSWER = { query: {
 
   /* ── laid out like the home page ── */
   ok(d.title === 'External Links' && /<link rel="stylesheet" href="\.\.\/home\.css">/.test(raw) && !/<style/.test(raw), 'uses the home page stylesheet, with no styles of its own');
-  ok(!/<script src=/.test(raw), 'loads no shared script: it needs no letters, progress or settings');
+  ok(!/<script src=/.test(raw), 'loads no shared script: it needs no letters, progress, or settings');
   ok(d.querySelector('main.tile-page > .home-inner > #sections') && /#home, \.tile-page \{/.test(home), 'the page scrolls and is centered as the home page is');
   ok(all('.section').length === 2 && all('.section-title').map(e => e.textContent).join() === 'Wikipedia,Other sites' && all('.section-count').map(e => e.textContent).join() === '3 links,3 links', 'sections with a heading and a count: ' + all('.section-title').map(e => e.textContent).join(', '));
   ok(all('.section > .tiles').length === 2 && all('.tiles > a.tile.link').length === 6 && tiles.length === 6, 'six tiles in the home page grid');
-  ok(tiles.every(t => t.querySelector('.tile-thumb') && t.querySelector('.tile-body .tile-title').textContent.length > 3 && t.querySelector('.tile-body .tile-host')), 'each tile has a thumbnail, a title and the site it leads to');
-  ok(['.tile.link', '.tile-thumb', '.tile-thumb img', '.tile-thumb img.ok', '.tile-host', '.page-note'].every(sel => home.includes(sel + ' {') || home.includes(sel + '  {')), 'home.css styles the link tile, its thumbnail and the note');
+  ok(tiles.every(t => t.querySelector('.tile-thumb') && t.querySelector('.tile-body .tile-title').textContent.length > 3 && t.querySelector('.tile-body .tile-host')), 'each tile has a thumbnail, a title, and the site it leads to');
+  ok(['.tile.link', '.tile-thumb', '.tile-thumb img', '.tile-thumb img.ok', '.tile-host', '.page-note'].every(sel => home.includes(sel + ' {') || home.includes(sel + '  {')), 'home.css styles the link tile, its thumbnail, and the note');
 
   /* ── the links ── */
   const WANT = ['https://en.wikipedia.org/wiki/International_Phonetic_Alphabet', 'https://en.wikipedia.org/wiki/Help:IPA/Telugu', 'https://en.wikipedia.org/wiki/Telugu_script',
@@ -46,7 +46,7 @@ const ANSWER = { query: {
   ok(tiles.every(t => /^https:\/\//.test(t.href)), 'every link is https');
   ok(all('.tile-host').map(e => e.textContent).join() === 'en.wikipedia.org,en.wikipedia.org,en.wikipedia.org,omniglot.com,telugu.earth,learn101.org', 'each tile names its site: ' + all('.tile-host').map(e => e.textContent).join(', '));
   ok(tiles.every(t => t.querySelector('.tile-badge').textContent === '↗' && t.querySelector('.tile-badge').title === 'Opens in a new tab'), 'each tile is marked as leaving the app');
-  ok(!/Wikiepdia/.test(raw) && all('.tile-title').every(e => !/Wiki[^p]/.test(e.textContent)), 'no misspelt site name');
+  ok(!/Wikiepdia/.test(raw) && all('.tile-title').every(e => !/Wiki[^p]/.test(e.textContent)), 'no misspelled site name');
   ok(all('.tile-desc').every(e => e.textContent.length > 20 && !/\.$/.test(e.textContent)), 'descriptions, where given, are one line with no closing period (as on the home page)');
 
   /* ── thumbnails come from the linked site ── */

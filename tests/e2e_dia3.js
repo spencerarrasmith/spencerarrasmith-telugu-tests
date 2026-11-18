@@ -6,7 +6,7 @@ const kb     = k => [...d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-btn`)]
 const groups = k => d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-group`).length;
 const labels = k => [...d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-label`)].map(x => x.textContent);
 const btn    = (k, ipa) => kb(k).find(b => b.dataset.ipa === ipa);
-const tickBox = id => $(id).click();
+const clickBox = id => $(id).click();
 const inject = (cIpa, vIpa) => w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa==='${cIpa}'),v=VOWELS.find(x=>x.ipa==='${vIpa}');GameCore.current.put({c,v,glyph:c.ch+v.sign,cat:c.cat,rare:c.rare||v.rare});})()`);
 const cur = () => G().current;
 const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
@@ -25,11 +25,11 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   ok(cons.length === 35 && cons.every(b => b.classList.contains('te') && b.textContent === b.dataset.ch), 'consonant keys: 35 Telugu letters, from the shared keyboard');
   ok(cons[0].textContent === 'క' && cons.at(-1).textContent === 'క్ష', 'in Phonemes\' alphabet order (క … క్ష)');
   ok(vows.length === 17 && vows.every(b => b.classList.contains('te') && b.classList.contains('sign') && !b.textContent.includes(KA)), 'vowel keys: 17 bare signs, no consonant');
-  ok(btn('v', AA).textContent === 'ా' && btn('v', II).textContent === 'ీ' && btn('v', '∅').textContent === '్' && vows.some(b => b.textContent === 'ం') && vows.some(b => b.textContent === 'ః'), 'e.g. ా ీ, the virama ్ and ం ః on their own');
+  ok(btn('v', AA).textContent === 'ా' && btn('v', II).textContent === 'ీ' && btn('v', '∅').textContent === '్' && vows.some(b => b.textContent === 'ం') && vows.some(b => b.textContent === 'ః'), 'e.g. ా ీ, the virama ్, and ం ః on their own');
   ok(btn('v', 'a').textContent === '\u25CC' && /no sign/.test(btn('v', 'a').getAttribute('aria-label')), 'the "no sign" key is ◌, with an accessible name');
   ok([...d.querySelectorAll('.kb-col-title')].map(x => x.textContent).join('|') === 'Consonant|Vowel sign', 'panel titles');
   ok(!/[A-Za-z]/.test(cons.concat(vows).map(b => b.textContent).join('')), 'no IPA left on any key');
-  ok(d.querySelectorAll('.kb-col[data-kind="c"] .kb-label').length === groups('c') && !labels('c').includes('Vowels'), 'consonant panel: labelled by place, no stray "Vowels" group');
+  ok(d.querySelectorAll('.kb-col[data-kind="c"] .kb-label').length === groups('c') && !labels('c').includes('Vowels'), 'consonant panel: labeled by place, no stray "Vowels" group');
   ok(groups('c') === 8 && labels('v').join() === 'Short,Long,Diphthong,Vocalic,Nasal · aspirate,Pure consonant', 'groups: 8 consonant, vowels by type (' + labels('v').join('/') + ')');
 
   /* ── the card ── */
@@ -45,9 +45,9 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   btn('c', 'k').click();
   const sc = $('slot-c').querySelector('.slot-val');
   ok(sc.textContent === 'క' && sc.classList.contains('te') && $('slot-c').classList.contains('filled') && btn('c', 'k').classList.contains('sel'), 'consonant pick shows in its slot in Telugu');
-  tickBox('show-cat');
+  clickBox('show-cat');
   ok(btn('c', 'k').classList.contains('sel') && sc.textContent === 'క' && groups('c') === 1 && labels('c').length === 0, 'flattening mid-round keeps the pick');
-  tickBox('show-cat');
+  clickBox('show-cat');
   btn('v', AA).click();
   ok($('slot-v').querySelector('.slot-val').textContent === 'ా', 'vowel pick shows as its key (ా)');
   ok($('char-card').classList.contains('correct') && $('feedback').textContent.trim() === '✓  కా' && $('feedback').classList.contains('te'), 'right: ✓ and the syllable revealed in Telugu: ' + $('feedback').textContent.trim());
@@ -80,21 +80,21 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   await tick(); await tick();
 
   /* ── options carry over ── */
-  tickBox('show-cat');
-  ok(groups('c') === 1 && groups('v') === 1 && labels('c').length + labels('v').length === 0 && kb('c').length === 35 && kb('c').map(b => b.dataset.ch).join() === w.eval('keys.c.map(c=>c.ch)').join(), 'unticking categories: both panels flat, Telugu alphabet order');
-  tickBox('show-cat');
-  tickBox('shuffle-kb');
+  clickBox('show-cat');
+  ok(groups('c') === 1 && groups('v') === 1 && labels('c').length + labels('v').length === 0 && kb('c').length === 35 && kb('c').map(b => b.dataset.ch).join() === w.eval('keys.c.map(c=>c.ch)').join(), 'unchecking categories: both panels flat, Telugu alphabet order');
+  clickBox('show-cat');
+  clickBox('shuffle-kb');
   const A = kb('c').map(b => b.dataset.ch).join(), V = kb('v').map(b => b.dataset.ipa).join();
   ok(kb('c').length === 35 && kb('v').length === 17 && groups('c') === 1 && A !== w.eval('keys.c.map(c=>c.ch)').join() && kb('c').every(b => b.classList.contains('te')), 'shuffle: both panels random, still Telugu');
   $('show-cat').dispatchEvent(new w.Event('change')); ok(kb('c').map(b => b.dataset.ch).join() === A && kb('v').map(b => b.dataset.ipa).join() === V, 'order stable within the round');
   inject('k', AA); btn('c', 'k').click(); btn('v', AA).click();
   ok($('char-card').classList.contains('correct'), 'plays normally on the shuffled keyboard');
   await tick(); await tick();
-  tickBox('shuffle-kb');
-  tickBox('show-cat');
-  tickBox('include-extra');
+  clickBox('shuffle-kb');
+  clickBox('show-cat');
+  clickBox('include-extra');
   ok(kb('c').length === 36 && !!btn('c', 'r') && kb('v').length === 19 && btn('v', 'l̩').textContent === 'ౢ' && groups('c') === 8, 'extras join: ఱ and ౢ ౣ (36 + 19)');
-  tickBox('include-extra');
+  clickBox('include-extra');
   ok(kb('c').length === 35 && kb('v').length === 17, '…and leave');
 
   /* ── back to forward ── */
@@ -111,7 +111,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   while (!$('g-complete').classList.contains('show') && g++ < 400) { const c = cur(); btn('c', c.c.ipa).click(); btn('v', c.v.ipa).click(); await tick(); await tick(); }
   ok($('g-complete').classList.contains('show') && G().completed === 51 && $('c-accuracy').textContent === '100%', 'reverse round completes (51 cards, 100%)');
   ok($('c-sub').textContent === 'All 51 sounds correctly written as Telugu syllables.', 'complete text names the direction');
-  ok(P.isComplete('diacritics'), 'finishing in reverse ticks the Diacritics tile');
+  ok(P.isComplete('diacritics'), 'finishing in reverse checks off the Diacritics tile');
   $('retry-btn').click();
   ok(!$('g-complete').classList.contains('show') && $('g-title').textContent === 'IPA → Diacritics' && kb('c')[0].classList.contains('te'), 'Practice Again stays in reverse');
 

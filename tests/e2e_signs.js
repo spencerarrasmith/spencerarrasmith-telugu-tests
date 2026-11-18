@@ -52,10 +52,10 @@ ok([...d.querySelectorAll('.cj sup')].map(s => s.textContent).sort().join('') ==
 ok(!card('క').querySelector('sup'), 'క has no note');
 /* ── rare and extra ── */
 $('show-rare').checked = false; $('show-rare').dispatchEvent(new w.Event('change'));
-ok(vis(rows()).length === 33 && /^33 letters$/.test($('count').textContent), 'unticked: ఙ ఞ ఱ rows hidden, count ' + $('count').textContent);
-ok(vis(all).length === 32 && card('ఱ').hidden && !card('క').hidden, 'unticked: 3 cards hidden');
-ok(['ౢ', 'ౣ'].every(s => [...d.querySelectorAll('#chart th.s')].find(h => h.textContent.startsWith(s)).hidden), 'unticked: ౢ ౣ columns hidden');
+ok(vis(rows()).length === 33 && /^33 letters$/.test($('count').textContent), 'unchecked: ఙ ఞ ఱ rows hidden, count ' + $('count').textContent);
+ok(vis(all).length === 32 && card('ఱ').hidden && !card('క').hidden, 'unchecked: 3 cards hidden');
+ok(['ౢ', 'ౣ'].every(s => [...d.querySelectorAll('#chart th.s')].find(h => h.textContent.startsWith(s)).hidden), 'unchecked: ౢ ౣ columns hidden');
 $('show-rare').checked = true; $('show-rare').dispatchEvent(new w.Event('change'));
-ok(vis(rows()).length === 36 && vis(all).length === 35 && $('count').textContent === '36 letters', 'ticking restores everything');
+ok(vis(rows()).length === 36 && vis(all).length === 35 && $('count').textContent === '36 letters', 'checking restores everything');
 ok(['sec-signs', 'sec-conjuncts'].every(id => !!$(id)) && [...d.querySelectorAll('.jump a')].every(a => $(a.getAttribute('href').slice(1))), 'jump links point to real sections');
 console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);

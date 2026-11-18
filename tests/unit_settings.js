@@ -16,9 +16,9 @@ const KEY = 'telugu.settings.v1';
 
 let w = boot(), S = w.TeluguSettings;
 ok(S && S.get('notation') === 'ipa' && S.label('notation') === 'IPA' && !(KEY in w.store), 'first visit: IPA, and nothing is written until a choice is made');
-ok(JSON.stringify(S.options('notation').map(o => [o.value, o.label, o.example])) === '[["ipa","IPA","/k/"],["iso","ISO","ka"]]' && S.options('notation').every(o => o.hint.length > 10), 'two notations on offer, each with a label, a hint and an example (/k/ · ka)');
+ok(JSON.stringify(S.options('notation').map(o => [o.value, o.label, o.example])) === '[["ipa","IPA","/k/"],["iso","ISO","ka"]]' && S.options('notation').every(o => o.hint.length > 10), 'two notations offered, each with a label, a hint, and an example (/k/ · ka)');
 let changes = 0; S.onChange(() => changes++);
-ok(S.set('notation', 'iso') === true && S.get('notation') === 'iso' && S.label('notation') === 'ISO' && changes === 1, 'set → get, label and a change event');
+ok(S.set('notation', 'iso') === true && S.get('notation') === 'iso' && S.label('notation') === 'ISO' && changes === 1, 'set → get, label, and a change event');
 ok(JSON.parse(w.store[KEY]).notation === 'iso', 'stored under ' + KEY);
 ok(S.set('notation', 'klingon') === false && S.set('nope', 'x') === false && S.get('notation') === 'iso' && changes === 1, 'unknown names and values are refused, and change nothing');
 ok(S.get('nope') === undefined && S.label('nope') === '' && S.options('nope').length === 0, 'an unknown setting reads as undefined / empty');
@@ -26,7 +26,7 @@ w.fire('storage', { key: KEY }); w.fire('storage', { key: 'other' }); w.fire('st
 ok(changes === 3, 'a change made in another tab or frame is announced too (not unrelated keys)');
 ok(S.persistent === true, 'persistent with working storage');
 
-// a second page load sees the choice; rubbish in storage falls back to the default
+// a second page load sees the choice; garbage in storage falls back to the default
 ok(boot(false, { [KEY]: '{"notation":"iso"}' }).TeluguSettings.get('notation') === 'iso', 'the next page load reads the stored choice');
 ok(['{"notation":"xx"}', 'not json', 'null', '[]', '"iso"'].every(v => boot(false, { [KEY]: v }).TeluguSettings.get('notation') === 'ipa'), 'an unknown value or damaged storage falls back to IPA');
 const keep = boot(false, { [KEY]: '{"notation":"ipa","future":"kept"}' }); keep.TeluguSettings.set('notation', 'iso');

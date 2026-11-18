@@ -73,7 +73,7 @@ ok(P.missCount() === 8 && P.isComplete('phonemes') && stored().v === 2 && stored
 ok(['phonemes', 'diacritics', 'conjuncts'].every(g => up[g].ask === 'telugu') && ['phonemes-reverse', 'diacritics-reverse', 'conjuncts-reverse', 'lookalikes'].every(g => up[g].ask === 'sound'), 'each script game\'s misses get the direction they were asked in');
 ok(['diacritics', 'diacritics-reverse', 'conjuncts', 'conjuncts-reverse'].every(g => up[g].syllable === true) && ['phonemes', 'phonemes-reverse', 'lookalikes'].every(g => !('syllable' in up[g])), 'Diacritics and Conjuncts misses are marked as syllables; Phonemes and Lookalikes as letters');
 ok(Object.values(up).filter(m => m.ask).every(m => !('prompt' in m) && !('answer' in m)), 'the old IPA text is dropped from converted misses');
-ok(up.phonemes.count === 3 && up.phonemes.streak === 1 && up.phonemes.note === 'Velar' && up.conjuncts.count === 2, 'counts, streaks and notes carry over');
+ok(up.phonemes.count === 3 && up.phonemes.streak === 1 && up.phonemes.note === 'Velar' && up.conjuncts.count === 2, 'counts, streaks, and notes carry over');
 ok(up['grammar-nouns'].prompt === 'boy' && up['grammar-nouns'].answer === 'అబ్బాయి' && !up['grammar-nouns'].ask, 'a lesson\'s misses are left exactly as they were');
 ok(seen === 0, 'the upgrade is silent (no change event: nothing the reader sees has changed)');
 const once = w.store['telugu.progress.v1']; P.missCount(); P.misses();

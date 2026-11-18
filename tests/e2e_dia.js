@@ -6,7 +6,7 @@ const cur = () => G().current;
 const n = kind => d.querySelectorAll(`.kb-btn[data-kind="${kind}"]`).length;
 const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa==='${cIpa}'),v=VOWELS.find(x=>x.sign==='${vSign}');GameCore.current.put({c,v,glyph:c.ch+v.sign,cat:c.cat,uncommon:c.uncommon||v.uncommon});})()`); };
 (async () => {
-  ok(!$('include-extra').checked && $('include-extra').parentElement.textContent.includes('Include extra letters'), 'extras unchecked by default, labelled "Include extra letters"');
+  ok(!$('include-extra').checked && $('include-extra').parentElement.textContent.includes('Include extra letters'), 'extras unchecked by default, labeled "Include extra letters"');
   ok(G().total === 51, 'default: 51 cards (17 vowel signs × 3)');
   ok(n('c') === 35 && n('v') === 17, 'default keys: 35 consonants (ఱ out, క్ష in) / 17 vowels (ౢ ౣ out)');
   ok(!btn('c', 'ɽ') && !btn('v', 'l̩') && !btn('v', 'l̩ː') && !!btn('v', 'r̩') && !!btn('v', '∅'), 'ఱ, ౢ, ౣ hidden; ృ and ∅ stay');

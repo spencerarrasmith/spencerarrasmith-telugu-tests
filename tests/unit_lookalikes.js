@@ -22,9 +22,9 @@ ok(r.groups.length === 3 && r.rows === 4 && r.skipped.join() === '౫', 'parseCs
 ok(r.groups.map(g => g.items.length).join() === '3,2,2' && r.groups.map(g => g.id).join() === '1,2,3', 'group sizes and ids');
 ok(L.parseCsv('క,క,క').groups.length === 0, 'duplicates collapse: a row of one distinct character is not a group');
 ok(L.parseCsv('').groups.length === 0 && L.parseCsv('hello').groups.length === 0, 'empty / non-Telugu text → no groups');
-ok(L.clean(' "క" ') === 'క' && L.clean('\uFEFFఅ') === 'అ' && L.clean('క,') === 'క' && L.clean("<'&>") === '' && L.clean('\u0C15\u0C3E') === L.clean('కా'), 'clean: spaces, quotes, commas, markup characters and BOM dropped');
+ok(L.clean(' "క" ') === 'క' && L.clean('\uFEFFఅ') === 'అ' && L.clean('క,') === 'క' && L.clean("<'&>") === '' && L.clean('\u0C15\u0C3E') === L.clean('కా'), 'clean: spaces, quotes, commas, markup characters, and BOM dropped');
 ok(L.clean('e\u0301') === '\u00E9', 'clean: text is put in NFC, so the same character always compares equal');
-ok(JSON.stringify(L.rows('\uFEFFఅ, ఆ ,"ఇ"\r\nక,,క్\n\n , \nఒ')) === '[["అ","ఆ","ఇ"],["క","క్"],["ఒ"]]' && L.rows('').length === 0, 'rows: a CSV as rows of tidy cells; empty cells and blank rows dropped');
+ok(JSON.stringify(L.rows('\uFEFFఅ, ఆ ,"ఇ"\r\nక,,క్\n\n , \nఒ')) === '[["అ","ఆ","ఇ"],["క","క్"],["ఒ"]]' && L.rows('').length === 0, 'rows: a CSV as rows of clean cells; empty cells and blank rows dropped');
 ok(L.parseCsv('అ,ఆ\n\n , \nక,ఖ').rows === 2, 'parseCsv counts only rows that hold something');
 const real = L.parseCsv(require('fs').readFileSync(require('path').join(__dirname, 'fixtures', 'telugu_lookalikes_groups.csv'), 'utf8'));
 ok(real.groups.map(g => g.items.length).join() === '31,21,14' && real.skipped.length === 0, 'the real exported CSV: groups of 31, 21, 14; nothing skipped');

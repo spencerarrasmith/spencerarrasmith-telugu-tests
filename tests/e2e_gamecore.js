@@ -1,6 +1,6 @@
 const { SITE_DIR } = require('./config');
 // game-core.js on its own, with a bare page and a three-card deck: the round every game plays
-// (deal, sample, judge, re-queue, counters, complete screen, ✓ and Review). The games' own suites cover what each adds.
+// (deal, sample, judge, re-queue, counters, complete screen, ✓, and Review). The games' own suites cover what each adds.
 const { JSDOM } = require('jsdom'); const fs = require('fs');
 const dir = SITE_DIR + '/';
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
@@ -22,7 +22,7 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
   ok(C.esc('<b a="1">&\'') === '&lt;b a=&quot;1&quot;&gt;&amp;&#39;' && C.esc(null) === '', 'esc escapes the five HTML characters');
   ok(C.$('s-rem') === $('s-rem'), '$ is getElementById');
   let threw = 0; [{}, { id: 'x' }, { id: 'x', pool: () => [] }, undefined].forEach(o => { try { C.create(o); } catch (e) { if (/needs id, pool\(\) and render\(\)/.test(e.message)) threw++; } });
-  ok(threw === 4 && C.current === null, 'create() without id, pool or render fails loudly');
+  ok(threw === 4 && C.current === null, 'create() without id, pool, or render fails loudly');
 
   /* a round */
   const CARDS = [{ k: 'a' }, { k: 'b' }, { k: 'c' }]; const drawn = []; let started = 0, pools = 0;
@@ -125,8 +125,8 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
   const GAMES = { Phonemes: 'alphabet/01_phonemes.html', Diacritics: 'alphabet/02_diacritics.html', Conjuncts: 'alphabet/03_conjuncts.html', Lookalikes: 'alphabet/05_lookalikes.html' };
   for (const [name, file] of Object.entries(GAMES)) {
     const src = fs.readFileSync(dir + file, 'utf8');
-    ok(/<script src="\.\.\/game-core\.js"><\/script>/.test(src) && /GameCore\.create\(\{/.test(src) && /game\.judge\(/.test(src), name + ' loads game-core.js, creates its round with it and judges answers through it');
-    ok(!/function (shuffle|updateProg|showComplete|initGame)\b/.test(src) && !/escHtml/.test(src) && !/let deck\b/.test(src) && !/\b(completed|attempts)\s*(\+\+|=)/.test(src) && !/Progress\.(miss|complete)\(/.test(src) && !/setTimeout|OK_MS|ERR_MS/.test(src), name + ' has no private shuffle, counters, complete screen, timers or progress calls');
+    ok(/<script src="\.\.\/game-core\.js"><\/script>/.test(src) && /GameCore\.create\(\{/.test(src) && /game\.judge\(/.test(src), name + ' loads game-core.js, creates its round with it, and judges answers through it');
+    ok(!/function (shuffle|updateProg|showComplete|initGame)\b/.test(src) && !/escHtml/.test(src) && !/let deck\b/.test(src) && !/\b(completed|attempts)\s*(\+\+|=)/.test(src) && !/Progress\.(miss|complete)\(/.test(src) && !/setTimeout|OK_MS|ERR_MS/.test(src), name + ' has no private shuffle, counters, complete screen, timers, or progress calls');
     ok(/<div class="g-complete" id="g-complete"><\/div>/.test(src) && !/c-attempts|retry-btn|trophy/.test(src), name + ' leaves the complete screen to the core');
     ok(!/document\.getElementById/.test(src) && !/TEST-END/.test(src), name + ' uses the shared $ helper');
   }

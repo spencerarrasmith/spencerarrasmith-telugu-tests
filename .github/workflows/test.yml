@@ -2,7 +2,7 @@ name: Telugu app tests
 
 # Runs in three ways:
 #   - on every push to this repo (tests the website's master),
-#   - by hand from the Actions tab (pick any website branch, tag or commit),
+#   - by hand from the Actions tab (pick any website branch, tag, or commit),
 #   - called from the website's own pipeline (`uses: …/spencerarrasmith-telugu-tests/.github/workflows/test.yml@main`),
 #     where it tests the exact commit that pipeline is building.
 on:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Branch, tag or commit of spencerarrasmith.com to test
+        description: Branch, tag, or commit of spencerarrasmith.com to test
         default: master
   workflow_call:
     inputs:

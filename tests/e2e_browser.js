@@ -21,7 +21,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   }
   ok(opened === 44, 'every tile loads its page in the iframe at the right path: ' + opened + '/44');
   ok(titled === 44, 'every loaded page has a title');
-  // the live pages actually initialise (their shared scripts were found)
+  // the live pages actually initialize (their shared scripts were found)
   const live = { 'alphabet/01_phonemes.html': 'TeluguData', 'alphabet/02_diacritics.html': 'TeluguData', 'alphabet/03_conjuncts.html': 'TeluguData', 'alphabet/04_lookalike-builder.html': 'LookalikeData', 'alphabet/05_lookalikes.html': 'LookalikeData', 'reference/01_rosetta.html': 'RosettaData', 'reference/02_signs-conjuncts.html': 'SignsConjunctsData', 'reference/03_sound-charts.html': 'SoundChartsData' };
   for (const [src, g] of Object.entries(live)) {
     const id = tiles.find(t => t.src === src).id; await pg.evaluate(i => { location.hash = '#/' + i; }, id); await pg.waitForTimeout(250);
@@ -34,7 +34,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(150);
   const top = pg.mainFrame();
   ok(await css(top, 'body', 'background-color') === 'rgb(11, 12, 24)' && await css(top, 'a.tile', 'border-radius') === '16px' && await css(top, '.tiles', 'display') === 'grid', 'home page is styled by home.css on top of base.css');
-  ok(await css(top, ':root', '--accent-glow') === 'rgba(201, 152, 26, 0.16)', 'home page takes its colour tokens from base.css (accent glow 0.16)');
+  ok(await css(top, ':root', '--accent-glow') === 'rgba(201, 152, 26, 0.16)', 'home page takes its color tokens from base.css (accent glow 0.16)');
   let fr0 = await frameOf('vocab-greetings');
   ok(await css(fr0, '.unit-icon', 'width') === '52px' && await css(fr0, '.facts', 'border-radius') === '16px' && await css(fr0, 'body', 'background-color') === 'rgb(11, 12, 24)', 'a placeholder is styled by shell.css');
   ok(await fr0.evaluate(() => document.querySelector('h1').textContent + '|' + document.querySelectorAll('.fact').length) === 'Greetings|3', 'a placeholder draws its title and three lines from units.js');
@@ -68,7 +68,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   fr0 = await frameOf('conjuncts');
   ok(await fr0.evaluate(() => { document.getElementById('rev-btn').click(); GameCore.current.put(TeluguData.clusters.find(c => c.glyph === 'క్ష')); const t = document.getElementById('tel-char'); return t.textContent + '|' + getComputedStyle(t).fontFamily.split(',')[0].replace(/['"]/g, ''); }) === 'kṣa|Noto Sans', 'Conjuncts reversed shows kṣa on the card, in the Latin face');
   fr0 = await frameOf('sound-charts');
-  ok(await fr0.evaluate(() => { const k = [...document.querySelectorAll('#cons .ph')].find(p => p.dataset.ipa === 'k'); return k.querySelector('.tel .snd').textContent + '|' + k.querySelector('.eng .snd').textContent; }) === 'ka|/k/', 'Sound Charts in ISO: క is labelled ka, English k stays /k/');
+  ok(await fr0.evaluate(() => { const k = [...document.querySelectorAll('#cons .ph')].find(p => p.dataset.ipa === 'k'); return k.querySelector('.tel .snd').textContent + '|' + k.querySelector('.eng .snd').textContent; }) === 'ka|/k/', 'Sound Charts in ISO: క is labeled ka, English k stays /k/');
   fr0 = await frameOf('review');
   ok(await fr0.evaluate(() => !!window.TeluguData && TeluguData.notation.id === 'iso'), 'Review loads the letter data and the notation too');
   await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(150);

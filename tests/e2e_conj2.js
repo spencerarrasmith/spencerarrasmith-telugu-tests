@@ -7,7 +7,7 @@ const labels = () => d.querySelectorAll('#kb-area .kb-label').length;
 const order  = () => kb().map(b => b.dataset.ipa).join('|');
 const alpha  = () => w.eval('keys.map(x => x.ipa)').join('|');
 const same   = (a, b) => a.split('|').sort().join() === b.split('|').sort().join();
-const tickBox = id => $(id).click();
+const clickBox = id => $(id).click();
 const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles: true }));
 const btn = ipa => kb().find(b => b.dataset.ipa === ipa);
 const cur = () => G().current;
@@ -20,42 +20,42 @@ const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}'
   ok($('show-cat').checked && !$('shuffle-kb').checked && !$('include-uncommon').checked, 'defaults: categories on, shuffle + uncommon off');
   ok($('opts-menu').hidden, 'menu starts closed');
   $('menu-btn').click(); ok(!$('opts-menu').hidden && $('menu-btn').getAttribute('aria-expanded') === 'true', '⋮ opens it');
-  tickBox('include-uncommon'); tickBox('include-uncommon');
-  ok(!$('opts-menu').hidden, 'ticking boxes keeps it open');
+  clickBox('include-uncommon'); clickBox('include-uncommon');
+  ok(!$('opts-menu').hidden, 'checking boxes keeps it open');
   pointerdown($('kb-area')); ok($('opts-menu').hidden, 'tapping outside closes it');
   $('menu-btn').click(); d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   ok($('opts-menu').hidden && d.activeElement === $('menu-btn'), 'Escape closes it, focus back on ⋮');
   $('menu-btn').click();
 
   /* ── show / hide categories ── */
-  ok(groups() > 1 && labels() === groups(), 'grouped by default, every block labelled');
-  tickBox('show-cat');
-  ok(groups() === 1 && labels() === 0 && kb().length === 34 && order() === alpha(), 'unticked: one unlabelled block, all 34 keys, alphabet order');
+  ok(groups() > 1 && labels() === groups(), 'grouped by default, every block labeled');
+  clickBox('show-cat');
+  ok(groups() === 1 && labels() === 0 && kb().length === 34 && order() === alpha(), 'unchecked: one unlabeled block, all 34 keys, alphabet order');
   ok($('cat-badge').style.visibility === 'hidden', 'card category label hidden');
   front(x => true); ok($('cat-badge').style.visibility === 'hidden', 'and stays hidden on the next card');
-  tickBox('show-cat');
-  ok(groups() > 1 && labels() === groups() && $('cat-badge').style.visibility === '', 'ticked again: regrouped, label back');
+  clickBox('show-cat');
+  ok(groups() > 1 && labels() === groups() && $('cat-badge').style.visibility === '', 'checked again: regrouped, label back');
 
   /* a half-made answer survives the keyboard being rebuilt */
   inject('జ్ఞ');
   const parts = cur().parts.map(p => p.ipa);
   btn(parts[0]).click();
   ok($('slots').children[0].querySelector('.slot-val').textContent === parts[0], 'first consonant placed');
-  tickBox('show-cat');
+  clickBox('show-cat');
   ok($('slots').children[0].querySelector('.slot-val').textContent === parts[0] && !!btn(parts[1]), 'flattening mid-round keeps the slot');
   btn(parts[1]).click();
   ok($('char-card').classList.contains('correct'), '…and the round completes normally');
   await tick(); await tick();
-  tickBox('show-cat');
+  clickBox('show-cat');
 
   /* ── shuffle keyboard ── */
-  tickBox('shuffle-kb');
+  clickBox('shuffle-kb');
   ok($('shuffle-kb').checked && !$('show-cat').checked && $('show-cat').disabled && $('show-cat').closest('.menu-opt').classList.contains('disabled') && !$('cat-note').hidden, 'Shuffle forces categories off, holds the box, shows the note');
-  ok(groups() === 1 && labels() === 0 && $('cat-badge').style.visibility === 'hidden', 'flat, unlabelled, card label hidden');
+  ok(groups() === 1 && labels() === 0 && $('cat-badge').style.visibility === 'hidden', 'flat, unlabeled, card label hidden');
   const A = order();
   ok(kb().length === 34 && same(A, alpha()) && A !== alpha(), 'same 34 keys, random order');
   $('show-cat').dispatchEvent(new w.Event('change')); ok(order() === A, 'the order is stable within a round');
-  tickBox('show-cat'); ok(!$('show-cat').checked, 'a disabled "Show categories" ignores taps');
+  clickBox('show-cat'); ok(!$('show-cat').checked, 'a disabled "Show categories" ignores taps');
   /* play on the shuffled keyboard */
   inject('జ్ఞ');
   const p = cur().parts.map(x => x.ipa);
@@ -68,17 +68,17 @@ const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}'
   await tick(); await tick();
   G().start();
   ok(order() !== A && same(order(), alpha()), 'a new round reshuffles');
-  tickBox('include-uncommon');
-  ok(kb().length === 35 && groups() === 1 && !!btn('ɽ'), 'uncommon ticked: ఱ joins the shuffled keyboard (35)');
-  tickBox('include-uncommon');
+  clickBox('include-uncommon');
+  ok(kb().length === 35 && groups() === 1 && !!btn('ɽ'), 'uncommon checked: ఱ joins the shuffled keyboard (35)');
+  clickBox('include-uncommon');
   ok(kb().length === 34, '…and leaves again');
 
   /* ── un-shuffle ── */
-  tickBox('shuffle-kb');
-  ok(!$('shuffle-kb').checked && !$('show-cat').disabled && $('cat-note').hidden && !$('show-cat').closest('.menu-opt').classList.contains('disabled'), 'unticking Shuffle frees the categories box');
+  clickBox('shuffle-kb');
+  ok(!$('shuffle-kb').checked && !$('show-cat').disabled && $('cat-note').hidden && !$('show-cat').closest('.menu-opt').classList.contains('disabled'), 'unchecking Shuffle frees the categories box');
   ok(!$('show-cat').checked && groups() === 1 && order() === alpha(), 'categories stay off; keys back in alphabet order');
-  tickBox('show-cat'); ok(groups() > 1 && labels() === groups(), 'ticking categories regroups');
-  tickBox('shuffle-kb'); tickBox('shuffle-kb'); tickBox('show-cat'); tickBox('show-cat');
+  clickBox('show-cat'); ok(groups() > 1 && labels() === groups(), 'checking categories regroups');
+  clickBox('shuffle-kb'); clickBox('shuffle-kb'); clickBox('show-cat'); clickBox('show-cat');
   ok(kb().length === 34, 'rapid toggling leaves a complete keyboard');
   ok(G().total === 40, 'game state untouched by option changes (40 cards)');
   h.done();

@@ -27,7 +27,7 @@ soon.forEach(t => { const s = fs.readFileSync(dir + t.src, 'utf8');
 ok(soon.length === 34 && bad.small.length === 0, '34 placeholder pages, each under 20 lines ' + bad.small);
 ok(bad.head.length === 0, 'each has viewport-fit, its own <title> and links shell.css ' + bad.head);
 ok(bad.call.length === 0, 'each loads units.js + lesson-shell.js and calls LessonShell.placeholder with its own tile id ' + bad.call);
-ok(bad.own.length === 0, 'none carries styles, colour tokens, fonts or text of its own ' + bad.own);
+ok(bad.own.length === 0, 'none carries styles, color tokens, fonts, or text of its own ' + bad.own);
 
 // every one of them renders what its tile says
 const wrong = [];
@@ -36,12 +36,12 @@ soon.forEach(t => { const { d, errs } = load(t.src); const txt = s => (d.querySe
   const want = `What you'll learn=${t.soon.learn}|How you'll practice=${t.soon.practice}|Where it fits=${t.soon.fits}`;
   if (errs.length || txt('h1') !== t.title || txt('.eyebrow') !== U.sectionOf(t.id).title || txt('.unit-icon') !== t.icon || txt('.lead') !== t.desc || txt('.pill.soon') !== 'Coming soon' || facts !== want || d.title !== t.title + ' · Telugu Suite') wrong.push(t.id + (errs[0] ? ' (' + errs[0] + ')' : ''));
 });
-ok(wrong.length === 0, 'all 34 render section, icon, title, "Coming soon", description and the three lines from units.js ' + wrong.join(', '));
+ok(wrong.length === 0, 'all 34 render section, icon, title, "Coming soon", description, and the three lines from units.js ' + wrong.join(', '));
 
 // one in detail
 const { w, d } = load('vocabulary/01_greetings.html');
 ok(d.querySelector('.shell > .shell-head .eyebrow').textContent === 'Vocabulary' && d.querySelector('.shell > .shell-body .facts').children.length === 3, 'the page uses the lesson frame (shell head + scrolling body)');
-ok(!d.querySelector('.stepper') && !d.querySelector('.shell-foot') && !d.querySelector('#ls-done'), 'no Learn/Practice steps, footer or "Completed" pill on a placeholder');
+ok(!d.querySelector('.stepper') && !d.querySelector('.shell-foot') && !d.querySelector('#ls-done'), 'no Learn/Practice steps, footer, or "Completed" pill on a placeholder');
 ok(d.querySelector('.unit-icon').getAttribute('aria-hidden') === 'true', 'the icon is decorative');
 ok(load('reference/04_idioms.html').d.querySelector('.eyebrow').textContent === 'Reference', 'Reference placeholders carry the section\'s own name, read from units.js');
 ok(load('grammar/02_nouns.html').d.querySelector('h1').innerHTML === 'Nouns: gender &amp; number', 'text is escaped, not injected as HTML');

@@ -9,22 +9,22 @@ const showCat = on => { $('show-cat').checked = on; $('show-cat').dispatchEvent(
 const alpha = D.letters.filter(l => l.core).map(l => l.ch).join('|');
 (async () => {
   /* forward (IPA) keyboard is always grouped, whatever the checkbox says */
-  ok(groups() === 9 && labels().length === 9, 'forward: 9 labelled groups');
+  ok(groups() === 9 && labels().length === 9, 'forward: 9 labeled groups');
   showCat(false);
-  ok(groups() === 1 && labels().length === 0 && vis().length === 51 && vis()[0].textContent === 'a' && vis().every(b => !b.classList.contains('te')), 'forward: unticking "Show categories" flattens the IPA keyboard too');
-  ok($('cat-badge').style.visibility === 'hidden', 'forward: card category label hidden when unticked');
+  ok(groups() === 1 && labels().length === 0 && vis().length === 51 && vis()[0].textContent === 'a' && vis().every(b => !b.classList.contains('te')), 'forward: unchecking "Show categories" flattens the IPA keyboard too');
+  ok($('cat-badge').style.visibility === 'hidden', 'forward: card category label hidden when unchecked');
   showCat(true);
-  ok(groups() === 9 && labels().length === 9, 'forward: ticking regroups the IPA keyboard');
+  ok(groups() === 9 && labels().length === 9, 'forward: checking regroups the IPA keyboard');
 
-  /* reverse + ticked = grouped Telugu keyboard (as before) */
+  /* reverse + checked = grouped Telugu keyboard (as before) */
   $('rev-btn').click();
-  ok(groups() === 9 && labels().join() === D.letterGroups.map(g => g.lbl).join(), 'reverse + ticked: grouped and labelled');
+  ok(groups() === 9 && labels().join() === D.letterGroups.map(g => g.lbl).join(), 'reverse + checked: grouped and labeled');
 
-  /* reverse + unticked = one plain block */
+  /* reverse + unchecked = one plain block */
   front(x => x.ipa === 'k');
   const before = { deck: G().deck.length, done: G().completed, top: G().current.ch };
   showCat(false);
-  ok(groups() === 1 && labels().length === 0 && d.querySelectorAll('#kb-area .kb-row').length === 1, 'reverse + unticked: a single group, no labels, one row');
+  ok(groups() === 1 && labels().length === 0 && d.querySelectorAll('#kb-area .kb-row').length === 1, 'reverse + unchecked: a single group, no labels, one row');
   ok(vis().length === 51 && vis().every(b => b.classList.contains('te')) && vis().map(b => b.textContent).join('|') === alpha, 'still 51 Telugu keys, still in alphabet order');
   ok(G().deck.length === before.deck && G().completed === before.done && G().current.ch === before.top, 'regrouping does not restart or change the round');
   ok($('cat-badge').style.visibility === 'hidden', 'card category label hidden too');
@@ -44,9 +44,9 @@ const alpha = D.letters.filter(l => l.core).map(l => l.ch).join('|');
   $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change'));
   ok(groups() === 1 && vis().length === 51, 'extras off: still flat');
   $('rev-btn').click(); ok(groups() === 1 && labels().length === 0 && vis()[0].textContent === 'a', 'back to forward: IPA keyboard also flat (setting is shared)');
-  $('rev-btn').click(); ok(groups() === 1 && labels().length === 0, 'reverse again: remembers unticked → flat');
+  $('rev-btn').click(); ok(groups() === 1 && labels().length === 0, 'reverse again: remembers unchecked → flat');
   showCat(true);
-  ok(groups() === 9 && labels().length === 9 && $('cat-badge').style.visibility === '', 'ticking again regroups and restores the card label');
+  ok(groups() === 9 && labels().length === 9 && $('cat-badge').style.visibility === '', 'checking again regroups and restores the card label');
 
   /* builder on its own */
   const host = d.createElement('div'); d.body.appendChild(host);
