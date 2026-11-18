@@ -10,17 +10,17 @@ const src = fs.readFileSync(dir + 'index.html', 'utf8');
 ok(/<script src="units\.js"><\/script>/.test(src) && !/\bsrc: ['"]/.test(src) && !/soon: true/.test(src), 'index.html holds no tile list of its own (it loads units.js)');
 ok(/<link rel="stylesheet" href="home\.css">/.test(src) && !/<style/.test(src) && !/fonts\.googleapis/.test(src), 'index.html links home.css: no inline <style>, no font link of its own');
 ok(S.map(s => s.title).join(' · ') === 'Resources · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'section order (Resources first, above Phonemes)');
-ok(S.map(s => s.tiles.length).join(',') === '5,8,8,12,8' && ALL.length === 41, 'tile counts 5/8/8/12/8 = 41');
+ok(S.map(s => s.tiles.length).join(',') === '6,8,8,12,8' && ALL.length === 42, 'tile counts 6/8/8/12/8 = 42');
 ok(new Set(ALL.map(t => t.id)).size === ALL.length, 'tile ids unique');
 ok(ALL.every(t => fs.existsSync(dir + t.src)), 'every src file exists');
 ok(new Set(ALL.map(t => t.src)).size === ALL.length, 'every src is distinct');
-ok(ALL.filter(t => !t.soon).map(t => t.id).join() === 'rosetta,signs-conjuncts,phonemes,diacritics,conjuncts,lookalike-builder,lookalikes', 'only the 7 built pages are live');
+ok(ALL.filter(t => !t.soon).map(t => t.id).join() === 'rosetta,signs-conjuncts,sound-charts,phonemes,diacritics,conjuncts,lookalike-builder,lookalikes', 'only the 8 built pages are live');
 const FOLDERS = ['reference', 'alphabet', 'grammar', 'vocabulary', 'advanced-grammar'];
 ok(S.every((s, i) => s.tiles.every((t, j) => t.src === FOLDERS[i] + '/' + String(j + 1).padStart(2, '0') + '_' + t.src.split('_').slice(1).join('_') && /^[a-z0-9-]+\.html$/.test(t.src.split('_').slice(1).join('_')))), 'every tile lives in its section folder, numbered in tile order (NN_name.html)');
 ok(ALL.filter(t => t.id !== 'review').every(t => require('fs').existsSync(dir + t.src)), 'every tile src is an existing file');
 ok(ALL.filter(t => t.id !== 'review').every(t => !/^(reference|grammar|vocab|advanced)-/.test(t.src.split('/')[1].replace(/^\d+_/, ''))), 'redundant section prefixes (grammar-, vocab-, advanced-, reference-) are gone from file names');
-ok([...d.querySelectorAll('.section-count')].map(e => e.textContent).join('|') === '2 of 5 ready|5 of 8 ready|0 of 8 ready|0 of 12 ready|0 of 8 ready', 'ready counts');
-ok(d.querySelectorAll('a.tile').length === 42 && d.querySelectorAll('a.tile.soon').length === 34 && d.querySelectorAll('.tile-badge').length === 35, '41 learning tiles + Review, 34 marked Soon (+ the Review count badge)');
+ok([...d.querySelectorAll('.section-count')].map(e => e.textContent).join('|') === '3 of 6 ready|5 of 8 ready|0 of 8 ready|0 of 12 ready|0 of 8 ready', 'ready counts');
+ok(d.querySelectorAll('a.tile').length === 43 && d.querySelectorAll('a.tile.soon').length === 34 && d.querySelectorAll('.tile-badge').length === 35, '42 learning tiles + Review, 34 marked Soon (+ the Review count badge)');
 (async () => {
   const wait = () => new Promise(r => setTimeout(r, 5));
   const frame = d.getElementById('app-frame');
@@ -28,7 +28,7 @@ ok(d.querySelectorAll('a.tile').length === 42 && d.querySelectorAll('a.tile.soon
     w.location.hash = '#/' + t.id; await wait();
     if (d.getElementById('app').hidden || frame.getAttribute('src') !== t.src || d.getElementById('app-title').textContent !== t.title) { ok(false, 'route ' + t.id); }
   }
-  ok(true, 'all 41 routes open the right page and title');
+  ok(true, 'all 42 routes open the right page and title');
   w.location.hash = '#/review'; await wait();
   ok(!d.getElementById('app').hidden && frame.getAttribute('src') === 'review.html' && d.getElementById('app-title').textContent === 'Review', 'Review route opens review.html');
   w.location.hash = '#/'; await wait();
@@ -57,7 +57,7 @@ ok(d.querySelectorAll('a.tile').length === 42 && d.querySelectorAll('a.tile.soon
   seg()[1].click();
   ok(on() === 'iso' && seg()[1].getAttribute('aria-checked') === 'true' && d.getElementById('pref-eg').textContent === 'క is written ka', 'choosing ISO selects it; the example becomes "క is written ka"');
   ok(JSON.parse(w.localStorage.getItem('telugu.settings.v1')).notation === 'iso' && w.TeluguSettings.get('notation') === 'iso', 'the choice is saved for every other page');
-  ok(d.querySelectorAll('a.tile').length === 42 && d.querySelector('.tile.review .tile-badge').textContent === '3 to revisit', 'the tiles are untouched by the change');
+  ok(d.querySelectorAll('a.tile').length === 43 && d.querySelector('.tile.review .tile-badge').textContent === '3 to revisit', 'the tiles are untouched by the change');
   seg()[1].click(); ok(on() === 'iso', 'choosing the selected option again changes nothing');
   w.TeluguSettings.set('notation', 'ipa'); ok(on() === 'ipa' && d.getElementById('pref-eg').textContent === 'క is written /k/', 'a change made elsewhere (another tab) shows here at once');
   ok(!/telugu-data\.js/.test(src) && /Settings\.set\('notation'/.test(src), 'the home page only stores the choice; it loads no letter data');

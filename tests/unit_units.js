@@ -5,14 +5,14 @@ const U = require(path.join(SITE_DIR, 'units.js'));
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
 
 ok(U.sections.map(s => s.title).join(' · ') === 'Resources · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'five sections, Resources first');
-ok(U.sections.map(s => s.tiles.length).join() === '5,8,8,12,8' && U.tiles.length === 41, 'tile counts 5/8/8/12/8 = 41');
-ok(U.featured.map(t => t.id).join() === 'review' && U.all.length === 42 && U.all[0].id === 'review', 'Review is featured; all = Review + the 41 tiles');
-ok(new Set(U.all.map(t => t.id)).size === 42 && new Set(U.all.map(t => t.src)).size === 42, 'ids and page paths are unique');
+ok(U.sections.map(s => s.tiles.length).join() === '6,8,8,12,8' && U.tiles.length === 42, 'tile counts 6/8/8/12/8 = 42');
+ok(U.featured.map(t => t.id).join() === 'review' && U.all.length === 43 && U.all[0].id === 'review', 'Review is featured; all = Review + the 42 tiles');
+ok(new Set(U.all.map(t => t.id)).size === 43 && new Set(U.all.map(t => t.src)).size === 43, 'ids and page paths are unique');
 ok(U.all.every(t => t.id && t.icon && t.title && t.desc && t.src && /^[a-z0-9-]+$/.test(t.id)), 'every tile has id, icon, title, desc and src');
 ok(U.all.every(t => fs.existsSync(path.join(SITE_DIR, t.src))), 'every src is a file');
 const soon = U.tiles.filter(t => t.soon);
 ok(soon.length === 34 && soon.every(t => ['learn', 'practise', 'fits'].every(k => typeof t.soon[k] === 'string' && t.soon[k].length > 10)), '34 placeholders, each with its three lines (learn, practise, fits)');
-ok(U.tiles.filter(t => !t.soon).map(t => t.id).join() === 'rosetta,signs-conjuncts,phonemes,diacritics,conjuncts,lookalike-builder,lookalikes', 'the 7 built pages carry no `soon` block');
+ok(U.tiles.filter(t => !t.soon).map(t => t.id).join() === 'rosetta,signs-conjuncts,sound-charts,phonemes,diacritics,conjuncts,lookalike-builder,lookalikes', 'the 8 built pages carry no `soon` block');
 ok(!soon.some(t => /once progress tracking exists/.test(JSON.stringify(t.soon))), 'no placeholder still talks about progress tracking as future work');
 
 // lookups

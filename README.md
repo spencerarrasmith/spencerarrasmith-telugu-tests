@@ -52,12 +52,12 @@ To run some suites only: `npm test -- e2e_index e2e_signs`.
 | `e2e_index`, `e2e_review`, `e2e_lesson`, `e2e_placeholder` | Home page (sections, tiles, routes, ✓ and counts), Review, the lesson template, the 34 "Coming soon" pages drawn from `units.js` |
 | `e2e_gamecore` | `game-core.js` on its own with a three-card deck: deal, sample a session, judge, re-queue, counters, complete screen, empty pool, ✓ and Review; and that none of the four games keeps a copy of the round |
 | `e2e_pho*`, `e2e_dia*`, `e2e_conj*`, `e2e_look`, `e2e_builder` | The games and the Lookalike Builder, click by click; the builder's letters, sounds, flags and CSV reading against the shared data |
-| `e2e_rosetta`, `e2e_signs` | The two reference pages |
+| `e2e_rosetta`, `e2e_signs`, `e2e_sounds` | The three reference pages. `e2e_sounds` checks that every Telugu and English sound is drawn once, in the right box of the consonant grid or spot on the vowel chart |
 | `e2e_iso` | Every page again for a reader who chose ISO on the home page: spellings like `ka`, `kā`, `kṣa` and no slashes anywhere. The other suites run in IPA, the default |
-| `e2e_browser` | Real Chromium: all 42 routes open in the iframe, scripts load, no errors or 404s, and each kind of page really gets its stylesheet (jsdom ignores CSS, so this is the only place that is checked) |
+| `e2e_browser` | Real Chromium: all 43 routes open in the iframe, scripts load, no errors or 404s, and each kind of page really gets its stylesheet (jsdom ignores CSS, so this is the only place that is checked) |
 | `verify_notes` | The Signs & Conjuncts notes against Noto Sans Telugu's own shaping data |
 
-Some assertions deliberately pin current content (41 tiles, which pages are live, 5 + 8 + 8 + 12 + 8 per section, 34 placeholders, the number of notes). When you add a page or turn a tile from "Soon" to live, expect `unit_units`, `e2e_index`, `e2e_links`, `e2e_placeholder`, `static_css` and `e2e_browser` to need their numbers updated; that failure is the reminder.
+Some assertions deliberately pin current content (42 tiles, which pages are live, 6 + 8 + 8 + 12 + 8 per section, 34 placeholders, the number of notes). When you add a page or turn a tile from "Soon" to live, expect `unit_units`, `e2e_index`, `e2e_links`, `e2e_placeholder`, `static_css` and `e2e_browser` to need their numbers updated; that failure is the reminder.
 
 **IPA and ISO.** `require('./harness')(page)` loads a page as a first-time visitor gets it, in IPA. `require('./harness')(page, { notation: 'iso' })` loads it with ISO already chosen. `h.shown(miss)` gives a stored miss as Review would draw it now, since the store keeps the character and not the text.
 

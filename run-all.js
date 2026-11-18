@@ -6,7 +6,7 @@ process.env.SITE_DIR = SITE_DIR;                             // so every test (a
 const T = path.join(__dirname, 'tests');
 const ORDER = ['e2e_links', 'static_css', 'unit_settings', 'unit_units', 'unit_data', 'unit_progress', 'unit_lookalikes', 'e2e_index', 'e2e_review', 'e2e_lesson', 'e2e_placeholder',
   'e2e_gamecore', 'e2e_pho', 'e2e_pho2', 'e2e_pho3', 'e2e_pho4', 'e2e_dia', 'e2e_dia2', 'e2e_dia3', 'e2e_conj', 'e2e_conj2', 'e2e_conj3',
-  'e2e_builder', 'e2e_look', 'e2e_rosetta', 'e2e_signs', 'e2e_iso', 'e2e_browser'];
+  'e2e_builder', 'e2e_look', 'e2e_rosetta', 'e2e_signs', 'e2e_sounds', 'e2e_iso', 'e2e_browser'];
 const only = process.argv.slice(2);                          // npm test -- e2e_index e2e_signs
 const list = only.length ? only : ORDER;
 const results = [];

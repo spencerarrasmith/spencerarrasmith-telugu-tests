@@ -41,7 +41,7 @@ const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDi
 const pages = walk(SITE_DIR).filter(f => f.endsWith('.html')).map(f => [path.relative(SITE_DIR, f), fs.readFileSync(f, 'utf8')]);
 const needs = pages.filter(([, s]) => /<script src="(\.\.\/)?telugu-data\.js">/.test(s));
 const bad = needs.filter(([, s]) => !/<script src="(\.\.\/)?settings\.js"><\/script>\s*(<script src="(\.\.\/)?units\.js"><\/script>\s*)?<script src="(\.\.\/)?telugu-data\.js">/.test(s)).map(([f]) => f);
-ok(needs.length === 9 && bad.length === 0, 'every page that loads telugu-data.js loads settings.js first (' + needs.length + ' pages) ' + bad.join(', '));
+ok(needs.length === 10 && bad.length === 0, 'every page that loads telugu-data.js loads settings.js first (' + needs.length + ' pages) ' + bad.join(', '));
 const idx = pages.find(([f]) => f === 'index.html')[1];
 ok(/<script src="settings\.js"><\/script>\s*<script src="units\.js">/.test(idx), 'the home page loads settings.js before units.js');
 const setters = pages.filter(([, s]) => /Settings\.set\(|TeluguSettings\.set\(/.test(s)).map(([f]) => f);

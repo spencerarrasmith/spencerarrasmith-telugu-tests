@@ -43,7 +43,7 @@ const { w, d } = load('vocabulary/01_greetings.html');
 ok(d.querySelector('.shell > .shell-head .eyebrow').textContent === 'Vocabulary' && d.querySelector('.shell > .shell-body .facts').children.length === 3, 'the page uses the lesson frame (shell head + scrolling body)');
 ok(!d.querySelector('.stepper') && !d.querySelector('.shell-foot') && !d.querySelector('#ls-done'), 'no Learn/Practice steps, footer or "Completed" pill on a placeholder');
 ok(d.querySelector('.unit-icon').getAttribute('aria-hidden') === 'true', 'the icon is decorative');
-ok(load('reference/03_idioms.html').d.querySelector('.eyebrow').textContent === 'Resources', 'Resources placeholders carry the section\'s own name (was "Reference")');
+ok(load('reference/04_idioms.html').d.querySelector('.eyebrow').textContent === 'Resources', 'Resources placeholders carry the section\'s own name (was "Reference")');
 ok(load('grammar/02_nouns.html').d.querySelector('h1').innerHTML === 'Nouns: gender &amp; number', 'text is escaped, not injected as HTML');
 
 // the API

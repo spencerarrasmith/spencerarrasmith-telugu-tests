@@ -18,7 +18,7 @@ files.filter(f => /\.(html|css|js)$/.test(f)).forEach(f => {
 });
 ok(bad.length === 0, 'every stylesheet, script and @import resolves' + (bad.length ? ': ' + bad.join(' | ') : ''));
 const srcs = require(path.join(dir, 'units.js')).all.map(t => t.src);
-ok(srcs.length === 42 && srcs.every(s => fs.existsSync(path.join(dir, s))), 'all ' + srcs.length + ' tile sources in units.js (41 + Review) exist');
+ok(srcs.length === 43 && srcs.every(s => fs.existsSync(path.join(dir, s))), 'all ' + srcs.length + ' tile sources in units.js (42 + Review) exist');
 const stale = JSON.parse(fs.readFileSync(path.join(__dirname, 'old-names.json'), 'utf8'));
 const hits = []; files.filter(f => /\.(html|css|js)$/.test(f)).forEach(f => { const s = fs.readFileSync(f, 'utf8'); stale.forEach(o => { if (new RegExp('(^|[^\\w/_-])' + o.replace('.', '\\.') + '\\b').test(s)) hits.push(rel(f) + ': ' + o); }); });
 ok(hits.length === 0, 'no old flat file names remain anywhere' + (hits.length ? ': ' + hits.slice(0, 8).join(' | ') : ''));

@@ -11,17 +11,17 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   await pg.route(/fonts\.(googleapis|gstatic)\.com/, rt => rt.abort());
   await pg.goto('http://localhost:8779/index.html'); await pg.waitForTimeout(300);
   const tiles = await pg.evaluate(() => TeluguUnits.all.map(t => ({ id: t.id, src: t.src, title: t.title, soon: !!t.soon })));
-  ok(tiles.length === 42, tiles.length + ' tiles (41 + Review)');
+  ok(tiles.length === 43, tiles.length + ' tiles (42 + Review)');
   let opened = 0, titled = 0;
   for (const t of tiles) {
     await pg.evaluate(id => { location.hash = '#/' + id; }, t.id); let fr; for (let i = 0; i < 40 && !fr; i++) { await pg.waitForTimeout(50); fr = pg.frames().find(f => f.url().endsWith('/' + t.src)); }
     if (!fr) console.log('   not loaded:', t.id, t.src, pg.frames().map(f => f.url()).join(' '));
     if (fr) { opened++; await fr.waitForLoadState('load').catch(() => {}); if (await fr.title()) titled++; else console.log('   no title:', t.src); }
   }
-  ok(opened === 42, 'every tile loads its page in the iframe at the right path: ' + opened + '/42');
-  ok(titled === 42, 'every loaded page has a title');
+  ok(opened === 43, 'every tile loads its page in the iframe at the right path: ' + opened + '/43');
+  ok(titled === 43, 'every loaded page has a title');
   // the live pages actually initialise (their shared scripts were found)
-  const live = { 'alphabet/01_phonemes.html': 'TeluguData', 'alphabet/02_diacritics.html': 'TeluguData', 'alphabet/03_conjuncts.html': 'TeluguData', 'alphabet/04_lookalike-builder.html': 'LookalikeData', 'alphabet/05_lookalikes.html': 'LookalikeData', 'reference/01_rosetta.html': 'RosettaData', 'reference/02_signs-conjuncts.html': 'SignsConjunctsData' };
+  const live = { 'alphabet/01_phonemes.html': 'TeluguData', 'alphabet/02_diacritics.html': 'TeluguData', 'alphabet/03_conjuncts.html': 'TeluguData', 'alphabet/04_lookalike-builder.html': 'LookalikeData', 'alphabet/05_lookalikes.html': 'LookalikeData', 'reference/01_rosetta.html': 'RosettaData', 'reference/02_signs-conjuncts.html': 'SignsConjunctsData', 'reference/03_sound-charts.html': 'SoundChartsData' };
   for (const [src, g] of Object.entries(live)) {
     const id = tiles.find(t => t.src === src).id; await pg.evaluate(i => { location.hash = '#/' + i; }, id); await pg.waitForTimeout(250);
     const fr = pg.frames().find(f => f.url().endsWith('/' + src)); const has = fr && await fr.evaluate(n => !!window[n] && !!window.TeluguData, g);
@@ -39,9 +39,14 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(await fr0.evaluate(() => document.querySelector('h1').textContent + '|' + document.querySelectorAll('.fact').length) === 'Greetings|3', 'a placeholder draws its title and three lines from units.js');
   let soonOk = 0; for (const t of tiles.filter(t => t.soon)) { const f = await frameOf(t.id); if (f && await f.evaluate(want => document.querySelector('h1') && document.querySelector('h1').textContent === want && !!document.querySelector('.pill.soon'), t.title)) soonOk++; else console.log('   placeholder not drawn:', t.id); }
   ok(soonOk === 34, 'all 34 placeholders draw in the browser: ' + soonOk + '/34');
-  for (const id of ['rosetta', 'signs-conjuncts']) { const f = await frameOf(id);
+  for (const id of ['rosetta', 'signs-conjuncts', 'sound-charts']) { const f = await frameOf(id);
     ok(await css(f, '.g-header', 'position') === 'sticky' && await css(f, 'body', 'overflow-y') === 'auto' && await css(f, '.jump a', 'border-radius') === '999px' && await css(f, '.wrap', 'display') === 'grid', id + ' is styled by reference.css on top of game.css'); }
   ok(await css(await frameOf('signs-conjuncts'), '.wrap', 'row-gap') === '16px' && await css(await frameOf('rosetta'), '.wrap', 'row-gap') === '14px', 'a reference page\'s own <style> still wins over reference.css');
+  fr0 = await frameOf('sound-charts');
+  ok(await fr0.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(), v = r('#vowel-chart svg'), g = c => getComputedStyle(document.querySelector(c));
+    return v.width > 300 && v.height > 150 && g('#cons .ph.both').backgroundColor !== g('#cons .ph.te').backgroundColor && g('#cons th.row').position === 'sticky' && g('#vowel-chart').overflowX === 'auto' && g('#cons .tel .te').fontFamily.includes('Noto Sans Telugu'); }),
+    'Sound Charts draws the vowel chart and the grid: shared sounds highlighted, row names pinned, both charts scroll sideways inside their own box');
+  ok(await fr0.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Sound Charts never makes the page itself scroll sideways');
   for (const [id, total] of [['phonemes', 51], ['diacritics', 51], ['conjuncts', 40], ['lookalikes', 40]]) { fr0 = await frameOf(id);
     ok(await fr0.evaluate(([id, total]) => !!window.GameCore && GameCore.current.id === id && GameCore.current.total === total && GameCore.current.deck.length === total && document.querySelectorAll('.kb-btn').length > 1 && !!document.getElementById('retry-btn') && document.getElementById('s-total').textContent === String(total), [id, total]), id + ' runs on game-core.js (' + total + ' cards dealt, complete screen in place)'); }
   fr0 = await frameOf('lookalike-builder');
@@ -55,6 +60,8 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(await fr0.evaluate(() => document.getElementById('g-title').textContent + '|' + [...document.querySelectorAll('.kb-btn')].find(b => b.dataset.ch === 'క').textContent + '|' + TeluguData.notation.id) === 'Telugu → ISO|ka|iso', 'after choosing ISO, Phonemes opens in ISO (title "Telugu → ISO", key "ka")');
   fr0 = await frameOf('conjuncts');
   ok(await fr0.evaluate(() => { document.getElementById('rev-btn').click(); GameCore.current.put(TeluguData.clusters.find(c => c.glyph === 'క్ష')); const t = document.getElementById('tel-char'); return t.textContent + '|' + getComputedStyle(t).fontFamily.split(',')[0].replace(/['"]/g, ''); }) === 'kṣa|Noto Sans', 'Conjuncts reversed shows kṣa on the card, in the Latin face');
+  fr0 = await frameOf('sound-charts');
+  ok(await fr0.evaluate(() => { const k = [...document.querySelectorAll('#cons .ph')].find(p => p.dataset.ipa === 'k'); return k.querySelector('.tel .snd').textContent + '|' + k.querySelector('.eng .snd').textContent; }) === 'ka|/k/', 'Sound Charts in ISO: క is labelled ka, English k stays /k/');
   fr0 = await frameOf('review');
   ok(await fr0.evaluate(() => !!window.TeluguData && TeluguData.notation.id === 'iso'), 'Review loads the letter data and the notation too');
   await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(150);
