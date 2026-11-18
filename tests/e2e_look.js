@@ -27,7 +27,7 @@ const upload = (text, name = 'mine.csv') => new Promise(res => { w.eval('onFile'
   key('బ').click();
   ok($('char-card').classList.contains('wrong') && key('బ').classList.contains('err') && key('ఒ').classList.contains('ok') && $('feedback').textContent.trim() === '✗  ఒ' && $('feedback').classList.contains('te'), 'wrong pick: red, right answer green, ✗ + the glyph');
   const P = w.TeluguProgress, m = P.misses().find(x => x.game === 'lookalikes');
-  ok(m && m.key === 'ఒ' && m.prompt === '/o/' && m.answer === 'ఒ' && /Among/.test(m.note) && /బ/.test(m.note), 'miss logged as its own game: ' + (m && `${m.prompt} → ${m.answer} (${m.note})`));
+  ok(m && m.key === 'ఒ' && m.ask === 'sound' && !m.syllable && h.shown(m).prompt === '/o/' && h.shown(m).answer === 'ఒ' && /Among/.test(m.note) && /బ/.test(m.note), 'miss logged as its own game, asked by sound: ' + (m && `${h.shown(m).prompt} → ${h.shown(m).answer} (${m.note})`));
   const n0 = G().deck.length;
   await tick(); await tick();
   ok(G().deck.length === n0 && G().deck.some(c => c.item.text === 'ఒ') && !$('char-card').classList.contains('wrong'), 'card re-queued, fresh card shown');

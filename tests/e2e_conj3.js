@@ -63,7 +63,7 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   ok(key('స').classList.contains('err') && key('ష').classList.contains('ok') && key('క').classList.contains('ok'), 'the wrong key is red, the letters of the answer green');
   ok($('feedback').textContent === '✗  ' + KSHA && $('feedback').classList.contains('err'), 'feedback gives the conjunct: ✗ క్ష');
   const m = P.misses().find(x => x.game === 'conjuncts-reverse');
-  ok(P.missCount() === misses0 + 1 && m && m.key === KSHA && m.prompt === '/kʂa/' && m.answer === KSHA && m.note === 'Velar + Fricative', 'recorded for Review as conjuncts-reverse: /kʂa/ → క్ష, note "Velar + Fricative"');
+  ok(P.missCount() === misses0 + 1 && m && m.key === KSHA && m.ask === 'sound' && m.syllable === true && h.shown(m).prompt === '/kʂa/' && h.shown(m).answer === KSHA && m.note === 'Velar + Fricative', 'recorded for Review as conjuncts-reverse: /kʂa/ → క్ష, note "Velar + Fricative"');
   ok(!P.misses().some(x => x.game === 'conjuncts'), 'nothing filed under the forward game');
   await tick(); await tick();
   ok(G().deck.length === n0 && G().deck.some(c => c.glyph === KSHA) && vals().split('|').every(v => v === '–'), 'card re-queued; slots clear on the next card');
@@ -114,6 +114,6 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   put(KSHA); ipaKey('k').click(); ok(vals() === 'k|–' && !slots()[0].querySelector('.slot-val').classList.contains('te'), 'slots show IPA again');
   ipaKey('s').click(); await tick(); await tick();
   const fm = P.misses().find(x => x.game === 'conjuncts');
-  ok(fm && fm.prompt === KSHA && fm.answer === '/kʂa/' && fm.note === 'Velar + Fricative', 'a forward miss is filed under conjuncts, with the class label as its note (not the set name)');
+  ok(fm && fm.ask === 'telugu' && h.shown(fm).prompt === KSHA && h.shown(fm).answer === '/kʂa/' && fm.note === 'Velar + Fricative', 'a forward miss is filed under conjuncts, with the class label as its note (not the set name)');
   h.done();
 })();

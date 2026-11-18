@@ -46,6 +46,22 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
     ok(await fr0.evaluate(([id, total]) => !!window.GameCore && GameCore.current.id === id && GameCore.current.total === total && GameCore.current.deck.length === total && document.querySelectorAll('.kb-btn').length > 1 && !!document.getElementById('retry-btn') && document.getElementById('s-total').textContent === String(total), [id, total]), id + ' runs on game-core.js (' + total + ' cards dealt, complete screen in place)'); }
   fr0 = await frameOf('lookalike-builder');
   ok(await fr0.evaluate(() => document.querySelectorAll('#kCons .key').length === TeluguData.consonants.length && document.querySelectorAll('#kDigits .key').length === TeluguData.digits.length && !!LookalikeData.rows), 'the Lookalike Builder draws its keys from TeluguData and has LookalikeData\'s CSV reader');
+  // The notation chosen on the home page reaches the next page opened (each page is loaded afresh from Home)
+  await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(150);
+  ok(await top.evaluate(() => [...document.querySelectorAll('#prefs .seg-opt')].map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join(' ')) === 'IPA* ISO', 'home shows the IPA | ISO control, IPA selected');
+  ok(await css(top, '.seg-opt.on', 'background-color') !== await css(top, '.seg-opt:not(.on)', 'background-color') && await css(top, '.prefs', 'margin-left') !== '0px', 'the control is styled by home.css (selected option highlighted, set to the right of the title)');
+  await pg.click('#prefs .seg-opt[data-value="iso"]');
+  fr0 = await frameOf('phonemes');
+  ok(await fr0.evaluate(() => document.getElementById('g-title').textContent + '|' + [...document.querySelectorAll('.kb-btn')].find(b => b.dataset.ch === 'క').textContent + '|' + TeluguData.notation.id) === 'Telugu → ISO|ka|iso', 'after choosing ISO, Phonemes opens in ISO (title "Telugu → ISO", key "ka")');
+  fr0 = await frameOf('conjuncts');
+  ok(await fr0.evaluate(() => { document.getElementById('rev-btn').click(); GameCore.current.put(TeluguData.clusters.find(c => c.glyph === 'క్ష')); const t = document.getElementById('tel-char'); return t.textContent + '|' + getComputedStyle(t).fontFamily.split(',')[0].replace(/['"]/g, ''); }) === 'kṣa|Noto Sans', 'Conjuncts reversed shows kṣa on the card, in the Latin face');
+  fr0 = await frameOf('review');
+  ok(await fr0.evaluate(() => !!window.TeluguData && TeluguData.notation.id === 'iso'), 'Review loads the letter data and the notation too');
+  await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(150);
+  ok(await top.evaluate(() => document.querySelector('#prefs .seg-opt.on').textContent) === 'ISO', 'the choice is still selected back on Home');
+  await pg.click('#prefs .seg-opt[data-value="ipa"]');
+  fr0 = await frameOf('phonemes');
+  ok(await fr0.evaluate(() => document.getElementById('g-title').textContent + '|' + [...document.querySelectorAll('.kb-btn')].find(b => b.dataset.ch === 'క').textContent) === 'Telugu → IPA|k', 'and choosing IPA again puts Phonemes back in IPA');
   // progress still flows from a game in the iframe to the home page's ✓
   await pg.evaluate(() => { location.hash = '#/phonemes'; }); await pg.waitForTimeout(250);
   const fr = pg.frames().find(f => f.url().endsWith('alphabet/01_phonemes.html'));

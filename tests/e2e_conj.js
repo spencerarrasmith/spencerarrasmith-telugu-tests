@@ -30,7 +30,7 @@ const inject = glyphEscaped => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.gly
   ok($('char-card').classList.contains('wrong') && $('feedback').textContent.includes('✗'), 'picking ɡ + ɲ (the spoken form) is marked wrong, with the note shown');
   await tick(); await tick();
   const m = P.misses().find(x => x.game === 'conjuncts');
-  ok(m && m.key === 'జ్ఞ' && m.prompt === 'జ్ఞ' && m.answer.includes('/dʒɲa/') && m.answer.includes('usually said /\u0261ɲa/'), 'wrong answer recorded for Review with written + spoken answer: ' + (m && m.answer));
+  ok(m && m.key === 'జ్ఞ' && m.ask === 'telugu' && !('answer' in m) && h.shown(m).prompt === 'జ్ఞ' && h.shown(m).answer.includes('/dʒɲa/') && h.shown(m).answer.includes('usually said /\u0261ɲa/'), 'wrong answer recorded for Review; shown with its written + spoken answer: ' + (m && h.shown(m).answer));
 
   // ordinary cluster has no note
   front(x => x.spoken === null);

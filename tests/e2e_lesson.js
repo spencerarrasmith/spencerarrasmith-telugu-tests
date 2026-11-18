@@ -31,7 +31,7 @@ const P = w.TeluguProgress;
   const wrong = [...d.querySelectorAll('#d-opts button')].find(b => b.dataset.ipa !== ipaOf(prompt()));
   const missed = prompt(); wrong.click();
   const m = P.misses().find(x => x.game === 'lesson-template');
-  ok(m && m.key === missed && m.prompt === missed && m.answer === '/' + ipaOf(missed) + '/' && m.note === 'Velar', 'ctx.miss reaches the Review store: ' + (m && m.key + ' ' + m.answer));
+  ok(m && m.key === missed && m.ask === 'telugu' && !('answer' in m) && m.note === 'Velar', 'ctx.miss({key, ask}) reaches the Review store as the letter and what was asked: ' + (m && m.key + ' ' + m.ask));
   ok(!P.isComplete('lesson-template') && $('#ls-done').hidden, 'not complete yet');
   let g = 0; while ($('#d-opts').children.length && g++ < 20) [...d.querySelectorAll('#d-opts button')].find(b => b.dataset.ipa === ipaOf(prompt())).click();
   ok(P.isComplete('lesson-template') && !$('#ls-done').hidden, 'ctx.complete marks the unit done and shows the pill');

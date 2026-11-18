@@ -73,5 +73,53 @@ const P = w.TeluguProgress, $ = s => d.querySelector(s), click = s => $(s).click
   ok($('.rv-game .name').textContent === 'Phonemes (IPA → Telugu)', 'Review labels the reverse game "Phonemes (IPA → Telugu)"');
   d.querySelector('[data-game="phonemes-reverse"]').click(); click('#rv-show');
   ok($('.fc .prompt').textContent === '/kʰ/' && $('#rv-answer').textContent.includes('ఖ'), 'reverse card replays as /kʰ/ → ఖ');
+
+  /* ── a miss about a character is stored as the character and drawn here, in the current notation ── */
+  const mk = (notation, progress) => { const pre = (notation ? `localStorage.setItem('telugu.settings.v1', '{"notation":"${notation}"}');` : '') + (progress ? `localStorage.setItem('telugu.progress.v1', ${JSON.stringify(JSON.stringify(progress))});` : '');
+    const win = new JSDOM(html.replace('<head>', '<head><script>' + pre + '</script>'), { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost/review.html' }).window;
+    const q = s => win.document.querySelector(s);
+    const play = game => { q(`[data-game="${game}"]`).click(); const note = q('.fc .cat') ? q('.fc .cat').textContent : ''; const prompt = q('.fc .prompt').textContent; q('#rv-show').click(); const answer = q('#rv-answer').textContent; q('#rv-again').click(); while (q('#rv-show')) { q('#rv-show').click(); q('#rv-got').click(); } q('#rv-back').click(); return prompt + ' → ' + answer + (note ? ' [' + note + ']' : ''); };
+    return { win, q, play, P: win.TeluguProgress, names: () => [...win.document.querySelectorAll('.rv-game .name')].map(n => n.textContent).sort().join(' | ') }; };
+  const fill = P => {
+    P.miss({ game: 'phonemes', key: 'క', ask: 'telugu', note: 'Velar' });
+    P.miss({ game: 'phonemes-reverse', key: 'ఖ', ask: 'sound', note: 'Velar' });
+    P.miss({ game: 'diacritics', key: 'క', ask: 'telugu', syllable: true, note: 'Short' });
+    P.miss({ game: 'diacritics-reverse', key: 'కం', ask: 'sound', syllable: true, note: 'Nasal · aspirate' });
+    P.miss({ game: 'conjuncts', key: 'జ్ఞ', ask: 'telugu', syllable: true, note: 'Palatal + Nasal' });
+    P.miss({ game: 'conjuncts-reverse', key: 'క్ష', ask: 'sound', syllable: true, note: 'Velar + Fricative' });
+    P.miss({ game: 'lookalikes', key: 'వు', ask: 'sound', note: 'Among వు పు' });
+    P.miss({ game: 'grammar-nouns', key: 'boy', prompt: 'boy', answer: 'అబ్బాయి' });
+  };
+  const A = mk(null); fill(A.P); await new Promise(r => setTimeout(r, 5));
+  ok(A.play('phonemes') === 'క → /k/ [Velar]' && A.play('phonemes-reverse') === '/kʰ/ → ఖ [Velar]', 'IPA: a Phonemes miss replays as క → /k/, the reverse as /kʰ/ → ఖ');
+  ok(A.play('diacritics') === 'క → /ka/ [Short]' && A.play('diacritics-reverse') === '/kã/ → కం [Nasal · aspirate]', 'IPA: Diacritics misses read the character as a syllable (క → /ka/, not /k/)');
+  ok(A.play('conjuncts') === 'జ్ఞ → /dʒɲa/  ·  usually said /ɡɲa/ [Palatal + Nasal]' && A.play('conjuncts-reverse') === '/kʂa/ → క్ష [Velar + Fricative]', 'IPA: Conjuncts misses, with the spoken note; క్ష is /kʂa/');
+  ok(A.play('lookalikes') === '/ʋu/ → వు [Among వు పు]' && A.play('grammar-nouns') === 'boy → అబ్బాయి', 'IPA: a Lookalikes miss; a lesson\'s text miss is shown as stored');
+  ok(A.names() === 'Conjuncts | Conjuncts (IPA → Conjuncts) | Diacritics | Diacritics (IPA → Diacritics) | Lookalikes (IPA → Telugu) | Nouns: gender & number | Phonemes | Phonemes (IPA → Telugu)', 'IPA: game names');
+
+  const B = mk('iso'); fill(B.P); await new Promise(r => setTimeout(r, 5));
+  ok(B.play('phonemes') === 'క → ka [Velar]' && B.play('phonemes-reverse') === 'kha → ఖ [Velar]', 'ISO: the same misses replay as క → ka and kha → ఖ, with no slashes');
+  ok(B.play('diacritics') === 'క → ka [Short]' && B.play('diacritics-reverse') === 'kaṁ → కం [Nasal · aspirate]', 'ISO: Diacritics misses (ka, kaṁ)');
+  ok(B.play('conjuncts') === 'జ్ఞ → jña  ·  usually said /ɡɲa/ [Palatal + Nasal]' && B.play('conjuncts-reverse') === 'kṣa → క్ష [Velar + Fricative]', 'ISO: Conjuncts misses (jña, kṣa); "usually said" stays IPA');
+  ok(B.play('lookalikes') === 'vu → వు [Among వు పు]' && B.play('grammar-nouns') === 'boy → అబ్బాయి', 'ISO: Lookalikes (vu); a lesson\'s text miss is unchanged');
+  ok(B.names() === 'Conjuncts | Conjuncts (ISO → Conjuncts) | Diacritics | Diacritics (ISO → Diacritics) | Lookalikes (ISO → Telugu) | Nouns: gender & number | Phonemes | Phonemes (ISO → Telugu)', 'ISO: game names say ISO');
+  B.q('[data-game="conjuncts-reverse"]').click();
+  ok(B.q('#rv-prompt').classList.contains('long') && !/\//.test(B.q('#rv-prompt').textContent), 'ISO: a long prompt still takes the smaller size');
+
+  /* ── a store written before this change (IPA text) is converted, then follows the notation too ── */
+  const V1 = { v: 1, done: {}, misses: {
+    'phonemes|క':           { game: 'phonemes', key: 'క', prompt: 'క', answer: '/k/', note: 'Velar', count: 2, streak: 0, last: 3 },
+    'diacritics-reverse|కా': { game: 'diacritics-reverse', key: 'కా', prompt: '/kaː/', answer: 'కా', note: 'Long', count: 1, streak: 0, last: 2 },
+    'conjuncts|క్ష':         { game: 'conjuncts', key: 'క్ష', prompt: 'క్ష', answer: '/kʂa/', note: 'Velar + Fricative', count: 1, streak: 0, last: 1 },
+  } };
+  const C = mk('iso', V1), E = mk(null, V1);
+  ok(C.play('phonemes') === 'క → ka [Velar]' && C.play('diacritics-reverse') === 'kā → కా [Long]' && C.play('conjuncts') === 'క్ష → kṣa [Velar + Fricative]', 'old misses, read in ISO: క → ka, kā → కా, క్ష → kṣa');
+  ok(E.play('phonemes') === 'క → /k/ [Velar]' && E.play('diacritics-reverse') === '/kaː/ → కా [Long]' && E.play('conjuncts') === 'క్ష → /kʂa/ [Velar + Fricative]', 'old misses, read in IPA: exactly what they showed before');
+  ok(JSON.parse(C.win.localStorage.getItem('telugu.progress.v1')).v === 2, 'the old store is now version 2');
+
+  /* ── a character the app can no longer read ── */
+  const F = mk(null); F.P.miss({ game: 'phonemes', key: 'zz', ask: 'telugu' });
+  await new Promise(r => setTimeout(r, 5));
+  ok(F.play('phonemes') === 'zz → This character is no longer in the app.', 'a stored character that can\'t be read any more says so and can still be cleared');
   console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
 })();

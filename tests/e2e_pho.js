@@ -34,7 +34,8 @@ const keys = () => vis().length;
   await tick(); await tick();
   ok(G().deck.length === n && cur().ipa !== 'k', 'wrong answer re-queues the card');
   const m = P.misses().find(x => x.game === 'phonemes');
-  ok(m && m.key === 'క' && m.prompt === 'క' && m.answer === '/k/' && m.note === 'Velar', 'wrong answer recorded for Review: ' + (m && m.key + ' ' + m.answer));
+  ok(m && m.key === 'క' && m.ask === 'telugu' && !m.syllable && !('prompt' in m) && !('answer' in m) && m.note === 'Velar', 'wrong answer recorded for Review as the letter and what was asked, not as text: ' + JSON.stringify(m && { key: m.key, ask: m.ask }));
+  ok(h.shown(m).prompt === 'క' && h.shown(m).answer === '/k/', 'which Review shows as క → /k/');
 
   // play full default session
   let g = 0;

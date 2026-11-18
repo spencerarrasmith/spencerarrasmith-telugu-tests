@@ -17,9 +17,11 @@ ok(d.title === 'Rosetta Stone' && /game\.css/.test(raw) && !!d.querySelector('he
 ok(entries().length === TD.letters.length + TD.signs.length, 'one card per letter and sign: ' + entries().length);
 ok(TD.letters.every(l => find(l.ch)) && TD.signs.every(s => find(s.sign || '(none)')), 'every TeluguData letter and sign has a card');
 ok(entries().every(e => e.querySelectorAll('.snd').length === 2), 'every card shows IPA and ISO chips');
-ok(find('క').textContent.includes('/k/') && /ISO\s*k(?!h)/.test(find('క').textContent), 'క: /k/ and k');
+ok(find('క').textContent.includes('/k/') && /ISO\s*ka(?!h)/.test(find('క').textContent), 'క: /k/ and ka (ISO spells a consonant letter with its own a)');
 ok(find('ఖ').textContent.includes('/kʰ/') || find('ఖ').textContent.includes('/kʰ'), 'ఖ shows its aspirate IPA: ' + find('ఖ').querySelector('.snd').textContent);
-ok(/ISO\s*ṭ/.test(find('ట').textContent) && /ISO\s*ś/.test(find('శ').textContent) && /ISO\s*ṣ/.test(find('ష').textContent), 'ISO: ట ṭ, శ ś, ష ṣ');
+ok(/ISO\s*ṭa/.test(find('ట').textContent) && /ISO\s*śa/.test(find('శ').textContent) && /ISO\s*ṣa/.test(find('ష').textContent) && /ISO\s*ā/.test(find('ఆ').textContent) && /ISO\s*kṣa/.test(find('క్ష').textContent), 'ISO: ట ṭa, శ śa, ష ṣa, ఆ ā, క్ష kṣa');
+ok(entries().every(e => e.querySelector('.snd + .snd').textContent.replace('ISO', '') === (e.dataset.key === '(none)' ? TD.signs[0].iso : (TD.letters.find(l => l.ch === e.dataset.key) || TD.signs.find(g => g.sign === e.dataset.key)).iso || '—')) && !('iso' in RD.letters['క']) && !('iso' in RD.signs['ా']), 'every ISO chip is the value in telugu-data.js; rosetta-data.js keeps none of its own');
+ok(find('ం').querySelector('.snd + .snd').textContent === 'ISOṁ' && find('ా').querySelector('.snd + .snd').textContent === 'ISOā' && find('్').querySelector('.snd + .snd').textContent === 'ISO—', 'signs show the sign\'s own spelling (ం ṁ, ా ā; none for the pollu)');
 ok(/r̥/.test(find('ఋ').textContent) && /l̥̄/.test(find('ౡ').textContent), 'ring-below r̥ and l̥̄ present');
 // words and meanings
 const wordless = Object.entries(RD.letters).filter(([, r]) => !r.word).map(([k]) => k);

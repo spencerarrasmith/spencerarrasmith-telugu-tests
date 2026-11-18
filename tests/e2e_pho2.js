@@ -73,7 +73,7 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   ok(lit() === 1 && byCh('గ').classList.contains('ok'), 'correct Telugu key highlighted');
   await tick(); await tick();
   const m = P.misses().find(x => x.game === 'phonemes-reverse');
-  ok(m && m.key === 'గ' && m.prompt === '/\u0261/' && m.answer === 'గ' && m.note === 'Velar', 'reverse miss goes to Review as its own game: ' + (m && `${m.prompt} → ${m.answer}`));
+  ok(m && m.key === 'గ' && m.ask === 'sound' && m.note === 'Velar' && h.shown(m).prompt === '/\u0261/' && h.shown(m).answer === 'గ', 'reverse miss goes to Review as its own game, asked by sound: ' + (m && `${h.shown(m).prompt} → ${h.shown(m).answer}`));
   ok(!P.misses().some(x => x.game === 'phonemes' && x.key === 'గ'), 'and does not pollute the forward-mode misses');
 
   /* highlight off in reverse */

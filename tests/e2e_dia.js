@@ -29,7 +29,7 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   inject('k', '\u0C3E'); btn('c', 'kʰ').click(); btn('v', 'aː').click();
   await tick(); await tick();
   const m = P.misses().find(x => x.game === 'diacritics');
-  ok(m && m.key === 'కా' && m.answer === '/kaː/', 'wrong answer recorded: ' + (m && m.key + ' ' + m.answer));
+  ok(m && m.key === 'కా' && m.ask === 'telugu' && m.syllable === true && !('answer' in m) && h.shown(m).answer === '/kaː/', 'wrong answer recorded as the syllable and what was asked: ' + (m && m.key + ' → ' + h.shown(m).answer));
 
   // pure consonant still works
   front(x => x.v.sign === '్');

@@ -21,7 +21,14 @@ ok(U.sectionOf('vocab-greetings').title === 'Vocabulary' && U.sectionOf('rosetta
 
 // Review names
 ok(U.label('phonemes') === 'Phonemes' && U.label('conjuncts') === 'Conjuncts' && U.label('diacritics') === 'Diacritics', 'label: a game is named by its tile title');
-ok(U.label('phonemes-reverse') === 'Phonemes (IPA → Telugu)' && U.label('diacritics-reverse') === 'Diacritics (IPA → Diacritics)' && U.label('conjuncts-reverse') === 'Conjuncts (IPA → Conjuncts)' && U.label('lookalikes') === 'Lookalikes (IPA → Telugu)', 'label: `review` names win (second directions, longer names)');
+ok(/\{sound\} → Telugu/.test(U.get('phonemes').review['phonemes-reverse']) && U.label('phonemes-reverse') === 'Phonemes (IPA → Telugu)' && U.label('diacritics-reverse') === 'Diacritics (IPA → Diacritics)' && U.label('conjuncts-reverse') === 'Conjuncts (IPA → Conjuncts)' && U.label('lookalikes') === 'Lookalikes (IPA → Telugu)', 'label: `review` names win (second directions, longer names)');
+// …and follow the reader's notation when settings.js is loaded
+(() => { const { JSDOM } = require('jsdom'); const read = f => fs.readFileSync(path.join(SITE_DIR, f), 'utf8');
+  const w = new JSDOM(`<script>${read('settings.js')}</script><script>${read('units.js')}</script>`, { runScripts: 'dangerously', url: 'http://localhost/' }).window;
+  const a = w.TeluguUnits.label('phonemes-reverse'); w.TeluguSettings.set('notation', 'iso');
+  ok(a === 'Phonemes (IPA → Telugu)' && w.TeluguUnits.label('phonemes-reverse') === 'Phonemes (ISO → Telugu)' && w.TeluguUnits.label('conjuncts-reverse') === 'Conjuncts (ISO → Conjuncts)' && w.TeluguUnits.label('lookalikes') === 'Lookalikes (ISO → Telugu)' && w.TeluguUnits.label('phonemes') === 'Phonemes', 'label: {sound} becomes IPA or ISO, whichever is chosen (re-read each time)');
+  ok(U.tiles.every(t => !/\bIPA\b/.test(t.desc) || t.id === 'rosetta') && U.all.every(t => Object.values(t.review || {}).every(n => !/IPA|ISO/.test(n))), 'no tile text is tied to one notation (Rosetta Stone, which shows both, aside)');
+})();
 ok(U.label('grammar-nouns') === 'Nouns: gender & number' && U.label('made_up-game') === 'Made up game', 'label: lessons use their tile title; an unlisted id is tidied up');
 const reviewIds = U.all.flatMap(t => Object.keys(t.review || {}));
 ok(U.all.every(t => Object.keys(t.review || {}).every(g => g === t.id || g.startsWith(t.id + '-'))), 'every `review` id belongs to the tile it sits on: ' + reviewIds.join(' '));

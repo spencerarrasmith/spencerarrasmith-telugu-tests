@@ -26,5 +26,55 @@ ok(D.letterGroups.reduce((n, g) => n + g.ipa.length, 0) === 54, 'every letter is
 ok(D.signs.find(s => s.ipa === '∅').sound === '' && D.signs.find(s => s.sign === '').sound === 'a', 'pure consonant sounds as nothing; no-sign sounds "a"');
 ok(D.digits.length === 10 && D.digits.map(g => g.ch).join('') === '౦౧౨౩౪౫౬౭౮౯' && D.digits.every((g, n) => g.value === n && g.kind === 'digit'), 'digits: ౦–౯ with values 0–9');
 ok(D.letters.every(l => !D.digits.some(g => g.ch === l.ch)) && D.pool(D.letters, true).length === 54, 'digits are a set of their own, not letters');
+/* ── ISO 15919 alongside IPA ── */
+const L1 = ch => D.letters.find(l => l.ch === ch), G1 = sg => D.signs.find(g => g.sign === sg);
+ok(D.letters.every(l => typeof l.iso === 'string' && l.iso && typeof l.isoStem === 'string' && l.isoStem), 'every letter has an ISO spelling and stem');
+ok(D.vowels.map(l => l.iso).join(' ') === 'a ā i ī u ū r̥ r̥̄ l̥ l̥̄ e ē ai o ō au aṁ aḥ', 'vowels in ISO: ' + D.vowels.map(l => l.iso).join(' '));
+ok(D.consonants.map(l => l.isoStem).join(' ') === 'k kh g gh ṅ c ch j jh ñ ṭ ṭh ḍ ḍh ṇ ḷ ṟ t th d dh n p ph b bh m y r l v ś ṣ s h', 'consonant stems in ISO, in keyboard order');
+ok(D.consonants.every(l => l.iso === l.isoStem + 'a') && D.vowels.every(l => l.iso === l.isoStem) && L1('క').iso === 'ka' && L1('క్ష').iso === 'kṣa' && L1('క్ష').isoStem === 'kṣ', 'a consonant letter is spelled with its own a (క ka, క్ష kṣa); a vowel is its stem');
+ok(new Set(D.letters.map(l => l.iso)).size === 54 && new Set(D.letters.map(l => l.ipa)).size === 54, 'no two letters share a spelling, in either notation');
+ok(D.signs.map(g => g.iso).join(',') === 'a,i,u,e,o,ā,ī,ū,ē,ō,ai,au,r̥,r̥̄,l̥,l̥̄,ṁ,ḥ,' && D.signs.map(g => g.isoSound).join(',') === 'a,i,u,e,o,ā,ī,ū,ē,ō,ai,au,r̥,r̥̄,l̥,l̥̄,aṁ,aḥ,', 'signs: own spelling (ం ṁ) and what they add to a syllable (ం aṁ, after the consonant\'s a); nothing for the pollu');
+ok([...D.letters, ...D.signs].every(x => x.iso === x.iso.normalize('NFC')) && L1('ౠ').iso === 'r̥̄' && D.RING === '̥' && D.MACRON === '̄', 'ISO strings are NFC; the vocalic letters use ring below (+ macron)');
+ok(D.clusters.every(c => c.iso === c.parts.map(p => p.isoStem).join('') + 'a') && cls && D.clusters.find(c => c.glyph === 'క్ష').iso === 'kṣa' && D.clusters.find(c => c.glyph === 'జ్ఞ').iso === 'jña' && D.clusters.find(c => c.glyph === 'ష్ట్ర').iso === 'ṣṭra', 'clusters in ISO: the stems joined, then a (క్ష kṣa, జ్ఞ jña, ష్ట్ర ṣṭra)');
+ok(new Set(D.clusters.map(c => c.iso)).size === D.clusters.length && D.clusters.every(c => c.glyph === 'క్ష' || !D.letters.some(l => l.iso === c.iso)), 'no two clusters share an ISO spelling, and none is spelled like a single letter (క్ష is both, by design)');
+
+/* ── notation: which of the two a page shows ── */
+const NI = D.notationFor('iso'), NP = D.notationFor('ipa');
+ok(D.notation.id === 'ipa' && D.notation.name === 'IPA' && Object.isFrozen(D.notation), 'default notation is IPA (no settings.js loaded here)');
+ok(NP.letter(L1('క')) === 'k' && NI.letter(L1('క')) === 'ka' && NP.letter(L1('ఆ')) === 'aː' && NI.letter(L1('ఆ')) === 'ā', 'letter(): క k · ka, ఆ aː · ā');
+ok(NP.part(L1('క')) === 'k' && NI.part(L1('క')) === 'k' && NI.part(L1('క్ష')) === 'kṣ', 'part(): a consonant as a piece is bare in both (k, kṣ)');
+ok(NP.sign(G1('ా')) === 'aː' && NI.sign(G1('ా')) === 'ā' && NI.sign(G1('ం')) === 'aṁ' && NP.sign(G1('్')) === '' && NI.sign(G1('్')) === '' && NI.sign(G1('')) === 'a', 'sign(): what it adds (ా aː · ā, ం … aṁ, pollu nothing, no sign a)');
+ok(NP.syllable(L1('క'), G1('ా')) === 'kaː' && NI.syllable(L1('క'), G1('ా')) === 'kā' && NI.syllable(L1('క'), G1('')) === 'ka' && NI.syllable(L1('క'), G1('్')) === 'k' && NI.syllable(L1('క'), G1('ం')) === 'kaṁ' && NI.syllable(L1('క్ష'), G1('ై')) === 'kṣai', 'syllable(): కా kaː · kā, క ka, క్ k, కం kaṁ, క్షై kṣai');
+const KS = D.clusters.find(c => c.glyph === 'క్ష');
+ok(NP.cluster(KS) === 'kʂa' && NI.cluster(KS) === 'kṣa' && NP.of({ ipa: 'x', iso: 'y' }) === 'x' && NI.of({ ipa: 'x', iso: 'y' }) === 'y', 'cluster() and of()');
+ok(NP.wrap('k') === '/k/' && NI.wrap('ka') === 'ka' && NI.name === 'ISO' && NI.id === 'iso', 'wrap(): IPA between slashes, ISO plain');
+ok(NP.html('k') === '<span class="sl">/</span>k<span class="sl">/</span>' && NI.html('ka') === 'ka' && NI.html('<b>') === '&lt;b&gt;' && NP.html('<') === '<span class="sl">/</span>&lt;<span class="sl">/</span>', 'html(): the card face, escaped; slashes only for IPA');
+ok(D.notationFor('nonsense').id === 'ipa' && D.notationFor().id === 'ipa', 'an unknown notation id means IPA');
+(() => { const fs = require('fs'), path = require('path'), { JSDOM } = require('jsdom'); const rd = f => fs.readFileSync(path.join(SITE_DIR, f), 'utf8');
+  const mk = pre => new JSDOM(`<script>${pre}</script><script>${rd('settings.js')}</script><script>${rd('telugu-data.js')}</script>`, { runScripts: 'dangerously', url: 'http://localhost/' }).window;
+  ok(mk('').TeluguData.notation.id === 'ipa' && mk(`localStorage.setItem('telugu.settings.v1','{"notation":"iso"}')`).TeluguData.notation.id === 'iso', 'with settings.js loaded first, TeluguData.notation is the reader\'s choice');
+})();
+
+/* ── read(): both spellings of any character ── */
+const rd = (t, o) => { const r = D.read(t, o); return r ? r.ipa + ' ' + r.iso : null; };
+ok(rd('క') === 'k ka' && rd('క', { syllable: true }) === 'ka ka' && rd('అ') === 'a a' && rd('అ', { syllable: true }) === 'a a' && rd('అం') === 'ã aṁ', 'read: a letter (క k · ka); as a syllable క is ka in both; vowels unchanged');
+ok(rd('కా') === 'kaː kā' && rd('క్') === 'k k' && rd('కం') === 'kã kaṁ' && rd('కృ') === 'kr̩ kr̥', 'read: letter + sign (కా, క్, కం, కృ)');
+ok(rd('క్ష') === 'kʂ kṣa' && rd('క్ష', { syllable: true }) === 'kʂa kṣa' && rd('క్షా') === 'kʂaː kṣā', 'read: క్ష is the letter (kʂ) unless read as a syllable (kʂa)');
+ok(rd('క్య') === 'kja kya' && rd('క్యా') === 'kjaː kyā' && D.read('జ్ఞ').spoken === 'ɡɲa' && D.read('క్య').spoken === null && D.read('జ్ఞా').spoken === null, 'read: clusters, with or without a sign; spoken only for the bare cluster that has one');
+ok(D.read('కా').listed && D.read('క్య').listed && rd('క్ప్త') === null && rd('క్ప్త', { any: true }) === 'kpt̪a kpta' && D.read('క్ప్త', { any: true }).listed === false && rd('క్ప్తి', { any: true }) === 'kpt̪i kpti' && rd('క్ప్', { any: true }) === 'kp kp', 'read: a stack outside the cluster list only with {any}, and marked unlisted');
+ok([['ఆా'], ['కాి'], ['౫'], ['a'], [''], ['ా'], ['కఖ', { any: true }], ['క్్ప', { any: true }], ['౫', { any: true }]].every(([t, o]) => D.read(t, o) === null), 'read: null for a vowel with a sign, two signs, digits, Latin, a bare sign, letters not joined by ్');
+ok(D.read('ఙ').rare && D.read('ఱ').core === false && D.read('కౢ').core === false && D.read('కృ').rare && D.read('క').core && !D.read('క').rare, 'read: rare and core carried from the letter and the sign');
+ok(D.letters.every(l => { const r = D.read(l.ch); return r && r.ipa === l.ipa && r.iso === l.iso; }) && D.clusters.every(c => { const r = D.read(c.glyph, { syllable: true }); return r && r.ipa === c.sound && r.iso === c.iso; }), 'read agrees with the data for every letter and (as a syllable) every cluster');
+ok(D.consonants.every(c => D.signs.every(g => { const r = D.read(c.ch + g.sign, { syllable: true }); return r && r.ipa === NP.syllable(c, g) && r.iso === NI.syllable(c, g); })), 'read agrees with syllable() for every consonant + sign (646 syllables)');
+
+/* ── keyboard faces ── */
+(() => { const { JSDOM } = require('jsdom'); const fs = require('fs'), path = require('path'); const rd = f => fs.readFileSync(path.join(SITE_DIR, f), 'utf8');
+  const w = new JSDOM(`<div id="a"></div><div id="b"></div><div id="c"></div><script>localStorage.setItem('telugu.settings.v1','{"notation":"iso"}')</script><script>${rd('settings.js')}</script><script>${rd('telugu-data.js')}</script>`, { runScripts: 'dangerously', url: 'http://localhost/' }).window;
+  const T = w.TeluguData, $ = id => w.document.getElementById(id);
+  const a = T.buildKeyboard($('a'), { face: 'sound' }), b = T.buildKeyboard($('b'), { face: 'ipa' }), c = T.buildKeyboard($('c'), { text: T.notation.part });
+  const k = list => list.find(x => x.dataset.ch === 'క');
+  ok(k(a).textContent === 'ka' && k(b).textContent === 'ka' && k(a).dataset.ipa === 'k' && !k(a).classList.contains('te'), 'buildKeyboard face "sound" (and its old name "ipa") prints the letter in the reader\'s notation; data-ipa stays the key');
+  ok(k(c).textContent === 'k' && c.length === 54, 'buildKeyboard text: prints what the page asks for instead (the bare consonant)');
+})();
 ok(Object.isFrozen(D), 'export is frozen');
 console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);

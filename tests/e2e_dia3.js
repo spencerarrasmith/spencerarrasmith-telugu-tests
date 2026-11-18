@@ -62,7 +62,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   ok(btn('c', KH).classList.contains('err') && btn('v', II).classList.contains('err') && btn('c', 'k').classList.contains('ok') && btn('v', AA).classList.contains('ok'), 'wrong keys red, right keys green (both panels)');
   ok($('slot-c').classList.contains('err') && $('slot-v').classList.contains('err'), 'both slots red');
   const m = P.misses().find(x => x.game === 'diacritics-reverse');
-  ok(m && m.key === 'కా' && m.prompt === '/kaː/' && m.answer === 'కా' && m.note === 'Long', 'miss logged as its own game: ' + (m && `${m.prompt} → ${m.answer}`));
+  ok(m && m.key === 'కా' && m.ask === 'sound' && m.syllable === true && m.note === 'Long' && h.shown(m).prompt === '/kaː/' && h.shown(m).answer === 'కా', 'miss logged as its own game, asked by sound: ' + (m && `${h.shown(m).prompt} → ${h.shown(m).answer}`));
   ok(!P.misses().some(x => x.game === 'diacritics'), 'and not mixed into forward misses');
   await tick(); await tick();
   ok(G().deck.length === n0 && G().deck.some(x => x.glyph === 'కా') && $('slot-c').querySelector('.slot-val').textContent === '–', 'card re-queued; slots clear');

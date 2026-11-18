@@ -13,7 +13,7 @@ ok(d.title === 'Lookalike Builder' && /game\.css/.test(raw) && !/Cormorant|Sourc
 ok(!!d.querySelector('header.g-header .g-title') && $('progressBar').classList.contains('g-prog-fill'), 'header + progress bar use the shared classes');
 ok(/0 of \d+ reviewed/.test($('progressText').textContent) && $('glyph').textContent === 'అ', 'starts on అ: ' + $('progressText').textContent);
 const name = () => $('promptName').textContent;
-ok(name() === '/a/ · vowel' && !/ā|ISO/.test(raw.split('<script>')[1] || ''), 'the character is named in IPA, not ISO: ' + name());
+ok(name() === '/a/ · vowel' && !/'[a-z]*[āīūṭḍṇṣśṅñḷṟ][a-z]*'/.test(raw.split('<script>')[1] || ''), 'the character is named in IPA by default (the page holds no spellings of its own): ' + name());
 key('బ'); const bKey = key('బ'); $('next').click();
 ok($('glyph').textContent === 'ఆ' && /^1 of/.test($('progressText').textContent), 'Done, next → ఆ; progress 1 reviewed');
 $('prev').click(); key('ఇ').click(); key('ఈ').click();

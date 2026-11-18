@@ -49,6 +49,18 @@ ok(d.querySelectorAll('a.tile').length === 42 && d.querySelectorAll('a.tile.soon
   w.location.hash = '#/phonemes'; await wait(); P.miss({ game: 'diacritics', key: 'కా', prompt: 'కా', answer: '/kaː/' });
   w.location.hash = '#/'; await wait();
   ok(d.querySelector('.tile.review .tile-badge').textContent === '3 to revisit', 'returning home picks up changes');
+  /* ── how sounds are written: the one app-wide setting, chosen here ── */
+  const seg = () => [...d.querySelectorAll('#prefs .seg-opt')], on = () => seg().filter(b => b.classList.contains('on')).map(b => b.dataset.value).join();
+  ok(d.querySelector('header.hero #prefs .pref[role=radiogroup]') && seg().map(b => b.textContent).join('|') === 'IPA|ISO' && seg().every(b => b.getAttribute('role') === 'radio' && b.title.length > 10), 'the hero holds a "Sounds as" control with two options, IPA and ISO');
+  ok(on() === 'ipa' && seg()[0].getAttribute('aria-checked') === 'true' && seg()[1].getAttribute('aria-checked') === 'false' && d.getElementById('pref-eg').textContent === 'క is written /k/', 'IPA is selected on a first visit; the example reads "క is written /k/"');
+  ok(w.localStorage.getItem('telugu.settings.v1') === null, 'nothing is stored until a choice is made');
+  seg()[1].click();
+  ok(on() === 'iso' && seg()[1].getAttribute('aria-checked') === 'true' && d.getElementById('pref-eg').textContent === 'క is written ka', 'choosing ISO selects it; the example becomes "క is written ka"');
+  ok(JSON.parse(w.localStorage.getItem('telugu.settings.v1')).notation === 'iso' && w.TeluguSettings.get('notation') === 'iso', 'the choice is saved for every other page');
+  ok(d.querySelectorAll('a.tile').length === 42 && d.querySelector('.tile.review .tile-badge').textContent === '3 to revisit', 'the tiles are untouched by the change');
+  seg()[1].click(); ok(on() === 'iso', 'choosing the selected option again changes nothing');
+  w.TeluguSettings.set('notation', 'ipa'); ok(on() === 'ipa' && d.getElementById('pref-eg').textContent === 'క is written /k/', 'a change made elsewhere (another tab) shows here at once');
+  ok(!/telugu-data\.js/.test(src) && /Settings\.set\('notation'/.test(src), 'the home page only stores the choice; it loads no letter data');
   // placeholder pages themselves: e2e_placeholder
   console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
 })();
