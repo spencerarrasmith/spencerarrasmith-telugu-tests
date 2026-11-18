@@ -26,6 +26,9 @@ ok(SD.PLACES.map(p => p[0]).join() === 'Bilabial,Labiodental,Linguolabial,Dental
 ok(SD.MANNERS.join() === 'Nasal,Plosive,Affricate,Sibilant fricative,Non-sibilant fricative,Approximant,Tap or flap,Trill,Lateral fricative,Lateral approximant,Lateral tap or flap', 'manners follow the IPA chart, with a row for affricates');
 ok(Object.values(SD.WHERE).every(([p, m, v]) => SD.PLACES.some(x => x[0] === p) && SD.MANNERS.includes(m) && typeof v === 'boolean'), 'every box names a real column and row');
 ok([...SD.ENGLISH_CONSONANTS, ...SD.ENGLISH_VOWELS, ...SD.DIPHTHONGS.en].every(([, wd]) => wd.split('|').length === 3 && wd.split('|')[1].length > 0), 'every English sound has a key word with the letters that spell it marked');
+const phonemes = SD.ENGLISH_CONSONANTS.filter(e => !e[2]).map(e => e[0]), variants = SD.ENGLISH_CONSONANTS.filter(e => e[2]);
+ok(phonemes.length === 24 && phonemes.slice().sort().join(' ') === ['m', 'n', 'ŋ', 'p', 'b', 't', 'd', 'k', 'ɡ', 'tʃ', 'dʒ', 's', 'z', 'ʃ', 'ʒ', 'f', 'v', 'θ', 'ð', 'h', 'ɹ', 'j', 'w', 'l'].sort().join(' '), 'all 24 consonants English tells apart are on the grid, w included');
+ok(variants.map(e => e[0] + '<' + e[2]).join(' ') === 'pʰ<p tʰ<t kʰ<k ʔ<t ɾ<t ɫ<l' && variants.every(e => phonemes.includes(e[2])), 'plus six common variants, each tied to its phoneme: pʰ tʰ kʰ (pin tin kin), ʔ (button), ɾ (butter), ɫ (full)');
 
 /* ── vowel chart ── */
 const svg = d.querySelector('#vowel-chart svg.vc');
@@ -59,30 +62,35 @@ ok(SD.teluguConsonants.every(l => { const c = all('#cons .tel').filter(e => e.da
 ok(SD.ENGLISH_CONSONANTS.every(([ipa]) => { const c = all('#cons .eng').filter(e => e.dataset.ipa === ipa); return c.length === 1 && boxOf(c[0]) === SD.WHERE[ipa][0] + ' / ' + SD.WHERE[ipa][1]; }), 'each of the ' + SD.ENGLISH_CONSONANTS.length + ' English consonants is drawn once, in its own box');
 const tel = ch => all('#cons .tel').find(e => e.dataset.ch === ch), eng = ipa => all('#cons .eng').find(e => e.dataset.ipa === ipa);
 ok(boxOf(tel('త')) === 'Dental / Plosive' && boxOf(tel('ట')) === 'Retroflex / Plosive' && boxOf(eng('t')) === 'Alveolar / Plosive', 'English t sits between Telugu త (dental) and ట (retroflex)');
+ok(boxOf(eng('w')) === 'Velar / Approximant' && boxOf(eng('ɾ')) === 'Alveolar / Tap or flap' && boxOf(eng('ʔ')) === 'Glottal / Plosive' && boxOf(eng('ɫ')) === boxOf(tel('ల')) && boxOf(eng('tʰ')) === boxOf(eng('t')), 'w is in the Velar column; the tap, the glottal stop, dark l and aspirated t each have their box');
 ok(boxOf(tel('చ')) === 'Postalveolar / Affricate' && boxOf(tel('వ')) === 'Labiodental / Approximant' && boxOf(eng('v')) === 'Labiodental / Non-sibilant fricative' && boxOf(tel('హ')) === 'Glottal / Non-sibilant fricative' && boxOf(tel('ళ')) === 'Retroflex / Lateral approximant', 'చ, వ, v, హ and ళ are where the IPA chart puts them');
-ok(all('#cons .ph.both').map(p => p.dataset.ipa).sort().join(' ') === ['k', 'ɡ', 'ŋ', 'tʃ', 'dʒ', 'n', 'p', 'b', 'm', 'j', 'l', 'ʃ', 's'].sort().join(' '), '13 consonants are shared: k ɡ ŋ tʃ dʒ n p b m j l ʃ s');
-ok(all('#cons .ph.en').map(p => p.dataset.ipa).sort().join(' ') === ['t', 'd', 'z', 'ʒ', 'f', 'v', 'θ', 'ð', 'h', 'ɹ'].sort().join(' ') && all('#cons .ph.te').length === 22, '10 are English only (t d z ʒ f v θ ð h ɹ) and 22 Telugu only');
+ok(all('#cons .ph.both').map(p => p.dataset.ipa).sort().join(' ') === ['k', 'kʰ', 'ɡ', 'ŋ', 'tʃ', 'dʒ', 'n', 'p', 'pʰ', 'b', 'm', 'j', 'l', 'ʃ', 's'].sort().join(' '), '15 consonants are shared: k kʰ ɡ ŋ tʃ dʒ n p pʰ b m j l ʃ s');
+ok(all('#cons .ph.en').map(p => p.dataset.ipa).sort().join(' ') === ['t', 'tʰ', 'd', 'z', 'ʒ', 'f', 'v', 'θ', 'ð', 'h', 'ɹ', 'w', 'ɾ', 'ʔ', 'ɫ'].sort().join(' ') && all('#cons .ph.te').length === 20, '15 are English only (t tʰ d z ʒ f v θ ð h ɹ w ɾ ʔ ɫ) and 20 Telugu only');
 ok(all('#cons .ph.both').every(p => p.querySelector('.tel') && p.querySelector('.eng')) && all('#cons .ph.te').every(p => !p.querySelector('.eng')) && all('#cons .ph.en').every(p => !p.querySelector('.tel')), 'a shared sound shows the Telugu letter and the English word in one card');
 const cellOf = e => e.closest('td').querySelector('.cell');
 ok(all('#cons td .cell').every(c => { const k = all(':scope > .vg', c).map(v => v.className.replace('vg ', '')); return k.join() === 'voiceless' || k.join() === 'voiced' || k.join() === 'voiceless,voiced'; }), 'in every box the voiceless sounds are on the left and the voiced on the right');
 ok(all('.voiceless .tel', cellOf(tel('ప'))).map(e => e.dataset.ch).join('') === 'పఫ' && all('.voiced .tel', cellOf(tel('ప'))).map(e => e.dataset.ch).join('') === 'బభ', 'the aspirated letters sit under their plain partners: ప ఫ | బ భ');
-ok(text(tel('క')) === 'క /k/' && tel('క').querySelector('.te').textContent === 'క' && text(eng('k')) === '/k/ kin' && eng('k').querySelector('b').textContent === 'k', 'a Telugu letter has its sound beside it (క /k/); an English sound has its key word (/k/ kin)');
+ok(text(tel('క')) === 'క /k/' && tel('క').querySelector('.te').textContent === 'క' && text(eng('k')) === '/k/ skin' && eng('k').querySelector('b').textContent === 'k', 'a Telugu letter has its sound beside it (క /k/); an English sound has its key word (/k/ skin)');
+ok(all('#cons .eng.var').map(e => text(e)).join(' | ') === '[pʰ] pin | [tʰ] tin | [kʰ] kin | [ʔ] button | [ɾ] butter | [ɫ] full' && all('#cons .eng.var').every(e => e.title === 'a variant of /' + e.dataset.of + '/'), 'a variant is written in square brackets and names its phoneme: ' + all('#cons .eng.var').map(e => text(e)).join(' | '));
+ok(all('#cons .eng:not(.var) .snd').length === 24 && all('#cons .eng:not(.var) .snd').every(e => /^\/.+\/$/.test(e.textContent)), 'the 24 phonemes are written between slashes');
+ok(ph('pʰ')[0].contains(tel('ఫ')) && ph('kʰ')[0].contains(tel('ఖ')) && ph('p')[0].contains(tel('ప')) && text(eng('p')) === '/p/ spin', 'pin shares a card with ఫ and kin with ఖ; ప and క get spin and skin');
+ok(all('.voiceless .eng', cellOf(eng('t'))).map(e => e.dataset.ipa).join(' ') === 't tʰ' && all('.voiced .eng', cellOf(eng('t'))).map(e => e.dataset.ipa).join(' ') === 'd', 'aspirated t sits under plain t, as ఫ sits under ప');
 ok(all('#cons td.empty').length > 0 && all('#cons td.empty').every(c => c.children.length === 0), 'a box neither language uses is left empty');
-ok(all('#cons-rows .offgrid').length === 2 && engIn('#cons-rows') === 'w' && telIn('#cons-rows') === 'క్ష' && all('#cons-rows .why').every(e => e.textContent.length > 15), 'English w and Telugu క్ష are listed under the grid, with the reason they have no box');
+ok(all('#cons-rows .offgrid').length === 1 && engIn('#cons-rows') === '' && telIn('#cons-rows') === 'క్ష' && all('#cons-rows .why').every(e => e.textContent.length > 15), 'only క్ష is listed under the grid, with the reason it has no box');
 
 /* ── count ── */
 const tally = () => { const k = all('#cons .ph, #vowel-chart .spot').map(kind); return ['both', 'te', 'en'].map(x => k.filter(y => y === x).length); };
-ok($('count').textContent === '15 shared · 25 Telugu only · 18 English only' && tally().join() === '15,25,18', 'the header counts what the two charts show: ' + $('count').textContent);
+ok($('count').textContent === '17 shared · 23 Telugu only · 23 English only' && tally().join() === '17,23,23', 'the header counts what the two charts show: ' + $('count').textContent);
 
 /* ── rare and extra letters ── */
 const rare = TD.letters.filter(l => l.rare || !l.inBook).map(l => l.ch);
 ok($('show-rare').checked && all('#cons .tel.rare').map(e => e.dataset.ch).sort().join(' ') === 'ఙ ఞ ఱ' && all('#vowel-rows .tel.rare').map(e => e.dataset.ch).join(' ') === 'ఋ ౠ ఌ ౡ', 'rare and extra letters are shown to begin with, and marked: ఙ ఞ ఱ, ఋ ౠ ఌ ౡ');
 click('show-rare');
 ok(all('.tel').filter(e => !e.closest('#legend')).every(e => !rare.includes(e.dataset.ch)) && all('#vowel-rows .offchart').length === 2, 'unticking "Include rare and extra letters" removes them from both charts and the lists');
-ok(ph('ŋ').length === 1 && kind(ph('ŋ')[0]) === 'en' && !ph('ɲ').length && $('count').textContent === '14 shared · 23 Telugu only · 19 English only', 'ŋ is then an English-only sound, and the count follows: ' + $('count').textContent);
+ok(ph('ŋ').length === 1 && kind(ph('ŋ')[0]) === 'en' && !ph('ɲ').length && $('count').textContent === '16 shared · 21 Telugu only · 24 English only', 'ŋ is then an English-only sound, and the count follows: ' + $('count').textContent);
 ok(places().length === 12 && manners().length === 11, 'the grid keeps its full shape');
 click('show-rare');
-ok(tel('ఙ') && kind(ph('ŋ')[0]) === 'both' && $('count').textContent === '15 shared · 25 Telugu only · 18 English only', 'ticking it again brings them back');
+ok(tel('ఙ') && kind(ph('ŋ')[0]) === 'both' && $('count').textContent === '17 shared · 23 Telugu only · 23 English only', 'ticking it again brings them back');
 
 /* ── only rows and columns in use ── */
 const before = all('#cons .ph').map(p => p.dataset.ipa + boxOf(p)).join('|');
@@ -94,14 +102,14 @@ ok(all('#cons tbody tr').every(r => r.querySelector('.ph')) && places().every(p 
 ok(all('#cons .ph').map(p => p.dataset.ipa + boxOf(p)).join('|') === before, 'and every sound is still there, in the same box');
 ok(all('#cons thead tr.groups th[colspan]').map(t => t.textContent + t.colSpan).join() === 'Labial2,Coronal4,Dorsal2,Laryngeal1', 'the group headings shrink to match');
 click('show-rare');
-ok(!manners().includes('Tap or flap') && !tel('ఱ'), 'with rare letters off as well, the Tap or flap row (only ఱ) goes too');
+ok(manners().includes('Tap or flap') && !tel('ఱ') && places().includes('Palatal'), 'with rare letters off as well, the Tap or flap row stays for English ɾ though ఱ is gone');
 click('show-rare'); click('compact');
 ok(places().length === 12 && manners().length === 11 && all('#cons .ph').map(p => p.dataset.ipa + boxOf(p)).join('|') === before, 'unticking both restores the full grid');
 
 /* ── legend and notes ── */
-ok(all('#legend .tel').map(e => e.dataset.ch).join(' ') === 'క ఱ' && all('#legend .eng').length === 1 && /always IPA/.test($('legend').textContent) && /rare or extra/.test($('legend').textContent) && !/ISO/.test($('legend').textContent), 'the legend shows a Telugu entry, an English entry and the rare-letter mark');
+ok(all('#legend .tel').map(e => e.dataset.ch).join(' ') === 'క ఱ' && all('#legend .eng').map(e => text(e)).join(' | ') === '/k/ skin | [kʰ] kin' && /square brackets/.test($('legend').textContent) && /always IPA/.test($('legend').textContent) && /rare or extra/.test($('legend').textContent) && !/ISO/.test($('legend').textContent), 'the legend shows a Telugu entry, an English entry and the rare-letter mark');
 const notes = all('#notes .note');
-ok(notes.length === SD.NOTES.length && notes.length === 7 && notes.map(n => n.querySelector('.num').textContent).join('') === '1234567' && notes.map(n => n.dataset.id).join() === 'aspiration,coronals,th,v,h,length,eo', '7 notes, numbered: ' + notes.map(n => n.dataset.id).join(' '));
+ok(notes.length === SD.NOTES.length && notes.length === 9 && notes.map(n => n.querySelector('.num').textContent).join('') === '123456789' && notes.map(n => n.dataset.id).join() === 'aspiration,variants,coronals,th,v,w,h,length,eo', '9 notes, numbered: ' + notes.map(n => n.dataset.id).join(' '));
 ok(notes.every(n => n.querySelector('h4').textContent.length > 5 && n.querySelector('p').textContent.length > 40), 'each note has a title and a sentence or two');
 ok(notes.every(n => all('p, h4', n).every(e => !/[ఀ-౿]/.test([...e.childNodes].filter(c => c.nodeType === 3).map(c => c.textContent).join('')))), 'Telugu inside a note is set in the Telugu face');
 ok(all('.jump a').map(a => a.getAttribute('href')).every(hf => d.querySelector(hf)) && all('.jump a').length === 3, 'the jump links point at the three sections');
@@ -114,9 +122,9 @@ ok(all('.jump a').map(a => a.getAttribute('href')).every(hf => d.querySelector(h
   ok(q('.tel .snd').length > 40 && q('.tel .snd').every(e => !e.textContent.includes('/')), 'ISO: no Telugu label carries slashes');
   const sp = ipa => D.querySelector(`#vowel-chart .spot[data-ipa="${ipa}"]`);
   ok(text(sp('i').querySelector('text')) === 'ఇi ఈī' && text(sp('a').querySelector('text')) === 'అa ఆā' && text(sp('o').querySelector('text')) === 'ఒo ఓō', 'ISO: the vowel chart labels Telugu vowels i ī, a ā, o ō');
-  ok(text(sp('i').querySelectorAll('text')[1]) === '/i/feet' && q('.eng .snd').every(e => /^\/.+\/$/.test(e.textContent)) && q('#cons .eng').length === SD.ENGLISH_CONSONANTS.length, 'ISO: English stays in IPA, between slashes');
+  ok(text(sp('i').querySelectorAll('text')[1]) === '/i/feet' && q('.eng .snd').every(e => /^(\/.+\/|\[.+\])$/.test(e.textContent)) && q('#cons .eng').length === SD.ENGLISH_CONSONANTS.length, 'ISO: English stays in IPA, between slashes or square brackets');
   ok(q('#diphthongs .tel .snd').map(e => e.textContent).join(' ') === 'ai au' && q('#cons-rows .tel .snd')[0].textContent === 'kṣa', 'ISO: the lists follow too (ai au, kṣa)');
-  ok(q('#cons .ph').map(p => p.dataset.ipa + kind(p)).join() === all('#cons .ph').map(p => p.dataset.ipa + kind(p)).join() && D.getElementById('count').textContent === '15 shared · 25 Telugu only · 18 English only', 'ISO: the charts themselves are the same; only the Telugu labels change');
+  ok(q('#cons .ph').map(p => p.dataset.ipa + kind(p)).join() === all('#cons .ph').map(p => p.dataset.ipa + kind(p)).join() && D.getElementById('count').textContent === '17 shared · 23 Telugu only · 23 English only', 'ISO: the charts themselves are the same; only the Telugu labels change');
   ok(/ISO, as chosen on the home page/.test(D.getElementById('legend').textContent), 'ISO: the legend says the Telugu sounds are in ISO');
 }
 
