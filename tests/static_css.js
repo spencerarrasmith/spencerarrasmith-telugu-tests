@@ -32,6 +32,8 @@ PAGES.forEach(f => {
 });
 ok([game, shell, home].every(c => /@import url\('base\.css'\)/.test(c)), 'game.css, shell.css, and home.css all import base.css');
 ok(!/@import/.test(ref) && ['html', 'body', '.g-header', '.wrap', '.hint', '.tools', '.jump a', '.tag', '.tag.flag'].every(sel => refRules.has(sel)), 'reference.css layers on game.css (no import of its own) and holds the shared reference rules');
+// A sticky header stays in view only against the thing that scrolls. If <body> is given a scrollbar of its own it never uses, the header scrolls away.
+ok(refRules.get('html').get('overflow') === 'auto' && refRules.get('body').get('overflow') === 'visible' && refRules.get('.g-header').get('position') === 'sticky', 'reference.css: the window scrolls, not <body>, so the sticky header can stay in view');
 ok([game, shell, home, ref].every(c => !/:root\s*\{/.test(c)) && /:root\s*\{/.test(base), 'color tokens are defined once, in base.css');
 // …and nowhere else: no page or stylesheet in the whole app defines a color token, a reset, or the core font link.
 (() => { const path = require('path'); const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
@@ -54,6 +56,7 @@ ok(/fonts\.googleapis/.test(base) && [shell, game, home, ref].every(c => !/fonts
   ok(!/:root\s*\{[^}]*--(bg|surface|border|accent):/.test(inline) && !/\*,\s*\*::before/.test(inline), f + ': no color tokens or reset of its own');
   const dup = []; rules(inline).forEach((props, sel) => props.forEach((v, p) => { const g = gameRules.get(sel); if (g && g.get(p) === v) dup.push(sel + '{' + p + ':' + v + '}'); }));
   ok(dup.length === 0, f + ': repeats no declaration already in game.css' + (dup.length ? ' → ' + dup.join(' | ') : ''));
+  ok(rules(inline).get('html').get('overflow') === 'auto' && rules(inline).get('body').get('overflow') === 'visible', f + ': the window scrolls, not <body>, so its header and character bar can stay in view');
   [...s.matchAll(/(?:href|src)="([^"#:]+\.(?:css|js))"/g)].forEach(m => ok(fs.existsSync(require('path').resolve(dir, require('path').dirname(f), m[1])), f + ': ' + m[1] + ' exists'));
 })();
 // every class a game page's markup/JS uses at least has a rule somewhere (game.css or its own style)

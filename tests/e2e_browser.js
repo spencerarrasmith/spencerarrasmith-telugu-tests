@@ -50,7 +50,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   let soonOk = 0; for (const t of tiles.filter(t => t.soon)) { const f = await frameOf(t.id); if (f && await f.evaluate(want => document.querySelector('h1') && document.querySelector('h1').textContent === want && !!document.querySelector('.pill.soon'), t.title)) soonOk++; else console.log('   placeholder not drawn:', t.id); }
   ok(soonOk === 34, 'all 34 placeholders draw in the browser: ' + soonOk + '/34');
   for (const id of ['rosetta', 'signs-conjuncts', 'sound-charts']) { const f = await frameOf(id);
-    ok(await css(f, '.g-header', 'position') === 'sticky' && await css(f, 'body', 'overflow-y') === 'auto' && await css(f, '.jump a', 'border-radius') === '999px' && await css(f, '.wrap', 'display') === 'grid', id + ' is styled by reference.css on top of game.css'); }
+    ok(await css(f, '.g-header', 'position') === 'sticky' && await css(f, 'html', 'overflow-y') === 'auto' && await css(f, 'body', 'overflow-y') === 'visible' && await css(f, '.jump a', 'border-radius') === '999px' && await css(f, '.wrap', 'display') === 'grid', id + ' is styled by reference.css on top of game.css'); }
   ok(await css(await frameOf('signs-conjuncts'), '.wrap', 'row-gap') === '16px' && await css(await frameOf('rosetta'), '.wrap', 'row-gap') === '14px', 'a reference page\'s own <style> still wins over reference.css');
   fr0 = await frameOf('links');
   ok(await fr0.evaluate(() => { const g = s => getComputedStyle(document.querySelector(s)); const t = [...document.querySelectorAll('a.tile.link')].map(e => e.getBoundingClientRect());
@@ -67,6 +67,16 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
     ok(await fr0.evaluate(([id, total]) => !!window.GameCore && GameCore.current.id === id && GameCore.current.total === total && GameCore.current.deck.length === total && document.querySelectorAll('.kb-btn').length > 1 && !!document.getElementById('retry-btn') && document.getElementById('s-total').textContent === String(total), [id, total]), id + ' runs on game-core.js (' + total + ' cards dealt, complete screen in place)'); }
   fr0 = await frameOf('lookalike-builder');
   ok(await fr0.evaluate(() => document.querySelectorAll('#kCons .key').length === TeluguData.consonants.length && document.querySelectorAll('#kDigits .key').length === TeluguData.digits.length && !!LookalikeData.rows), 'the Lookalike Builder draws its keys from TeluguData and has LookalikeData\'s CSV reader');
+  // its bar (the switch, the character, its lookalikes) stays under the header while the keyboard scrolls
+  await fr0.click('#kb .key[data-ch="క"]');
+  ok(await fr0.evaluate(() => { const g = s => getComputedStyle(document.querySelector(s)); return document.querySelector('.mode-opt[aria-checked="true"]').dataset.mode === 'looks' && g('.kb').borderTopColor === g('.mode-opt[aria-checked="true"]').borderTopColor && g('.keys.c').gridTemplateColumns.split(' ').length === 10; }),
+    'the Lookalike Builder: choosing a character switches to "Looks like" (keyboard outlined in gold); consonants run ten to a row on a wide screen');
+  ok(await fr0.evaluate(async () => { window.scrollTo(0, 400); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); const t = s => Math.round(document.querySelector(s).getBoundingClientRect().top), h = document.querySelector('.g-header').offsetHeight;
+    const r = window.scrollY > 100 && t('.g-header') === 0 && t('.pick') === h; window.scrollTo(0, 0); return r; }), 'the Lookalike Builder: the header and the character bar stay in view when the page scrolls');
+  // the reference pages: the header stays at the top (the window scrolls, not <body>)
+  for (const id of ['rosetta', 'signs-conjuncts', 'sound-charts']) { const f = await frameOf(id);
+    ok(await f.evaluate(async () => { window.scrollTo(0, 600); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); const r = window.scrollY > 300 && Math.round(document.querySelector('.g-header').getBoundingClientRect().top) === 0 && document.body.scrollTop === 0; window.scrollTo(0, 0); return r; }),
+      id + ': the header stays in view when the page scrolls'); }
   // The notation chosen on the home page reaches the next page opened (each page is loaded afresh from Home)
   await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(150);
   ok(await top.evaluate(() => [...document.querySelectorAll('#prefs .seg-opt')].map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join(' ')) === 'IPA* ISO', 'home shows the IPA | ISO control, IPA selected');

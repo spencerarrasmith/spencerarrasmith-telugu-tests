@@ -121,13 +121,16 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
   /* ── Lookalike Builder ── */
   {
     const h = load('alphabet/04_lookalike-builder.html', ISO); const { w, d, $ } = h, D = w.TeluguData;
-    const name = () => $('promptName').textContent, key = ch => [...d.querySelectorAll('.key')].find(b => b.dataset.ch === ch);
+    const name = () => $('promptName').querySelector('b').textContent, key = ch => [...d.querySelectorAll('.key')].find(b => b.dataset.ch === ch);
     const title = k => k.title.replace(' (the character shown)', '');
-    ok(name() === 'a · vowel', 'Builder: the character shown is named in ISO (a · vowel)');
+    key('అ').click();
+    ok(name() === 'a' && $('promptName').textContent === 'avowel', 'Builder: the character chosen is named in ISO (a)');
     ok(title(key('క')) === 'ka' && title(key('ట')) === 'ṭa' && title(key('ఆ')) === 'ā' && [...d.querySelectorAll('#kVowels .key, #kCons .key')].every(k => title(k) === D.letters.find(l => l.ch === k.dataset.ch).iso), 'Builder: every letter key\'s tooltip is its ISO spelling');
     ok([...d.querySelectorAll('#signs .key')].map(k => k.title).join(' | ').startsWith('vowel sign ā | vowel sign i | vowel sign ī') && d.querySelector('#signs .key[data-sign="్"]').title === 'no vowel (pollu)' && d.querySelector('#signs .key[data-sign="ం"]').title === 'vowel sign aṁ', 'Builder: sign keys say what the sign adds, in ISO');
-    const typed = t => { $('other').value = t; $('otherPrompt').click(); return name(); };
-    ok(typed('కా').startsWith('kā ·') && typed('క్ష').startsWith('kṣa ·') && typed('క్ప్త').startsWith('kpta ·') && typed('౫').startsWith('5 ·'), 'Builder: typed characters are named in ISO (kā, kṣa, kpta); a digit is still its number');
+    const typed = t => { d.querySelector('.mode-opt[data-mode="character"]').click(); $('other').value = t; $('otherForm').dispatchEvent(new w.Event('submit', { bubbles: true, cancelable: true })); return name(); };
+    ok(typed('కా') === 'kā' && typed('క్ష') === 'kṣa' && typed('స్త్రీ') === 'strī' && typed('౫') === '5', 'Builder: typed characters are named in ISO (kā, kṣa, strī); a digit is still its number');
+    d.querySelector('.mode-opt[data-mode="character"]').click(); d.getElementById('stack').click(); [...d.querySelectorAll('#kCons .key')].find(k => k.dataset.base === 'క').click();
+    ok(title(key('క్య')) === 'kya' && title(key('క్ష')) === 'kṣa' && d.querySelector('#prefixChips .chip').title === 'Remove ka', 'Builder: conjunct keys carry their ISO spelling (kya, kṣa)');
     ok(noSlash(name()) && [...d.querySelectorAll('.key')].every(k => noSlash(k.title)), 'Builder: no slashes anywhere');
   }
 

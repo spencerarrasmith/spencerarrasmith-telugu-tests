@@ -51,7 +51,8 @@ To run some suites only: `npm test -- e2e_index e2e_signs`.
 | `unit_*` | `settings.js`, `units.js`, `telugu-data.js` (letters, both notations, `read()`), `lookalikes-data.js`, `progress.js` (including the stored format and the upgrade of an old store) |
 | `e2e_index`, `e2e_review`, `e2e_lesson`, `e2e_placeholder` | Home page (sections that fold away, tiles, routes, ✓, and counts), Review, the lesson template, the 34 "Coming soon" pages drawn from `units.js` |
 | `e2e_gamecore` | `game-core.js` on its own with a three-card deck: deal, sample a session, judge, re-queue, counters, complete screen, empty pool, ✓, and Review; and that none of the four games keeps a copy of the round |
-| `e2e_pho*`, `e2e_dia*`, `e2e_conj*`, `e2e_look`, `e2e_builder` | The games and the Lookalike Builder, click by click; the builder's letters, sounds, flags, and CSV reading against the shared data |
+| `e2e_pho*`, `e2e_dia*`, `e2e_conj*`, `e2e_look` | The games, click by click |
+| `e2e_builder` | The Lookalike Builder: the Character / Looks like switch, choosing and picking, conjuncts limited to the listed ones (every key offered is one the Lookalikes game can read), stored picks, CSV export and import, and its letters, sounds, and flags against the shared data |
 | `e2e_external` | The External Links page: the links, that each opens in a new tab, and that every thumbnail is requested from the linked site and falls back to the site's initial when it cannot be loaded. Wikipedia's answer is stood in for; no test touches another site |
 | `e2e_rosetta`, `e2e_signs`, `e2e_sounds` | The three reference pages. `e2e_sounds` checks that every Telugu and English sound is drawn once, in the right box of the consonant grid or spot on the vowel chart |
 | `e2e_iso` | Every page again for a reader who chose ISO on the home page: spellings like `ka`, `kā`, `kṣa` and no slashes anywhere. The other suites run in IPA, the default |
