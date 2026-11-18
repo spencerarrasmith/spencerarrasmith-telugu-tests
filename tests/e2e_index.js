@@ -62,6 +62,43 @@ ok(d.querySelectorAll('a.tile').length === 44 && d.querySelectorAll('a.tile.soon
   seg()[1].click(); ok(on() === 'iso', 'choosing the selected option again changes nothing');
   w.TeluguSettings.set('notation', 'ipa'); ok(on() === 'ipa' && d.getElementById('pref-eg').textContent === 'క is written /k/', 'a change made elsewhere (another tab) shows here at once');
   ok(!/telugu-data\.js/.test(src) && /Settings\.set\('notation'/.test(src), 'the home page only stores the choice; it loads no letter data');
+  /* ── a section folds away to its heading line ── */
+  {
+    const KEY = 'telugu.home.v1';
+    const sec = t => d.querySelector(`.section[data-section="${t}"]`), btn = t => sec(t).querySelector('.section-toggle'), tiles = t => sec(t).querySelector('.tiles');
+    const stored = win => JSON.parse(win.localStorage.getItem(KEY) || '{}').collapsed || [];
+    ok(S.every(s => btn(s.title) && btn(s.title).tagName === 'BUTTON' && btn(s.title).closest('.section-head') && btn(s.title).querySelector('svg path')), 'every section heading ends in an arrow button');
+    ok(S.every(s => btn(s.title).getAttribute('aria-expanded') === 'true' && btn(s.title).getAttribute('aria-controls') === tiles(s.title).id && btn(s.title).getAttribute('aria-label') === 'Hide ' + s.title && !tiles(s.title).hidden && !sec(s.title).classList.contains('collapsed')),
+      'all sections start open; each button says what it will do ("Hide Alphabet") and names the tiles it controls');
+    ok(w.localStorage.getItem(KEY) === null && !d.querySelector('.featured .section-toggle'), 'nothing is stored until a section is folded; the Review strip has no arrow');
+    btn('Alphabet').click();
+    ok(tiles('Alphabet').hidden && sec('Alphabet').classList.contains('collapsed') && btn('Alphabet').getAttribute('aria-expanded') === 'false' && btn('Alphabet').getAttribute('aria-label') === 'Show Alphabet' && btn('Alphabet').title === 'Show Alphabet',
+      'the arrow folds its section: tiles hidden, button now reads "Show Alphabet"');
+    ok(sec('Alphabet').querySelector('.section-title').textContent === 'Alphabet' && sec('Alphabet').querySelector('.section-count').textContent === '5 of 8 ready · 1 done', 'the heading line stays, with its name and count');
+    ok(S.filter(s => s.title !== 'Alphabet').every(s => !tiles(s.title).hidden && btn(s.title).getAttribute('aria-expanded') === 'true'), 'the other sections are not touched');
+    ok(stored(w).join() === 'Alphabet', 'the folded section is remembered in this browser');
+    ok(d.querySelectorAll('a.tile').length === 44 && tiles('Alphabet').querySelectorAll('a.tile').length === 8, 'its tiles are still there, only hidden');
+    w.location.hash = '#/rosetta'; await wait(); w.location.hash = '#/'; await wait();
+    ok(tiles('Alphabet').hidden && btn('Alphabet').getAttribute('aria-expanded') === 'false' && !tiles('Reference').hidden, 'it is still folded after opening a page and coming back');
+    P.complete('diacritics', { accuracy: 80 });
+    ok(tiles('Alphabet').hidden && sec('Alphabet').querySelector('.section-count').textContent === '5 of 8 ready · 2 done', 'a folded section keeps counting: ' + sec('Alphabet').querySelector('.section-count').textContent);
+    w.location.hash = '#/phonemes'; await wait();
+    ok(!d.getElementById('app').hidden && frame.getAttribute('src') === 'alphabet/01_phonemes.html', 'a page in a folded section still opens by its address');
+    w.location.hash = '#/'; await wait();
+    btn('Grammar').click(); btn('Alphabet').click();
+    ok(!tiles('Alphabet').hidden && !sec('Alphabet').classList.contains('collapsed') && btn('Alphabet').getAttribute('aria-expanded') === 'true' && btn('Alphabet').getAttribute('aria-label') === 'Hide Alphabet' && stored(w).join() === 'Grammar',
+      'the arrow opens it again; only Grammar is now remembered as folded');
+    // the next visit: the stored sections start folded, and a stored name that no longer exists is ignored
+    const visit = value => new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost/index.html', beforeParse(win) { if (value !== undefined) win.localStorage.setItem(KEY, value); } }).window;
+    const folded = win => [...win.document.querySelectorAll('.section.collapsed')].map(s => s.dataset.section).join();
+    let v = visit(JSON.stringify({ collapsed: ['Grammar', 'Vocabulary', 'Resources'] }));
+    ok(folded(v) === 'Grammar,Vocabulary' && [...v.document.querySelectorAll('.section.collapsed .tiles')].every(t => t.hidden) && v.document.querySelectorAll('.section-toggle[aria-expanded="false"]').length === 2, 'on the next visit the same sections start folded (a section that no longer exists is ignored)');
+    ok(['not json', 'null', '[]', '{"collapsed":"Grammar"}', '{"collapsed":[1,null]}'].every(x => folded(visit(x)) === '' ), 'unreadable storage leaves every section open');
+    v = visit(); v.Storage.prototype.setItem = () => { throw new Error('blocked'); };
+    v.document.querySelector('.section-toggle').click();
+    ok(folded(v) === 'Reference', 'with storage blocked the arrow still works for this visit');
+    ok(/\.section-toggle\[aria-expanded="false"\] svg \{ transform: rotate\(-90deg\); \}/.test(fs.readFileSync(dir + 'home.css', 'utf8')) && /\.section\.collapsed/.test(fs.readFileSync(dir + 'home.css', 'utf8')), 'home.css turns the arrow to the side and tightens a folded section');
+  }
   // placeholder pages themselves: e2e_placeholder
   console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
 })();

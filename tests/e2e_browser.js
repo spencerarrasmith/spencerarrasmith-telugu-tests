@@ -35,6 +35,15 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   const top = pg.mainFrame();
   ok(await css(top, 'body', 'background-color') === 'rgb(11, 12, 24)' && await css(top, 'a.tile', 'border-radius') === '16px' && await css(top, '.tiles', 'display') === 'grid', 'home page is styled by home.css on top of base.css');
   ok(await css(top, ':root', '--accent-glow') === 'rgba(201, 152, 26, 0.16)', 'home page takes its color tokens from base.css (accent glow 0.16)');
+  // a section folds away to its heading line, and opens again
+  const fold = () => top.evaluate(() => { const s = document.querySelectorAll('.section')[1], b = s.querySelector('.section-toggle');
+    return { h: Math.round(s.getBoundingClientRect().height), tiles: getComputedStyle(s.querySelector('.tiles')).display, turned: getComputedStyle(b.querySelector('svg')).transform !== 'none', line: getComputedStyle(s.querySelector('.section-head')).borderBottomWidth }; });
+  const open0 = await fold();
+  await pg.click('.section:nth-of-type(2) .section-toggle'); await pg.waitForTimeout(250);
+  const shut0 = await fold();
+  ok(open0.h > 200 && open0.tiles === 'grid' && !open0.turned && shut0.h < 40 && shut0.tiles === 'none' && shut0.turned && shut0.line === '1px', 'the arrow folds a section down to its heading line (' + open0.h + 'px → ' + shut0.h + 'px) and turns to the side');
+  await pg.click('.section:nth-of-type(2) .section-toggle'); await pg.waitForTimeout(250);
+  ok((await fold()).h === open0.h, 'and opens it again');
   let fr0 = await frameOf('vocab-greetings');
   ok(await css(fr0, '.unit-icon', 'width') === '52px' && await css(fr0, '.facts', 'border-radius') === '16px' && await css(fr0, 'body', 'background-color') === 'rgb(11, 12, 24)', 'a placeholder is styled by shell.css');
   ok(await fr0.evaluate(() => document.querySelector('h1').textContent + '|' + document.querySelectorAll('.fact').length) === 'Greetings|3', 'a placeholder draws its title and three lines from units.js');

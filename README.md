@@ -49,7 +49,7 @@ To run some suites only: `npm test -- e2e_index e2e_signs`.
 |---|---|
 | `e2e_links`, `static_css` | Every stylesheet, script, and `@import` resolves; no old file names left; pages are numbered `NN_name.html` (from `00` or `01`); one stylesheet per kind of page (`home.css`, `game.css`, `shell.css`, `reference.css`); color tokens, reset, and fonts only in `base.css` |
 | `unit_*` | `settings.js`, `units.js`, `telugu-data.js` (letters, both notations, `read()`), `lookalikes-data.js`, `progress.js` (including the stored format and the upgrade of an old store) |
-| `e2e_index`, `e2e_review`, `e2e_lesson`, `e2e_placeholder` | Home page (sections, tiles, routes, ✓, and counts), Review, the lesson template, the 34 "Coming soon" pages drawn from `units.js` |
+| `e2e_index`, `e2e_review`, `e2e_lesson`, `e2e_placeholder` | Home page (sections that fold away, tiles, routes, ✓, and counts), Review, the lesson template, the 34 "Coming soon" pages drawn from `units.js` |
 | `e2e_gamecore` | `game-core.js` on its own with a three-card deck: deal, sample a session, judge, re-queue, counters, complete screen, empty pool, ✓, and Review; and that none of the four games keeps a copy of the round |
 | `e2e_pho*`, `e2e_dia*`, `e2e_conj*`, `e2e_look`, `e2e_builder` | The games and the Lookalike Builder, click by click; the builder's letters, sounds, flags, and CSV reading against the shared data |
 | `e2e_external` | The External Links page: the links, that each opens in a new tab, and that every thumbnail is requested from the linked site and falls back to the site's initial when it cannot be loaded. Wikipedia's answer is stood in for; no test touches another site |
