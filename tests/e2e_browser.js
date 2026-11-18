@@ -8,18 +8,19 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 1200, height: 800 } });
   const errs = []; const missing = [];
   pg.on('pageerror', e => errs.push(e.message)); pg.on('response', r => { if (r.status() >= 400 && r.url().includes('localhost')) missing.push(r.status() + ' ' + r.url()); });
-  await pg.route(/fonts\.(googleapis|gstatic)\.com/, rt => rt.abort());
+  // Nothing outside this folder is fetched: not the web fonts, and not the thumbnails the External Links page takes from other sites.
+  await pg.route(u => u.hostname !== 'localhost', rt => rt.abort());
   await pg.goto('http://localhost:8779/index.html'); await pg.waitForTimeout(300);
   const tiles = await pg.evaluate(() => TeluguUnits.all.map(t => ({ id: t.id, src: t.src, title: t.title, soon: !!t.soon })));
-  ok(tiles.length === 43, tiles.length + ' tiles (42 + Review)');
+  ok(tiles.length === 44, tiles.length + ' tiles (43 + Review)');
   let opened = 0, titled = 0;
   for (const t of tiles) {
     await pg.evaluate(id => { location.hash = '#/' + id; }, t.id); let fr; for (let i = 0; i < 40 && !fr; i++) { await pg.waitForTimeout(50); fr = pg.frames().find(f => f.url().endsWith('/' + t.src)); }
     if (!fr) console.log('   not loaded:', t.id, t.src, pg.frames().map(f => f.url()).join(' '));
     if (fr) { opened++; await fr.waitForLoadState('load').catch(() => {}); if (await fr.title()) titled++; else console.log('   no title:', t.src); }
   }
-  ok(opened === 43, 'every tile loads its page in the iframe at the right path: ' + opened + '/43');
-  ok(titled === 43, 'every loaded page has a title');
+  ok(opened === 44, 'every tile loads its page in the iframe at the right path: ' + opened + '/44');
+  ok(titled === 44, 'every loaded page has a title');
   // the live pages actually initialise (their shared scripts were found)
   const live = { 'alphabet/01_phonemes.html': 'TeluguData', 'alphabet/02_diacritics.html': 'TeluguData', 'alphabet/03_conjuncts.html': 'TeluguData', 'alphabet/04_lookalike-builder.html': 'LookalikeData', 'alphabet/05_lookalikes.html': 'LookalikeData', 'reference/01_rosetta.html': 'RosettaData', 'reference/02_signs-conjuncts.html': 'SignsConjunctsData', 'reference/03_sound-charts.html': 'SoundChartsData' };
   for (const [src, g] of Object.entries(live)) {
@@ -42,6 +43,12 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   for (const id of ['rosetta', 'signs-conjuncts', 'sound-charts']) { const f = await frameOf(id);
     ok(await css(f, '.g-header', 'position') === 'sticky' && await css(f, 'body', 'overflow-y') === 'auto' && await css(f, '.jump a', 'border-radius') === '999px' && await css(f, '.wrap', 'display') === 'grid', id + ' is styled by reference.css on top of game.css'); }
   ok(await css(await frameOf('signs-conjuncts'), '.wrap', 'row-gap') === '16px' && await css(await frameOf('rosetta'), '.wrap', 'row-gap') === '14px', 'a reference page\'s own <style> still wins over reference.css');
+  fr0 = await frameOf('links');
+  ok(await fr0.evaluate(() => { const g = s => getComputedStyle(document.querySelector(s)); const t = [...document.querySelectorAll('a.tile.link')].map(e => e.getBoundingClientRect());
+    return t.length === 6 && g('.tiles').display === 'grid' && g('.tile.link').borderRadius === '16px' && g('.tile-thumb').height === '96px' && g('.tile-page').overflowY === 'auto' && t[0].top === t[1].top && t[1].left > t[0].right; }),
+    'External Links is laid out by home.css: a grid of tiles, each with a thumbnail band, in a page that scrolls');
+  await fr0.waitForFunction(() => !document.querySelector('.tile-thumb img'), null, { timeout: 5000 }).catch(() => {});
+  ok(await fr0.evaluate(() => [...document.querySelectorAll('.tile-thumb')].map(b => b.querySelector('img') ? '?' : b.textContent.trim()).join('')) === 'WWWOTL', 'with the other sites out of reach, every link tile falls back to its site initial');
   fr0 = await frameOf('sound-charts');
   ok(await fr0.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(), v = r('#vowel-chart svg'), g = c => getComputedStyle(document.querySelector(c));
     return v.width > 300 && v.height > 150 && g('#cons .ph.both').backgroundColor !== g('#cons .ph.te').backgroundColor && g('#cons th.row').position === 'sticky' && g('#vowel-chart').overflowX === 'auto' && g('#cons .tel .te').fontFamily.includes('Noto Sans Telugu'); }),

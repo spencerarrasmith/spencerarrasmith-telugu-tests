@@ -9,7 +9,7 @@ ok(top.filter(n => fs.statSync(path.join(dir, n)).isFile()).join() === 'README.m
 ok(!top.includes('shared') && ['advanced-grammar', 'alphabet', 'grammar', 'reference', 'vocabulary'].every(n => top.includes(n)) && top.filter(n => fs.statSync(path.join(dir, n)).isDirectory()).length === 5, 'folders: ' + top.filter(n => fs.statSync(path.join(dir, n)).isDirectory()).join(' '));
 const pages = files.filter(f => /\.html$/.test(f) && path.dirname(f) !== dir);
 ok(pages.every(f => /^\d\d_[a-z-]+\.html$/.test(path.basename(f))), pages.length + ' section pages are named NN_name.html');
-ok(['reference', 'alphabet', 'grammar', 'vocabulary', 'advanced-grammar'].every(sec => { const n = pages.filter(f => rel(f).startsWith(sec + '/')).map(f => +path.basename(f).slice(0, 2)).sort((a, b) => a - b); return n.length && n.every((v, i) => v === i + 1); }), 'numbering in each folder runs 01, 02, 03 … with no gaps');
+ok(['reference', 'alphabet', 'grammar', 'vocabulary', 'advanced-grammar'].every(sec => { const n = pages.filter(f => rel(f).startsWith(sec + '/')).map(f => +path.basename(f).slice(0, 2)).sort((a, b) => a - b); return n.length && n[0] <= 1 && n.every((v, i) => v === i + n[0]); }), 'numbering in each folder runs on from 00 or 01 with no gaps');
 let bad = [];
 files.filter(f => /\.(html|css|js)$/.test(f)).forEach(f => {
   const s = fs.readFileSync(f, 'utf8');
@@ -18,7 +18,7 @@ files.filter(f => /\.(html|css|js)$/.test(f)).forEach(f => {
 });
 ok(bad.length === 0, 'every stylesheet, script and @import resolves' + (bad.length ? ': ' + bad.join(' | ') : ''));
 const srcs = require(path.join(dir, 'units.js')).all.map(t => t.src);
-ok(srcs.length === 43 && srcs.every(s => fs.existsSync(path.join(dir, s))), 'all ' + srcs.length + ' tile sources in units.js (42 + Review) exist');
+ok(srcs.length === 44 && srcs.every(s => fs.existsSync(path.join(dir, s))), 'all ' + srcs.length + ' tile sources in units.js (43 + Review) exist');
 const stale = JSON.parse(fs.readFileSync(path.join(__dirname, 'old-names.json'), 'utf8'));
 const hits = []; files.filter(f => /\.(html|css|js)$/.test(f)).forEach(f => { const s = fs.readFileSync(f, 'utf8'); stale.forEach(o => { if (new RegExp('(^|[^\\w/_-])' + o.replace('.', '\\.') + '\\b').test(s)) hits.push(rel(f) + ': ' + o); }); });
 ok(hits.length === 0, 'no old flat file names remain anywhere' + (hits.length ? ': ' + hits.slice(0, 8).join(' | ') : ''));

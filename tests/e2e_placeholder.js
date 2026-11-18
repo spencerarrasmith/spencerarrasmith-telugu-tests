@@ -33,7 +33,7 @@ ok(bad.own.length === 0, 'none carries styles, colour tokens, fonts or text of i
 const wrong = [];
 soon.forEach(t => { const { d, errs } = load(t.src); const txt = s => (d.querySelector(s) || {}).textContent;
   const facts = [...d.querySelectorAll('.fact')].map(f => f.querySelector('.fact-label').textContent + '=' + f.querySelector('p').textContent).join('|');
-  const want = `What you'll learn=${t.soon.learn}|How you'll practise=${t.soon.practise}|Where it fits=${t.soon.fits}`;
+  const want = `What you'll learn=${t.soon.learn}|How you'll practice=${t.soon.practice}|Where it fits=${t.soon.fits}`;
   if (errs.length || txt('h1') !== t.title || txt('.eyebrow') !== U.sectionOf(t.id).title || txt('.unit-icon') !== t.icon || txt('.lead') !== t.desc || txt('.pill.soon') !== 'Coming soon' || facts !== want || d.title !== t.title + ' · Telugu Suite') wrong.push(t.id + (errs[0] ? ' (' + errs[0] + ')' : ''));
 });
 ok(wrong.length === 0, 'all 34 render section, icon, title, "Coming soon", description and the three lines from units.js ' + wrong.join(', '));
@@ -43,7 +43,7 @@ const { w, d } = load('vocabulary/01_greetings.html');
 ok(d.querySelector('.shell > .shell-head .eyebrow').textContent === 'Vocabulary' && d.querySelector('.shell > .shell-body .facts').children.length === 3, 'the page uses the lesson frame (shell head + scrolling body)');
 ok(!d.querySelector('.stepper') && !d.querySelector('.shell-foot') && !d.querySelector('#ls-done'), 'no Learn/Practice steps, footer or "Completed" pill on a placeholder');
 ok(d.querySelector('.unit-icon').getAttribute('aria-hidden') === 'true', 'the icon is decorative');
-ok(load('reference/04_idioms.html').d.querySelector('.eyebrow').textContent === 'Resources', 'Resources placeholders carry the section\'s own name (was "Reference")');
+ok(load('reference/04_idioms.html').d.querySelector('.eyebrow').textContent === 'Reference', 'Reference placeholders carry the section\'s own name, read from units.js');
 ok(load('grammar/02_nouns.html').d.querySelector('h1').innerHTML === 'Nouns: gender &amp; number', 'text is escaped, not injected as HTML');
 
 // the API

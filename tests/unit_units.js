@@ -4,20 +4,20 @@ const fs = require('fs'), path = require('path');
 const U = require(path.join(SITE_DIR, 'units.js'));
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
 
-ok(U.sections.map(s => s.title).join(' · ') === 'Resources · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'five sections, Resources first');
-ok(U.sections.map(s => s.tiles.length).join() === '6,8,8,12,8' && U.tiles.length === 42, 'tile counts 6/8/8/12/8 = 42');
-ok(U.featured.map(t => t.id).join() === 'review' && U.all.length === 43 && U.all[0].id === 'review', 'Review is featured; all = Review + the 42 tiles');
-ok(new Set(U.all.map(t => t.id)).size === 43 && new Set(U.all.map(t => t.src)).size === 43, 'ids and page paths are unique');
+ok(U.sections.map(s => s.title).join(' · ') === 'Reference · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'five sections, Reference first');
+ok(U.sections.map(s => s.tiles.length).join() === '7,8,8,12,8' && U.tiles.length === 43, 'tile counts 7/8/8/12/8 = 43');
+ok(U.featured.map(t => t.id).join() === 'review' && U.all.length === 44 && U.all[0].id === 'review', 'Review is featured; all = Review + the 43 tiles');
+ok(new Set(U.all.map(t => t.id)).size === 44 && new Set(U.all.map(t => t.src)).size === 44, 'ids and page paths are unique');
 ok(U.all.every(t => t.id && t.icon && t.title && t.desc && t.src && /^[a-z0-9-]+$/.test(t.id)), 'every tile has id, icon, title, desc and src');
 ok(U.all.every(t => fs.existsSync(path.join(SITE_DIR, t.src))), 'every src is a file');
 const soon = U.tiles.filter(t => t.soon);
-ok(soon.length === 34 && soon.every(t => ['learn', 'practise', 'fits'].every(k => typeof t.soon[k] === 'string' && t.soon[k].length > 10)), '34 placeholders, each with its three lines (learn, practise, fits)');
-ok(U.tiles.filter(t => !t.soon).map(t => t.id).join() === 'rosetta,signs-conjuncts,sound-charts,phonemes,diacritics,conjuncts,lookalike-builder,lookalikes', 'the 8 built pages carry no `soon` block');
+ok(soon.length === 34 && soon.every(t => ['learn', 'practice', 'fits'].every(k => typeof t.soon[k] === 'string' && t.soon[k].length > 10)), '34 placeholders, each with its three lines (learn, practice, fits)');
+ok(U.tiles.filter(t => !t.soon).map(t => t.id).join() === 'links,rosetta,signs-conjuncts,sound-charts,phonemes,diacritics,conjuncts,lookalike-builder,lookalikes', 'the 9 built pages carry no `soon` block');
 ok(!soon.some(t => /once progress tracking exists/.test(JSON.stringify(t.soon))), 'no placeholder still talks about progress tracking as future work');
 
 // lookups
 ok(U.get('phonemes').src === 'alphabet/01_phonemes.html' && U.get('review').src === 'review.html' && U.get('nope') === null, 'get(id) finds tiles and Review; null when unknown');
-ok(U.sectionOf('vocab-greetings').title === 'Vocabulary' && U.sectionOf('rosetta').title === 'Resources' && U.sectionOf('review') === null, 'sectionOf(id) gives the section (none for Review)');
+ok(U.sectionOf('vocab-greetings').title === 'Vocabulary' && U.sectionOf('rosetta').title === 'Reference' && U.sectionOf('review') === null, 'sectionOf(id) gives the section (none for Review)');
 
 // Review names
 ok(U.label('phonemes') === 'Phonemes' && U.label('conjuncts') === 'Conjuncts' && U.label('diacritics') === 'Diacritics', 'label: a game is named by its tile title');

@@ -4,13 +4,14 @@ const fs = require('fs'), path = require('path');
 // load(file)                       the page as a first-time visitor gets it (sounds in IPA)
 // load(file, { notation: 'iso' })  the page for a reader who chose ISO on the home page
 // load(file, { storage: {...} })   any localStorage entries to have in place before the page's scripts run
+// load(file, { before: win => … }) anything else to set up on the window first (a stand-in for fetch, say)
 module.exports = function load(file, opts = {}) {
   const dir = (SITE_DIR + '/');
   const storage = Object.assign({}, opts.storage, opts.notation ? { 'telugu.settings.v1': JSON.stringify({ notation: opts.notation }) } : {});
   const html = fs.readFileSync(dir + file, 'utf8').replace(/<link[^>]*>/g, '')
     .replace(/<script src="([^"]+)"><\/script>/g, (m, src) => '<script>' + fs.readFileSync(path.resolve(dir, path.dirname(file), src), 'utf8') + '</script>');
   const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost/' + file,
-    beforeParse(win) { Object.entries(storage).forEach(([k, v]) => win.localStorage.setItem(k, v)); } });
+    beforeParse(win) { Object.entries(storage).forEach(([k, v]) => win.localStorage.setItem(k, v)); if (opts.before) opts.before(win); } });
   const w = dom.window, d = w.document;
   w.HTMLElement.prototype.scrollIntoView = () => {};
   const realST = w.setTimeout.bind(w);
