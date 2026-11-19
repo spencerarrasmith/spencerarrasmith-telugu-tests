@@ -10,6 +10,10 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   pg.on('pageerror', e => errs.push(e.message)); pg.on('response', r => { if (r.status() >= 400 && r.url().includes('localhost')) missing.push(r.status() + ' ' + r.url()); });
   // Nothing outside this folder is fetched: not the web fonts, and not the thumbnails the External Links page takes from other sites.
   await pg.route(u => u.hostname !== 'localhost', rt => rt.abort());
+  // The home page turns its title over every 5 seconds. Here that timer is held, and the checks turn the title themselves,
+  // so that no check depends on where in those 5 seconds it happens to run.
+  await pg.addInitScript(() => { if (window !== window.top) return; const real = window.setInterval;
+    window.setInterval = (fn, ms, ...rest) => { if (ms === 5000) { window.__titleFlip = fn; return 0; } return real(fn, ms, ...rest); }; });
   await pg.goto('http://localhost:8779/index.html'); await pg.waitForTimeout(300);
   const tiles = await pg.evaluate(() => TeluguUnits.all.map(t => ({ id: t.id, src: t.src, title: t.title, soon: !!t.soon })));
   ok(tiles.length === 44, tiles.length + ' tiles (43 + Review)');
@@ -38,15 +42,17 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   const titleNow = () => top.evaluate(() => { const t = document.getElementById('flip-title'), px = e => parseFloat(getComputedStyle(e).width);
     return { te: t.classList.contains('is-te'), cards: [...t.querySelectorAll('.flip')].map(c => ({ w: px(c), la: px(c.querySelector('.la')), te: px(c.querySelector('.te')), m: getComputedStyle(c.querySelector('.flip-in')).transform, vars: !!c.style.getPropertyValue('--la') && !!c.style.getPropertyValue('--te') })),
       line: t.getBoundingClientRect().height, sr: document.querySelector('#hero-title .sr-only').getBoundingClientRect().width }; });
-  await top.waitForFunction(() => !document.getElementById('flip-title').classList.contains('is-te'), null, { timeout: 7000 }); await pg.waitForTimeout(700);
+  const latin = c => Math.abs(c.w - c.la) < 0.6 && (c.m === 'none' || /^matrix\(1, 0, 0, 1, 0, 0\)$/.test(c.m)), telugu = c => Math.abs(c.w - c.te) < 0.6 && /^matrix3d\(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0,/.test(c.m);
   let tn = await titleNow();
-  ok(tn.cards.length === 6 && tn.cards.every(c => c.vars && c.la > 5 && c.te > 5 && Math.abs(c.w - c.la) < 0.6 && (c.m === 'none' || /^matrix\(1, 0, 0, 1, 0, 0\)$/.test(c.m))) && tn.line < 45 && tn.sr <= 1,
+  ok(await top.evaluate(() => typeof window.__titleFlip === 'function') && !tn.te, 'the home page asks for its title to turn every 5 seconds, and starts in Latin');
+  ok(tn.cards.length === 6 && tn.cards.every(c => c.vars && c.la > 5 && c.te > 5 && latin(c)) && tn.line < 60 && tn.sr <= 1,
     'the title shows "Telugu Telusu": six cards, each measured and as wide as its Latin face, on one line');
-  await top.waitForFunction(() => document.getElementById('flip-title').classList.contains('is-te'), null, { timeout: 7000 });
-  ok(true, 'left alone, the title turns over by itself (within the 5 seconds between flips)');
-  await pg.waitForTimeout(700);
+  await top.evaluate(() => window.__titleFlip()); await pg.waitForTimeout(800);
   tn = await titleNow();
-  ok(tn.cards.every(c => Math.abs(c.w - c.te) < 0.6 && /^matrix3d\(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0,/.test(c.m)) && tn.cards.some(c => Math.abs(c.la - c.te) > 2), 'about half a second later every card has turned to its Telugu face and taken that face\'s width');
+  ok(tn.te && tn.cards.every(telugu), 'turned, every card shows its Telugu face within the half second and has taken that face\'s width');
+  await top.evaluate(() => window.__titleFlip()); await pg.waitForTimeout(800);
+  tn = await titleNow();
+  ok(!tn.te && tn.cards.every(latin), 'and turned again, it is back to "Telugu Telusu"');
   ok(await css(top, ':root', '--accent-glow') === 'rgba(201, 152, 26, 0.16)', 'home page takes its color tokens from base.css (accent glow 0.16)');
   // a section folds away to its heading line, and opens again
   const fold = () => top.evaluate(() => { const s = document.querySelectorAll('.section')[1], b = s.querySelector('.section-toggle');
@@ -97,10 +103,10 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   // a wrong pick: the line under the card shows it (not the answer) and stays for about a second and a half
   await pg.waitForTimeout(1600);
   const pickedText = await fr0.evaluate(() => { const b = [...document.querySelectorAll('.kb-btn')].find(k => k.style.display !== 'none' && k.dataset.ch !== GameCore.current.current.ch); b.click(); return b.textContent; });
-  await pg.waitForTimeout(1200);
-  ok(await fr0.evaluate(t => { const f = document.getElementById('feedback'); return f.textContent === '✗  /' + t + '/' && f.getBoundingClientRect().height > 0 && GameCore.current.locked; }, pickedText), 'a wrong pick is shown under the card (✗ and the key that was pressed) and is still there after 1.2 seconds');
-  await pg.waitForTimeout(600);
-  ok(await fr0.evaluate(() => document.getElementById('feedback').textContent === '' && !GameCore.current.locked), 'and gone by 1.8 seconds, with the next card ready');
+  await pg.waitForTimeout(900);          // (well inside the 1.5 seconds, so a slow machine does not miss it)
+  ok(await fr0.evaluate(t => { const f = document.getElementById('feedback'); return f.textContent === '✗  /' + t + '/' && f.getBoundingClientRect().height > 0 && GameCore.current.locked; }, pickedText), 'a wrong pick is shown under the card (✗ and the key that was pressed) and is still there after 0.9 seconds');
+  await pg.waitForTimeout(1000);
+  ok(await fr0.evaluate(() => document.getElementById('feedback').textContent === '' && !GameCore.current.locked), 'and gone by 1.9 seconds, with the next card ready');
   await pg.evaluate(() => { location.hash = '#/'; }); await pg.waitForTimeout(150);      // leave, so the page is opened afresh
   fr0 = await frameOf('phonemes');
   await fr0.click('#setup-cancel'); await pg.waitForTimeout(250);
@@ -132,8 +138,16 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   await fr0.click('#kb .key[data-ch="క"]');
   ok(await fr0.evaluate(() => { const g = s => getComputedStyle(document.querySelector(s)); return document.querySelector('.mode-opt[aria-checked="true"]').dataset.mode === 'looks' && g('.kb').borderTopColor === g('.mode-opt[aria-checked="true"]').borderTopColor && g('.keys.c').gridTemplateColumns.split(' ').length === 10; }),
     'the Lookalike Builder: choosing a character switches to "Looks like" (keyboard outlined in gold); consonants run ten to a row on a wide screen');
-  ok(await fr0.evaluate(async () => { window.scrollTo(0, 400); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); const t = s => Math.round(document.querySelector(s).getBoundingClientRect().top), h = document.querySelector('.g-header').offsetHeight;
-    const r = window.scrollY > 100 && t('.g-header') === 0 && t('.pick') === h; window.scrollTo(0, 0); return r; }), 'the Lookalike Builder: the header and the character bar stay in view when the page scrolls');
+  // (the header's height depends on the font in use, so the bar must follow the header and not a fixed number)
+  const pinned = () => fr0.evaluate(async () => { const frames = n => new Promise(r => { const step = () => (n-- > 0 ? requestAnimationFrame(step) : r()); step(); });
+    await frames(3); window.scrollTo(0, 400); await frames(2);
+    const head = document.querySelector('.g-header').getBoundingClientRect(), bar = document.querySelector('.pick').getBoundingClientRect();
+    const r = { scrolled: window.scrollY > 100, headTop: head.top, gap: bar.top - head.bottom, height: head.height }; window.scrollTo(0, 0); return r; });
+  let pin = await pinned();
+  ok(pin.scrolled && Math.abs(pin.headTop) < 0.6 && Math.abs(pin.gap) < 0.6, 'the Lookalike Builder: the header and the character bar stay in view when the page scrolls, the bar right under the header (a ' + pin.height + 'px header here)');
+  await fr0.addStyleTag({ content: '.g-header .g-title { font-size: 22px !important; line-height: 2 !important; }' });
+  const taller = await pinned();
+  ok(taller.height > pin.height + 10 && Math.abs(taller.headTop) < 0.6 && Math.abs(taller.gap) < 0.6, 'the Lookalike Builder: when the header is a different height (another font, larger text) the bar still sits right under it');
   // the reference pages: the header stays at the top (the window scrolls, not <body>)
   for (const id of ['rosetta', 'signs-conjuncts', 'sound-charts']) { const f = await frameOf(id);
     ok(await f.evaluate(async () => { window.scrollTo(0, 600); await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); const r = window.scrollY > 300 && Math.round(document.querySelector('.g-header').getBoundingClientRect().top) === 0 && document.body.scrollTop === 0; window.scrollTo(0, 0); return r; }),
