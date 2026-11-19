@@ -121,6 +121,63 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
   const extra = { k: 99 }; g7.put(extra);
   ok(g7.current === extra && g7.deck.length === 2 && g7.total === 1 && draws === 2, 'put(card) lays a card on top and draws it; the total is left alone');
 
+  /* a session's own length and miss limit: start({ size, misses }) */
+  {
+    const PAGE2 = PAGE.replace('<div id="prog-fill"></div>', '<div id="prog-fill"></div><span class="g-lives" id="s-lives" role="img" hidden></span>');
+    const w = new JSDOM(PAGE2, { runScripts: 'dangerously', url: 'http://localhost/x.html' }).window, $ = id => w.document.getElementById(id);
+    const realST = w.setTimeout.bind(w); w.setTimeout = fn => realST(fn, 0); const tick = () => new Promise(r => realST(r, 5));
+    const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{1F9E1}', L1 = '\u{1F9E1}', RING = '\u2B55';       // ❤️ · 💚🤍🧡 · 🤍🧡 · 🧡 · ⭕ (none left)
+    const lives = () => $('s-lives').hidden ? 'hidden' : $('s-lives').textContent;
+    const cards = [1, 2, 3, 4, 5, 6].map(k => ({ k })); let retried = 0;
+    const g = w.GameCore.create({ id: 'sized', pool: () => cards, render() {}, onRetry: () => { retried++; } }), P = w.TeluguProgress;
+    g.start();
+    ok(g.total === 6 && g.limit === null && g.left === null && g.misses === 0 && !g.short && !g.over && lives() === 'hidden' && !$('s-lives').hasAttribute('aria-label'), 'by default: every card, no limit on mistakes, and the hearts hidden');
+    g.start({ size: 4, misses: 3 });
+    ok(g.total === 4 && g.deck.length === 4 && g.limit === 3 && g.left === 3 && g.short && lives() === L3 && $('s-lives').getAttribute('aria-label') === 'Mistakes left: 3', 'start({ size: 4, misses: 3 }): 4 cards, 3 mistakes allowed, shown as three hearts, green white orange (read out as "Mistakes left: 3")');
+    g.start();
+    ok(g.total === 4 && g.limit === 3, 'both stay in force for a plain start()');
+    g.start(new w.Event('change'));
+    ok(g.total === 4 && g.limit === 3, 'and when start is used directly as an event handler');
+    g.judge(false); await tick();
+    ok(g.misses === 1 && g.left === 2 && !g.over && lives() === L2 && g.deck.length === 4 && !$('g-complete').classList.contains('show'), 'the first mistake: the green heart goes, white and orange are left, play goes on');
+    g.judge(true); await tick(); g.judge(false); await tick();
+    ok(g.misses === 2 && !g.over && lives() === L1 && !$('s-lives').classList.contains('out'), 'the second: the orange heart is the last one');
+    g.judge(false); await tick();
+    ok(g.misses === 3 && g.left === 0 && !g.over && lives() === RING && $('s-lives').classList.contains('out') && $('s-lives').getAttribute('aria-label') === 'Mistakes left: 0' && !$('g-complete').classList.contains('show'), 'the third: all three allowed mistakes are used, an empty ring (⭕) replaces the hearts, and play still goes on');
+    g.judge(false);
+    ok(g.over && g.misses === 4 && lives() === RING, 'the fourth is one too many: the session is over as soon as it is made');
+    await tick();
+    ok($('g-complete').classList.contains('show') && $('g-main').style.display === 'none' && $('c-title').textContent === 'Out of mistakes' && $('c-trophy').hidden && $('c-sub').textContent === '1 of 4 cleared. 3 mistakes were allowed.', 'and the complete screen says so: ' + $('c-sub').textContent);
+    ok($('c-attempts').textContent === '5' && $('c-accuracy').textContent === '20%' && $('c-errors').textContent === '4' && !P.isComplete('sized'), 'its numbers are for what was played; the unit is not marked done');
+    g.judge(true); ok(g.attempts === 5, 'judge() after it does nothing');
+    $('retry-btn').click();
+    ok(retried === 1 && g.over && $('g-complete').classList.contains('show'), 'with onRetry, "Practice Again" hands over to the page and deals nothing itself');
+    g.start({ misses: 0 });
+    ok(g.limit === 0 && lives() === RING && $('s-lives').classList.contains('out'), 'misses: 0 allows none: an empty ring (⭕) from the start');
+    g.judge(false); await tick();
+    ok(g.over && g.misses === 1 && $('c-sub').textContent === '0 of 4 cleared. No mistakes were allowed.', 'and the first mistake ends the session');
+    g.start({ misses: 1 }); g.judge(false); await tick();
+    ok(!g.over && lives() === RING, 'misses: 1 lets one go (0 and 1 are different)');
+    g.judge(false); await tick();
+    ok(g.over && $('c-sub').textContent === '0 of 4 cleared. 1 mistake was allowed.', 'and the second ends it: ' + $('c-sub').textContent);
+    const shown = n => { g.start({ misses: n }); return lives(); };
+    ok(shown(20) === H + '×20' && shown(5) === H + '×5' && shown(4) === H + '×4' && shown(3) === L3 && shown(2) === L2 && shown(1) === L1 && shown(0) === RING, 'the hearts: a red ❤️×20 … ❤️×4, then 💚🤍🧡, 🤍🧡, 🧡 (orange last), then ⭕');
+    g.start({ misses: 20 }); g.judge(false); await tick();
+    ok(lives() === H + '×19', 'a mistake takes one off the count: ❤️×19');
+    g.start({ size: 2, misses: null });
+    ok(g.limit === null && lives() === 'hidden' && g.total === 2, 'misses: null lifts the limit');
+    g.judge(true); await tick(); g.judge(true); await tick();
+    ok($('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && !$('c-trophy').hidden && !P.isComplete('sized'), 'a session shorter than the usual length finishes normally but does not mark the unit done');
+    g.start({ size: null }); for (let i = 0; i < 6; i++) { g.judge(true); await tick(); }
+    ok(g.total === 6 && !g.short && P.isComplete('sized'), 'size: null goes back to the usual length, and finishing that marks it done');
+    g.start({ size: 99 }); ok(g.total === 6 && !g.short, 'a size past the pool is the whole pool');
+    // a game with its own session length (size: 3 of 6): that length is the usual one
+    const g3 = w.GameCore.create({ id: 'sampled', size: 3, pool: () => cards, render() {} });
+    g3.start(); ok(g3.total === 3 && !g3.short, 'a game that samples (size: 3) deals 3, and that is a whole session');
+    g3.start({ size: 5 }); ok(g3.total === 5 && !g3.short, 'it can be asked for more');
+    g3.start({ size: 2 }); ok(g3.total === 2 && g3.short, 'or for fewer, which is a short session');
+  }
+
   /* every game is built on it and keeps no copy of the round */
   const GAMES = { Phonemes: 'alphabet/01_phonemes.html', Diacritics: 'alphabet/02_diacritics.html', Conjuncts: 'alphabet/03_conjuncts.html', Lookalikes: 'alphabet/05_lookalikes.html' };
   for (const [name, file] of Object.entries(GAMES)) {

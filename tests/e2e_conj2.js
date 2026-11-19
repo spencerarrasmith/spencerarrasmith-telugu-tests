@@ -8,24 +8,16 @@ const order  = () => kb().map(b => b.dataset.ipa).join('|');
 const alpha  = () => w.eval('keys.map(x => x.ipa)').join('|');
 const same   = (a, b) => a.split('|').sort().join() === b.split('|').sort().join();
 const clickBox = id => $(id).click();
-const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles: true }));
 const btn = ipa => kb().find(b => b.dataset.ipa === ipa);
 const cur = () => G().current;
 const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}');GameCore.current.put(CLUSTERS[i]);})()`);
 (async () => {
-  /* ── the ⋮ menu ── */
+  /* ── the options: in the session popup (the keyboard follows the two keyboard boxes at once) ── */
   ok(!d.querySelector('.g-controls') && !d.querySelector('.g-controls-sep') && !d.querySelector('.cat-toggle'), 'the old controls bar is gone');
-  ok($('menu-btn').closest('.g-right') && $('menu-btn').closest('.g-right').parentElement.classList.contains('g-header-top') && $('menu-btn').closest('.g-right').lastElementChild === $('menu-wrap'), '⋮ is the last item of the header: top right');
-  ok([...d.querySelectorAll('#opts-menu .menu-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include uncommon clusters', 'menu items, in order');
+  ok(!$('menu-btn') && !$('opts-menu') && !$('menu-wrap'), 'no ⋮ menu on this page');
+  ok([...d.querySelectorAll('#setup .menu-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include uncommon clusters', 'the checkboxes are in the session popup, in order');
   ok($('show-cat').checked && !$('shuffle-kb').checked && !$('include-uncommon').checked, 'defaults: categories on, shuffle + uncommon off');
-  ok($('opts-menu').hidden, 'menu starts closed');
-  $('menu-btn').click(); ok(!$('opts-menu').hidden && $('menu-btn').getAttribute('aria-expanded') === 'true', '⋮ opens it');
-  clickBox('include-uncommon'); clickBox('include-uncommon');
-  ok(!$('opts-menu').hidden, 'checking boxes keeps it open');
-  pointerdown($('kb-area')); ok($('opts-menu').hidden, 'tapping outside closes it');
-  $('menu-btn').click(); d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  ok($('opts-menu').hidden && d.activeElement === $('menu-btn'), 'Escape closes it, focus back on ⋮');
-  $('menu-btn').click();
+  ok($('setup').hidden && G().total === 40, 'the suite starts in a session with the defaults (the harness pressed Start)');
 
   /* ── show / hide categories ── */
   ok(groups() > 1 && labels() === groups(), 'grouped by default, every block labeled');
@@ -69,8 +61,11 @@ const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}'
   G().start();
   ok(order() !== A && same(order(), alpha()), 'a new round reshuffles');
   clickBox('include-uncommon');
-  ok(kb().length === 35 && groups() === 1 && !!btn('ɽ'), 'uncommon checked: ఱ joins the shuffled keyboard (35)');
+  ok(kb().length === 34 && G().total === 40, 'checking "Include uncommon clusters" changes nothing by itself: it is settled by Start');
   clickBox('include-uncommon');
+  h.setup(() => clickBox('include-uncommon'));
+  ok(kb().length === 35 && groups() === 1 && !!btn('ɽ'), 'uncommon checked: ఱ joins the shuffled keyboard (35)');
+  h.setup(() => clickBox('include-uncommon'));
   ok(kb().length === 34, '…and leaves again');
 
   /* ── un-shuffle ── */

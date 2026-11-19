@@ -27,6 +27,8 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   const P = w.TeluguProgress;
   ok(P.missCount() === 0, 'no misses yet');
   inject('k', '\u0C3E'); btn('c', 'kʰ').click(); btn('v', 'aː').click();
+  ok($('feedback').textContent.trim() === '✗  /kʰaː/' && btn('c', 'k').classList.contains('ok'), 'a wrong pair: the line under the card shows what was picked (/kʰaː/), not the answer; the right key is lit: ' + $('feedback').textContent.trim());
+  ok(/GameCore\.create\(\{[^}]*?errMs:\s*1500\b/.test(require('fs').readFileSync(require('path').join(require('./config').SITE_DIR, 'alphabet/02_diacritics.html'), 'utf8')), 'Diacritics: a wrong pick stays on screen for 1.5 seconds (errMs: 1500)');
   await tick(); await tick();
   const m = P.misses().find(x => x.game === 'diacritics');
   ok(m && m.key === 'కా' && m.ask === 'telugu' && m.syllable === true && !('answer' in m) && h.shown(m).answer === '/kaː/', 'wrong answer recorded as the syllable and what was asked: ' + (m && m.key + ' → ' + h.shown(m).answer));
@@ -43,7 +45,8 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   ok(P.isComplete('diacritics'), 'completion recorded for the Diacritics tile');
 
   $('retry-btn').click();
-  $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change'));
+  ok(!$('setup').hidden && $('g-complete').classList.contains('show'), '"Practice Again" opens the session popup');
+  $('include-extra').click(); $('setup-start').click();
   ok(G().total === 57 && n('c') === 36 && n('v') === 19, 'extras on: 57 cards, 36 consonant + 19 vowel keys');
   ok(!!btn('c', 'ɽ') && !!btn('v', 'l̩') && !!btn('v', 'l̩ː'), 'ఱ ౢ ౣ keys return');
   h.done();

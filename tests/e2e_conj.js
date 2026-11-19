@@ -27,7 +27,8 @@ const inject = glyphEscaped => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.gly
   // picking the "spoken" sounds is wrong by the written-letters rule
   inject('జ్ఞ');
   btn('ɡ').click(); btn('ɲ').click();
-  ok($('char-card').classList.contains('wrong') && $('feedback').textContent.includes('✗'), 'picking ɡ + ɲ (the spoken form) is marked wrong, with the note shown');
+  ok($('char-card').classList.contains('wrong') && $('feedback').textContent === '✗  /ɡɲa/' && btn('dʒ').classList.contains('ok'), 'picking ɡ + ɲ (the spoken form) is marked wrong; the line shows what was picked (/ɡɲa/), not the answer, and the right keys are lit');
+  ok(/GameCore\.create\(\{[^}]*?errMs:\s*1500\b/.test(require('fs').readFileSync(require('path').join(require('./config').SITE_DIR, 'alphabet/03_conjuncts.html'), 'utf8')), 'Conjuncts: a wrong pick stays on screen for 1.5 seconds (errMs: 1500)');
   await tick(); await tick();
   const m = P.misses().find(x => x.game === 'conjuncts');
   ok(m && m.key === 'జ్ఞ' && m.ask === 'telugu' && !('answer' in m) && h.shown(m).prompt === 'జ్ఞ' && h.shown(m).answer.includes('/dʒɲa/') && h.shown(m).answer.includes('usually said /\u0261ɲa/'), 'wrong answer recorded for Review; shown with its written + spoken answer: ' + (m && h.shown(m).answer));
@@ -45,7 +46,8 @@ const inject = glyphEscaped => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.gly
   ok(P.isComplete('conjuncts'), 'completion recorded for the Conjuncts tile');
 
   $('retry-btn').click();
-  $('include-uncommon').checked = true; $('include-uncommon').dispatchEvent(new w.Event('change'));
+  ok(!$('setup').hidden && $('g-complete').classList.contains('show'), '"Practice Again" opens the session popup');
+  $('include-uncommon').click(); $('setup-start').click();
   ok(d.querySelectorAll('.kb-btn').length === 35 && !!btn('ɽ'), 'checked: 35 keys, ఱ appears');
   ok(w.eval('CLUSTERS.filter(c=>!c.core).length') === 9, '9 uncommon clusters available when checked');
   h.done();

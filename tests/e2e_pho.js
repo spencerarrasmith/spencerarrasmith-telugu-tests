@@ -7,7 +7,7 @@ const cur = () => G().current;
 const keys = () => vis().length;
 (async () => {
   ok(!$('include-extra').checked, '"Include extra letters" is unchecked by default');
-  ok($('include-extra').parentElement.textContent.includes('Include extra letters'), 'label reads "Include extra letters"');
+  ok($('include-extra').parentElement.textContent.includes('Include extra letters') && $('include-extra').closest('#setup'), 'label reads "Include extra letters"; the box is in the session popup');
   ok(G().total === 51 && keys() === 51, 'book set by default: 51 cards / 51 keys');
   ok(!btn('ɽ') && !btn('l̩') && !btn('l̩ː'), 'ఱ ఌ ౡ keys hidden by default');
   ok(!!btn('kʂ') && [...d.querySelectorAll('.kb-label')].some(l => l.textContent === 'Conjunct'), 'క్ష has its own "Conjunct" key (kʂ)');
@@ -44,13 +44,13 @@ const keys = () => vis().length;
   ok(P.isComplete('phonemes'), 'completion recorded for the Phonemes tile');
 
   // extras on
-  $('retry-btn').click();
-  $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change'));
+  h.again();
+  h.setup(() => { $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change')); });
   ok(G().total === 54 && keys() === 54, 'extras on: 54 cards / 54 keys');
   ok(!!btn('ɽ') && !!btn('l̩') && !!btn('l̩ː'), 'ఱ ఌ ౡ keys appear');
   front(x => x.ipa === 'ɽ');
   ok($('rare-badge').style.display !== 'none', 'extra letters carry the "rare" badge');
-  $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change'));
+  h.setup(() => { $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change')); });
   ok(G().total === 51, 'unchecking returns to 51');
   h.done();
 })();

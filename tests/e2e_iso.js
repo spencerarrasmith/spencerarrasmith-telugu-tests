@@ -11,7 +11,7 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
   {
     const h = load('alphabet/01_phonemes.html', ISO); const { w, d, tick, $ } = h, G = h.game, P = w.TeluguProgress, D = w.TeluguData;
     const kb = () => [...d.querySelectorAll('.kb-btn')].filter(b => b.style.display !== 'none'), key = ch => kb().find(b => b.dataset.ch === ch);
-    ok(D.notation.id === 'iso' && $('g-title').textContent === 'Telugu → ISO' && /ISO to Telugu/.test($('rev-btn').getAttribute('aria-label')), 'Phonemes: title and swap button say ISO');
+    ok(D.notation.id === 'iso' && $('g-title').textContent === 'Telugu → ISO' && $('setup-dir').textContent === 'Telugu → ISO', 'Phonemes: the title and the popup\'s direction say ISO');
     ok(key('క').textContent === 'ka' && key('ఖ').textContent === 'kha' && key('ట').textContent === 'ṭa' && key('ఆ').textContent === 'ā' && key('అం').textContent === 'aṁ' && key('క్ష').textContent === 'kṣa' && key('ఋ').textContent === 'r̥', 'Phonemes: keys spell each letter in ISO, consonants with their a (ka kha ṭa ā aṁ kṣa r̥)');
     ok(kb().length === 51 && kb().every(b => noSlash(b.textContent) && !IPA_ONLY.test(b.textContent)) && key('క').dataset.ipa === 'k', 'Phonemes: no slashes or IPA letters on any key; data-ipa is still the key\'s identity');
     ok(kb().map(b => b.textContent).join(' ') === D.pool(D.letters, false).map(l => l.iso).join(' '), 'Phonemes: every key is the letter\'s iso from telugu-data.js');
@@ -19,12 +19,12 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
     ok($('char-card').classList.contains('correct') && G().completed === 1, 'Phonemes: the ka key answers క');
     await tick(); await tick();
     h.front(c => c.ch === 'గ'); key('క').click();
-    ok($('feedback').textContent === '✗  ga' && $('char-card').classList.contains('wrong'), 'Phonemes: a wrong answer shows the spelling, with no slashes (✗ ga)');
+    ok($('feedback').textContent === '✗  ka' && $('char-card').classList.contains('wrong'), 'Phonemes: a wrong answer shows the spelling of the key that was picked, with no slashes (✗ ka, on the card గ)');
     const m = P.misses().find(x => x.key === 'గ');
     ok(m.ask === 'telugu' && h.shown(m).answer === 'ga' && !('answer' in m), 'Phonemes: the miss stores the letter; shown in ISO it is ga');
     await tick(); await tick();
-    $('rev-btn').click();
-    ok($('g-title').textContent === 'ISO → Telugu' && /Telugu to ISO/.test($('rev-btn').getAttribute('aria-label')) && kb().every(b => b.classList.contains('te')), 'Phonemes reversed: ISO → Telugu, Telugu keys');
+    h.flip();
+    ok($('g-title').textContent === 'ISO → Telugu' && $('setup-dir').textContent === 'ISO → Telugu' && kb().every(b => b.classList.contains('te')), 'Phonemes reversed: ISO → Telugu, Telugu keys');
     h.front(c => c.ch === 'ఖ');
     ok($('tel-char').classList.contains('ipa-face') && $('tel-char').textContent === 'kha' && !$('tel-char').querySelector('.sl') && $('tel-char').innerHTML === 'kha', 'Phonemes reversed: the card shows kha, plain (no slash spans)');
     key('ఖ').click(); ok($('char-card').classList.contains('correct'), 'Phonemes reversed: ఖ answers kha');
@@ -49,12 +49,12 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
     ok($('char-card').classList.contains('correct') && $('feedback').textContent === '✓  kā', 'Diacritics: k + ā answers కా; feedback ✓ kā');
     await tick(); await tick();
     put('క', 'ం'); key('c', 'k').click(); key('v', 'a').click();
-    ok($('char-card').classList.contains('wrong') && $('feedback').textContent === '✗  kaṁ', 'Diacritics: a wrong vowel on కం shows ✗ kaṁ');
+    ok($('char-card').classList.contains('wrong') && $('feedback').textContent === '✗  ka', 'Diacritics: a wrong vowel on కం shows what was picked, ✗ ka');
     const m = P.misses().find(x => x.key === 'కం');
     ok(m.ask === 'telugu' && m.syllable === true && h.shown(m).answer === 'kaṁ', 'Diacritics: the miss stores the syllable; shown in ISO it is kaṁ');
     await tick(); await tick();
-    $('rev-btn').click();
-    ok($('g-title').textContent === 'ISO → Diacritics', 'Diacritics reversed: ISO → Diacritics');
+    h.flip();
+    ok($('g-title').textContent === 'ISO → Diacritics' && $('setup-dir').textContent === 'ISO → Diacritics', 'Diacritics reversed: ISO → Diacritics, in the title and in the popup');
     const face = () => $('tel-char').textContent;
     put('క', 'ా'); const a = face(); put('క', ''); const b = face(); put('క', '్'); const c = face(); put('క్ష', 'ై'); const e = face(); put('ఖ', 'ం'); const f = face();
     ok(a === 'kā' && b === 'ka' && c === 'k' && e === 'kṣai' && f === 'khaṁ' && !$('tel-char').querySelector('.sl'), 'Diacritics reversed: cards read kā, ka (no sign), k (pollu), kṣai, khaṁ; no slashes');
@@ -78,10 +78,10 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
     await tick(); await tick();
     put('క్య'); ipaKey('k').click(); ipaKey('r').click();
     const m = P.misses().find(x => x.key === 'క్య');
-    ok($('feedback').textContent === '✗  kya' && m.ask === 'telugu' && h.shown(m).answer === 'kya', 'Conjuncts: a miss shows ✗ kya and is stored as the conjunct');
+    ok($('feedback').textContent === '✗  kra' && m.ask === 'telugu' && h.shown(m).answer === 'kya', 'Conjuncts: a miss shows what was picked (✗ kra) and is stored as the conjunct on the card (kya)');
     await tick(); await tick();
-    $('rev-btn').click();
-    ok($('g-title').textContent === 'ISO → Conjuncts', 'Conjuncts reversed: ISO → Conjuncts');
+    h.flip();
+    ok($('g-title').textContent === 'ISO → Conjuncts' && $('setup-dir').textContent === 'ISO → Conjuncts', 'Conjuncts reversed: ISO → Conjuncts, in the title and in the popup');
     put('క్ష'); ok($('tel-char').textContent === 'kṣa' && !$('tel-char').querySelector('.sl'), 'Conjuncts reversed: the card shows kṣa, plain');
     put('ష్ట్ర'); ok($('tel-char').textContent === 'ṣṭra', 'Conjuncts reversed: three letters → ṣṭra');
     put('జ్ఞ'); ok($('tel-char').textContent === 'jña' && $('feedback').textContent === 'This is the spelling as written · spoken Telugu usually says /ɡɲa/', 'Conjuncts reversed: జ్ఞ shows jña, and the hint calls it the spelling');

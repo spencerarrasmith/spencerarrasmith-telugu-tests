@@ -8,26 +8,16 @@ const order  = k => kb(k).map(b => b.dataset.ipa).join('|');
 const alpha  = k => w.eval(`keys.${k}.map(x => x.ipa)`).join('|');
 const same   = (a, b) => a.split('|').sort().join() === b.split('|').sort().join();
 const clickBox = id => $(id).click();
-const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles: true }));
 const btn = (kind, ipa) => kb(kind).find(b => b.dataset.ipa === ipa);
 const cur = () => G().current;
 const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa==='${cIpa}'),v=VOWELS.find(x=>x.sign==='${vSign}');GameCore.current.put({c,v,glyph:c.ch+v.sign,cat:c.cat,rare:c.rare||v.rare});})()`); };
 (async () => {
-  /* ── the ⋮ menu ── */
+  /* ── the options: in the session popup (the keyboard follows the two keyboard boxes at once) ── */
   ok(!d.querySelector('.g-controls') && !d.querySelector('.g-controls-sep') && !d.querySelector('.cat-toggle'), 'the old controls bar is gone');
-  ok($('menu-btn').closest('.g-right') && $('menu-btn').closest('.g-right').parentElement.classList.contains('g-header-top') && $('menu-btn').closest('.g-right').lastElementChild === $('menu-wrap'), '⋮ is the last item of the header: top right');
-  ok($('menu-btn').querySelectorAll('circle').length === 3 && $('menu-btn').getAttribute('aria-label') === 'Options', 'three dots, labeled "Options"');
-  ok([...d.querySelectorAll('#opts-menu .menu-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include extra letters', 'menu items, in order');
+  ok(!$('menu-btn') && !$('opts-menu') && !$('menu-wrap'), 'no ⋮ menu on this page');
+  ok([...d.querySelectorAll('#setup .menu-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include extra letters', 'the checkboxes are in the session popup, in order');
   ok($('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked, 'defaults: categories on, shuffle + extras off');
-  ok($('opts-menu').hidden && $('menu-btn').getAttribute('aria-expanded') === 'false', 'menu starts closed');
-  $('menu-btn').click();
-  ok(!$('opts-menu').hidden && $('menu-btn').getAttribute('aria-expanded') === 'true', '⋮ opens it');
-  clickBox('include-extra'); clickBox('include-extra');
-  ok(!$('opts-menu').hidden, 'checking boxes keeps it open');
-  pointerdown($('kb-area')); ok($('opts-menu').hidden, 'tapping outside closes it');
-  $('menu-btn').click(); d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  ok($('opts-menu').hidden && d.activeElement === $('menu-btn'), 'Escape closes it, focus back on ⋮');
-  $('menu-btn').click();
+  ok($('setup').hidden && G().total === 51, 'the suite starts in a session with the defaults (the harness pressed Start)');
 
   /* ── show / hide categories ── */
   ok(groups('c') > 1 && groups('v') > 1 && labels('c') === groups('c') && labels('v') === groups('v'), 'grouped by default: both panels labeled');
@@ -76,8 +66,11 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   G().start();
   ok(order('c') !== C && same(order('c'), alpha('c')), 'a new round reshuffles');
   clickBox('include-extra');
-  ok(kb('c').length === 36 && kb('v').length === 19 && groups('c') === 1 && !!btn('c', 'ɽ') && !!btn('v', 'l̩'), 'extras join the shuffled keyboard (36 + 19)');
+  ok(kb('c').length === 35 && G().total === 51, 'checking "Include extra letters" changes nothing by itself: it is settled by Start');
   clickBox('include-extra');
+  h.setup(() => clickBox('include-extra'));
+  ok(kb('c').length === 36 && kb('v').length === 19 && groups('c') === 1 && !!btn('c', 'ɽ') && !!btn('v', 'l̩'), 'extras join the shuffled keyboard (36 + 19)');
+  h.setup(() => clickBox('include-extra'));
   ok(kb('c').length === 35, '…and leave again');
 
   /* ── un-shuffle ── */

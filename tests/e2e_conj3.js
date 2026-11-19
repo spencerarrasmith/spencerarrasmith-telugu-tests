@@ -1,7 +1,7 @@
 const h = require('./harness')('alphabet/03_conjuncts.html');
 const { w, d, tick, ok, $ } = h;
 const G = h.game;                                          // the round: G().deck, .current, .total, .completed
-// Conjuncts in the other direction (🔀): the card shows the sound, the keys are Telugu letters.
+// Conjuncts in the other direction (🔀, in the session popup): the card shows the sound, the keys are Telugu letters.
 const D = w.TeluguData, P = w.TeluguProgress;
 const kb     = () => [...d.querySelectorAll('#kb-area .kb-btn')];
 const key    = ch => kb().find(b => b.dataset.ch === ch);
@@ -16,8 +16,8 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
 (async () => {
   /* ── the swap button ── */
   ok($('rev-btn') && $('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false', 'swap button present (same 🔀 as Phonemes and Diacritics)');
-  ok($('rev-btn').parentElement === $('g-title').parentElement && $('g-title').parentElement.classList.contains('g-title-row'), 'it sits next to the title');
-  ok($('g-title').textContent === 'Conjuncts → IPA' && !d.querySelector('.kb-btn.te') && !$('tel-char').classList.contains('ipa-face') && /IPA to Conjuncts/.test($('rev-btn').getAttribute('aria-label')), 'forward: IPA keys, Telugu conjunct on the card');
+  ok($('rev-btn').closest('#setup') && !d.querySelector('.g-header .rev-btn'), 'it is in the session popup, and no longer in the header');
+  ok($('g-title').textContent === 'Conjuncts → IPA' && !d.querySelector('.kb-btn.te') && !$('tel-char').classList.contains('ipa-face') && $('setup-dir').textContent === 'Conjuncts → IPA', 'forward: IPA keys, Telugu conjunct on the card');
 
   /* ── the card label never names a letter (either direction) ── */
   put('క్య'); ok($('cat-badge').textContent === 'Velar + Approx.', 'forward: క్య is labeled "Velar + Approx.", not "+ య (ya)"');
@@ -30,8 +30,8 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   /* ── switch ── */
   put(KSHA); ipaKey('k').click(); ipaKey('ʂ').click(); await tick(); await tick();
   ok(G().completed === 1, 'one card cleared before switching');
-  $('rev-btn').click();
-  ok($('g-title').textContent === 'IPA → Conjuncts' && $('rev-btn').getAttribute('aria-pressed') === 'true' && /Conjuncts to IPA/.test($('rev-btn').getAttribute('aria-label')), 'title and button state flip');
+  h.flip();
+  ok($('g-title').textContent === 'IPA → Conjuncts' && $('rev-btn').getAttribute('aria-pressed') === 'true' && $('setup-dir').textContent === 'IPA → Conjuncts', 'title and button state flip');
   ok(G().completed === 0 && G().deck.length === 40 && G().total === 40, 'a fresh round starts (40 cards)');
   ok(kb().length === 34 && kb().every(b => b.classList.contains('te') && b.textContent === b.dataset.ch), 'keys: the 34 book consonants as Telugu letters, from the shared keyboard');
   ok(kb()[0].textContent === 'క' && kb().at(-1).textContent === 'హ' && !key('ఱ') && !key(KSHA), 'in the keyboard\'s alphabet order (క … హ); no extra ఱ, no క్ష key');
@@ -61,7 +61,7 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   key('క').click(); key('స').click();
   ok($('char-card').classList.contains('wrong') && slots()[0].classList.contains('ok') && slots()[1].classList.contains('err'), 'one wrong letter: card wrong, the slot at fault is red');
   ok(key('స').classList.contains('err') && key('ష').classList.contains('ok') && key('క').classList.contains('ok'), 'the wrong key is red, the letters of the answer green');
-  ok($('feedback').textContent === '✗  ' + KSHA && $('feedback').classList.contains('err'), 'feedback gives the conjunct: ✗ క్ష');
+  ok($('feedback').textContent === '✗  క్స' && $('feedback').classList.contains('err') && $('feedback').classList.contains('te'), 'the line shows the conjunct that was picked (క + స = క్స), not the answer (క్ష)');
   const m = P.misses().find(x => x.game === 'conjuncts-reverse');
   ok(P.missCount() === misses0 + 1 && m && m.key === KSHA && m.ask === 'sound' && m.syllable === true && h.shown(m).prompt === '/kʂa/' && h.shown(m).answer === KSHA && m.note === 'Velar + Fricative', 'recorded for Review as conjuncts-reverse: /kʂa/ → క్ష, note "Velar + Fricative"');
   ok(!P.misses().some(x => x.game === 'conjuncts'), 'nothing filed under the forward game');
@@ -95,10 +95,10 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   ok(kb().length === 34 && A !== w.eval('keys.map(c => c.ch)').join() && kb().every(b => b.classList.contains('te')), 'shuffle: random order, still Telugu');
   $('show-cat').dispatchEvent(new w.Event('change')); ok(kb().map(b => b.dataset.ch).join() === A, 'order stable within the round');
   clickBox('shuffle-kb'); clickBox('show-cat');
-  clickBox('include-uncommon');
+  h.setup(() => clickBox('include-uncommon'));
   ok(kb().length === 35 && !!key('ఱ') && G().total === 40 && $('g-title').textContent === 'IPA → Conjuncts', 'uncommon clusters on: ఱ joins the keys; still reversed');
   put(NKA); ok($('tel-char').textContent === '/ŋka/' && $('rare-badge').style.display !== 'none', 'an uncommon cluster shows its sound and the rare badge');
-  clickBox('include-uncommon');
+  h.setup(() => clickBox('include-uncommon'));
 
   /* ── a whole reverse round ── */
   let guard = 0;
@@ -108,7 +108,7 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   ok(P.isComplete('conjuncts'), 'finishing the reverse direction checks off the Conjuncts tile');
 
   /* ── and back ── */
-  $('rev-btn').click();
+  h.flip();
   ok($('g-title').textContent === 'Conjuncts → IPA' && $('rev-btn').getAttribute('aria-pressed') === 'false' && !d.querySelector('.kb-btn.te') && kb()[0].textContent === 'k' && !$('tel-char').classList.contains('ipa-face') && $('tel-char').style.fontSize === '', 'swapping back restores IPA keys and the Telugu card');
   ok(!$('g-complete').classList.contains('show') && G().total === 40 && G().completed === 0 && $('tel-char').textContent === G().current.glyph, 'with a fresh forward round');
   put(KSHA); ipaKey('k').click(); ok(vals() === 'k|–' && !slots()[0].querySelector('.slot-val').classList.contains('te'), 'slots show IPA again');

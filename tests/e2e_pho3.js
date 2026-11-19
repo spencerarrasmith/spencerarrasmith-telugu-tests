@@ -17,7 +17,7 @@ const alpha = D.letters.filter(l => l.core).map(l => l.ch).join('|');
   ok(groups() === 9 && labels().length === 9, 'forward: checking regroups the IPA keyboard');
 
   /* reverse + checked = grouped Telugu keyboard (as before) */
-  $('rev-btn').click();
+  h.flip();
   ok(groups() === 9 && labels().join() === D.letterGroups.map(g => g.lbl).join(), 'reverse + checked: grouped and labeled');
 
   /* reverse + unchecked = one plain block */
@@ -39,12 +39,12 @@ const alpha = D.letters.filter(l => l.core).map(l => l.ch).join('|');
   await tick(); await tick();
 
   /* the choice sticks across rebuilds */
-  $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change'));
+  h.setup(() => { $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change')); });
   ok(groups() === 1 && labels().length === 0 && vis().length === 54, 'extras on: still flat, 54 keys');
-  $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change'));
+  h.setup(() => { $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change')); });
   ok(groups() === 1 && vis().length === 51, 'extras off: still flat');
-  $('rev-btn').click(); ok(groups() === 1 && labels().length === 0 && vis()[0].textContent === 'a', 'back to forward: IPA keyboard also flat (setting is shared)');
-  $('rev-btn').click(); ok(groups() === 1 && labels().length === 0, 'reverse again: remembers unchecked → flat');
+  h.flip(); ok(groups() === 1 && labels().length === 0 && vis()[0].textContent === 'a', 'back to forward: IPA keyboard also flat (setting is shared)');
+  h.flip(); ok(groups() === 1 && labels().length === 0, 'reverse again: remembers unchecked → flat');
   showCat(true);
   ok(groups() === 9 && labels().length === 9 && $('cat-badge').style.visibility === '', 'checking again regroups and restores the card label');
 

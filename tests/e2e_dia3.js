@@ -13,13 +13,13 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
 (async () => {
   /* ── the swap button ── */
   ok($('rev-btn') && $('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false', 'swap button present (same 🔀 as Phonemes)');
-  ok($('rev-btn').parentElement === $('g-title').parentElement && $('g-title').parentElement.classList.contains('g-title-row'), 'it sits next to the title');
+  ok($('rev-btn').closest('#setup') && !d.querySelector('.g-header .rev-btn') && $('setup-dir').textContent === 'Diacritics → IPA', 'it is in the session popup, next to the direction, and no longer in the header');
   ok($('g-title').textContent === 'Diacritics → IPA' && !d.querySelector('.kb-btn.te') && !$('tel-char').classList.contains('ipa-face'), 'forward: IPA keys, Telugu syllable on the card');
 
   /* ── switch ── */
   const fwdDeck = G().deck.length;
-  $('rev-btn').click();
-  ok($('g-title').textContent === 'IPA → Diacritics' && $('rev-btn').getAttribute('aria-pressed') === 'true', 'title and button state flip');
+  h.flip();
+  ok($('g-title').textContent === 'IPA → Diacritics' && $('setup-dir').textContent === 'IPA → Diacritics' && $('rev-btn').getAttribute('aria-pressed') === 'true', 'title and button state flip');
   ok(G().completed === 0 && G().deck.length === 51 && G().total === 51 && fwdDeck === 51, 'a fresh round starts (51 cards)');
   const cons = kb('c'), vows = kb('v');
   ok(cons.length === 35 && cons.every(b => b.classList.contains('te') && b.textContent === b.dataset.ch), 'consonant keys: 35 Telugu letters, from the shared keyboard');
@@ -58,7 +58,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   inject('k', AA);
   const n0 = G().deck.length;
   btn('c', KH).click(); btn('v', II).click();
-  ok($('char-card').classList.contains('wrong') && $('feedback').textContent.trim() === '✗  కా' && $('feedback').classList.contains('err'), 'wrong: ✗ and the right syllable shown: ' + $('feedback').textContent.trim());
+  ok($('char-card').classList.contains('wrong') && $('feedback').textContent.trim() === '✗  ఖీ' && $('feedback').classList.contains('err') && $('feedback').classList.contains('te'), 'wrong: ✗ and the syllable that was picked (ఖ + ీ), not the answer (కా): ' + $('feedback').textContent.trim());
   ok(btn('c', KH).classList.contains('err') && btn('v', II).classList.contains('err') && btn('c', 'k').classList.contains('ok') && btn('v', AA).classList.contains('ok'), 'wrong keys red, right keys green (both panels)');
   ok($('slot-c').classList.contains('err') && $('slot-v').classList.contains('err'), 'both slots red');
   const m = P.misses().find(x => x.game === 'diacritics-reverse');
@@ -92,13 +92,13 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   await tick(); await tick();
   clickBox('shuffle-kb');
   clickBox('show-cat');
-  clickBox('include-extra');
+  h.setup(() => clickBox('include-extra'));
   ok(kb('c').length === 36 && !!btn('c', 'r') && kb('v').length === 19 && btn('v', 'l̩').textContent === 'ౢ' && groups('c') === 8, 'extras join: ఱ and ౢ ౣ (36 + 19)');
-  clickBox('include-extra');
+  h.setup(() => clickBox('include-extra'));
   ok(kb('c').length === 35 && kb('v').length === 17, '…and leave');
 
   /* ── back to forward ── */
-  $('rev-btn').click();
+  h.flip();
   ok($('g-title').textContent === 'Diacritics → IPA' && $('rev-btn').getAttribute('aria-pressed') === 'false' && !d.querySelector('.kb-btn.te') && kb('c')[0].textContent === 'k' && !$('tel-char').classList.contains('ipa-face') && G().completed === 0, 'back: IPA keys, syllable on the card, fresh round');
   inject('k', AA); btn('c', 'k').click();
   ok($('slot-c').querySelector('.slot-val').textContent === 'k' && !$('slot-c').querySelector('.slot-val').classList.contains('te'), 'slots back to IPA');
@@ -106,13 +106,13 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   ok($('feedback').textContent === '' && !$('feedback').classList.contains('te'), 'feedback reset');
 
   /* ── finish a whole round in reverse ── */
-  $('rev-btn').click();
+  h.flip();
   let g = 0;
   while (!$('g-complete').classList.contains('show') && g++ < 400) { const c = cur(); btn('c', c.c.ipa).click(); btn('v', c.v.ipa).click(); await tick(); await tick(); }
   ok($('g-complete').classList.contains('show') && G().completed === 51 && $('c-accuracy').textContent === '100%', 'reverse round completes (51 cards, 100%)');
   ok($('c-sub').textContent === 'All 51 sounds correctly written as Telugu syllables.', 'complete text names the direction');
   ok(P.isComplete('diacritics'), 'finishing in reverse checks off the Diacritics tile');
-  $('retry-btn').click();
+  h.again();
   ok(!$('g-complete').classList.contains('show') && $('g-title').textContent === 'IPA → Diacritics' && kb('c')[0].classList.contains('te'), 'Practice Again stays in reverse');
 
   /* ── shared builder: skipHidden ── */

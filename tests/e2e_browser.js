@@ -65,6 +65,54 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(await fr0.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Sound Charts never makes the page itself scroll sideways');
   for (const [id, total] of [['phonemes', 51], ['diacritics', 51], ['conjuncts', 40], ['lookalikes', 40]]) { fr0 = await frameOf(id);
     ok(await fr0.evaluate(([id, total]) => !!window.GameCore && GameCore.current.id === id && GameCore.current.total === total && GameCore.current.deck.length === total && document.querySelectorAll('.kb-btn').length > 1 && !!document.getElementById('retry-btn') && document.getElementById('s-total').textContent === String(total), [id, total]), id + ' runs on game-core.js (' + total + ' cards dealt, complete screen in place)'); }
+  // Phonemes opens with the session popup over everything; Enter starts, and Cancel on a fresh open goes back to Home
+  fr0 = await frameOf('phonemes');
+  ok(await fr0.evaluate(() => { const s = document.getElementById('setup'), r = s.getBoundingClientRect(), box = s.querySelector('.setup-box').getBoundingClientRect(), x = id => document.getElementById(id).getBoundingClientRect();
+    return !s.hidden && r.width === innerWidth && r.height === innerHeight && s.contains(document.elementFromPoint(30, 30)) && s.contains(document.elementFromPoint(innerWidth / 2, innerHeight - 30)) && box.width <= 440 && box.left > 0
+      && x('setup-cancel').right < x('setup-title').left && x('setup-title').right < x('setup-start').left && Math.abs(x('setup-cancel').top - x('setup-start').top) < 2 && x('setup-rounds').right < x('setup-rounds-n').left
+      && Math.abs((x('show-cat').left + x('show-cat').right) / 2 - (x('rev-btn').left + x('rev-btn').right) / 2) < 2 && x('rev-btn').bottom < x('setup-rounds').top && x('setup-rounds').bottom < x('setup-misses').top && x('setup-misses').bottom < x('show-cat').top
+      && document.activeElement.id === 'setup-start'; }), 'Phonemes opens with the session popup covering the page: Cancel top left, Start top right, the direction first, then the two sliders, then the checkboxes in line under the 🔀 button, the rounds box to the right of its slider, Start focused');
+  await fr0.focus('#shuffle-kb');
+  ok(await fr0.evaluate(() => { const row = document.getElementById('shuffle-kb').closest('.setup-opt'), g = getComputedStyle(row), r = row.getBoundingClientRect(), t = row.querySelector('.menu-txt span').getBoundingClientRect(), b = document.getElementById('shuffle-kb').getBoundingClientRect(), dir = document.getElementById('setup-dir').getBoundingClientRect(), box = document.querySelector('.setup-box').getBoundingClientRect();
+    return g.outlineStyle === 'solid' && g.outlineWidth === '1px' && t.left - r.left >= 7 && t.top - r.top >= 5 && r.bottom - t.bottom >= 5 && r.right - b.right >= 7 && r.left > box.left + 4 && r.right < box.right - 4 && Math.abs(t.left - dir.left) < 1; }),
+    'the outline around a checkbox row in use is 1px, with room on every side of the words and the box, inside the popup; the words stay in line with the direction');
+  await fr0.focus('#setup-start');
+  await fr0.fill('#setup-rounds-n', '4'); await fr0.press('#setup-rounds-n', 'Enter'); await pg.waitForTimeout(150);
+  ok(await fr0.evaluate(() => document.getElementById('setup').hidden && GameCore.current.total === 4 && [...document.querySelectorAll('.kb-btn')].filter(b => b.style.display !== 'none').length === 51 && !document.querySelector('.menu-btn')), 'typing 4 in the box and pressing Enter starts a session of 4 (all 51 keys, no ⋮ menu)');
+  await fr0.click('.kb-btn:not([style*="none"])'); await pg.waitForTimeout(100);
+  ok(await fr0.evaluate(() => GameCore.current.attempts === 1), 'with the popup closed the keyboard takes taps again');
+  // a wrong pick: the line under the card shows it (not the answer) and stays for about a second and a half
+  await pg.waitForTimeout(1600);
+  const pickedText = await fr0.evaluate(() => { const b = [...document.querySelectorAll('.kb-btn')].find(k => k.style.display !== 'none' && k.dataset.ch !== GameCore.current.current.ch); b.click(); return b.textContent; });
+  await pg.waitForTimeout(1200);
+  ok(await fr0.evaluate(t => { const f = document.getElementById('feedback'); return f.textContent === '✗  /' + t + '/' && f.getBoundingClientRect().height > 0 && GameCore.current.locked; }, pickedText), 'a wrong pick is shown under the card (✗ and the key that was pressed) and is still there after 1.2 seconds');
+  await pg.waitForTimeout(600);
+  ok(await fr0.evaluate(() => document.getElementById('feedback').textContent === '' && !GameCore.current.locked), 'and gone by 1.8 seconds, with the next card ready');
+  await pg.evaluate(() => { location.hash = '#/'; }); await pg.waitForTimeout(150);      // leave, so the page is opened afresh
+  fr0 = await frameOf('phonemes');
+  await fr0.click('#setup-cancel'); await pg.waitForTimeout(250);
+  ok(await pg.evaluate(() => !document.getElementById('home').hidden && document.getElementById('app').hidden && (location.hash === '#/' || location.hash === '')), 'Cancel on the popup, before anything is played, goes back to Home');
+  // Diacritics and Conjuncts open the same way; Conjuncts starts at its usual 40 of 83
+  for (const [id, title, rounds, top] of [['diacritics', 'Diacritics', '51', '51'], ['conjuncts', 'Conjuncts', '40', '83']]) {
+    fr0 = await frameOf(id);
+    ok(await fr0.evaluate(([title, rounds, top]) => { const s = document.getElementById('setup'), r = s.getBoundingClientRect(), x = i => document.getElementById(i).getBoundingClientRect();
+      return !s.hidden && r.width === innerWidth && r.height === innerHeight && s.contains(document.elementFromPoint(innerWidth / 2, innerHeight - 30)) && document.getElementById('setup-title').textContent === title
+        && document.getElementById('setup-rounds').value === rounds && document.getElementById('setup-rounds').max === top && document.getElementById('setup-misses-out').textContent === 'Unlimited' && document.getElementById('setup-misses-note').textContent === 'Never ends early' && x('setup-misses').bottom <= x('setup-misses-note').top && x('setup-misses-note').height > 0 && x('setup-misses-note').bottom < x('show-cat').top
+        && x('rev-btn').bottom < x('setup-rounds').top && x('setup-misses').bottom < x('show-cat').top && Math.abs((x('show-cat').left + x('show-cat').right) / 2 - (x('rev-btn').left + x('rev-btn').right) / 2) < 2
+        && !document.querySelector('.menu-btn') && !document.querySelector('.g-header .rev-btn') && document.activeElement.id === 'setup-start'; }, [title, rounds, top]),
+      title + ' opens with the session popup covering the page (' + rounds + ' rounds of ' + top + ', unlimited misses), with no ⋮ menu or 🔀 left in the header');
+    await fr0.fill('#setup-rounds-n', '3'); await fr0.evaluate(() => { const m = document.getElementById('setup-misses'); m.value = 2; m.dispatchEvent(new Event('input', { bubbles: true })); });
+    await fr0.press('#setup-rounds-n', 'Enter'); await pg.waitForTimeout(150);
+    ok(await fr0.evaluate(() => { const st = document.getElementById('s-lives'), r = st.getBoundingClientRect(), c = document.getElementById('s-total').getBoundingClientRect();
+      return document.getElementById('setup').hidden && GameCore.current.total === 3 && GameCore.current.limit === 2 && !st.hidden && r.width > 0 && r.left > c.right && Math.abs((r.top + r.bottom) / 2 - (c.top + c.bottom) / 2) < 4 && st.textContent === '\u{1F90D}\u{1F9E1}' && st.getAttribute('aria-label') === 'Mistakes left: 2' && document.documentElement.scrollWidth <= innerWidth; }),
+      title + ': Enter starts 3 rounds with 2 mistakes allowed; the header shows two hearts (white, orange) after the counters, on their line');
+    ok(await fr0.evaluate(() => { const g = GameCore.current, st = document.getElementById('s-lives'), seen = [20, 4, 3, 2, 1, 0].map(n => { g.start({ misses: n });
+        const r = st.getBoundingClientRect(), range = document.createRange(); range.selectNodeContents(st); const t = range.getBoundingClientRect();
+        return { w: Math.round(r.width * 10), total: Math.round(document.getElementById('s-total').getBoundingClientRect().left * 10), rem: Math.round(document.getElementById('s-rem').getBoundingClientRect().left * 10), fits: t.width <= r.width + 0.5, flush: Math.abs(t.right - r.right) < 2 }; });
+      return seen.every(s => s.w === seen[0].w && s.total === seen[0].total && s.rem === seen[0].rem && s.fits && s.flush); }),
+      title + ': the hearts keep one width at 20, 4, 3, 2, 1, and 0 left, at the right of their box, so the counters beside them do not move');
+    await pg.evaluate(() => { location.hash = '#/'; }); await pg.waitForTimeout(150);
+  }
   fr0 = await frameOf('lookalike-builder');
   ok(await fr0.evaluate(() => document.querySelectorAll('#kCons .key').length === TeluguData.consonants.length && document.querySelectorAll('#kDigits .key').length === TeluguData.digits.length && !!LookalikeData.rows), 'the Lookalike Builder draws its keys from TeluguData and has LookalikeData\'s CSV reader');
   // its bar (the switch, the character, its lookalikes) stays under the header while the keyboard scrolls
@@ -85,7 +133,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   fr0 = await frameOf('phonemes');
   ok(await fr0.evaluate(() => document.getElementById('g-title').textContent + '|' + [...document.querySelectorAll('.kb-btn')].find(b => b.dataset.ch === 'క').textContent + '|' + TeluguData.notation.id) === 'Telugu → ISO|ka|iso', 'after choosing ISO, Phonemes opens in ISO (title "Telugu → ISO", key "ka")');
   fr0 = await frameOf('conjuncts');
-  ok(await fr0.evaluate(() => { document.getElementById('rev-btn').click(); GameCore.current.put(TeluguData.clusters.find(c => c.glyph === 'క్ష')); const t = document.getElementById('tel-char'); return t.textContent + '|' + getComputedStyle(t).fontFamily.split(',')[0].replace(/['"]/g, ''); }) === 'kṣa|Noto Sans', 'Conjuncts reversed shows kṣa on the card, in the Latin face');
+  ok(await fr0.evaluate(() => { document.getElementById('rev-btn').click(); document.getElementById('setup-start').click(); GameCore.current.put(TeluguData.clusters.find(c => c.glyph === 'క్ష')); const t = document.getElementById('tel-char'); return t.textContent + '|' + getComputedStyle(t).fontFamily.split(',')[0].replace(/['"]/g, ''); }) === 'kṣa|Noto Sans', 'Conjuncts reversed shows kṣa on the card, in the Latin face');
   fr0 = await frameOf('sound-charts');
   ok(await fr0.evaluate(() => { const k = [...document.querySelectorAll('#cons .ph')].find(p => p.dataset.ipa === 'k'); return k.querySelector('.tel .snd').textContent + '|' + k.querySelector('.eng .snd').textContent; }) === 'ka|/k/', 'Sound Charts in ISO: క is labeled ka, English k stays /k/');
   fr0 = await frameOf('review');

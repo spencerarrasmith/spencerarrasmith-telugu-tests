@@ -10,33 +10,35 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
 (async () => {
   /* ── controls + defaults ── */
   ok($('g-title').textContent === 'Telugu → IPA', 'forward title: Telugu → IPA');
-  ok($('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false', '🔀 button next to the title, not pressed');
-  ok($('rev-btn').parentElement === $('g-title').parentElement, 'button sits in the same row as the title');
+  ok($('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false' && $('rev-btn').closest('#setup') && !$('g-title').closest('.g-header').querySelector('.rev-btn'), 'the 🔀 button is in the session popup, not pressed; the header no longer has one');
   ok($('highlight-correct').checked && $('highlight-correct').parentElement.textContent.includes('Highlight correct answer'), '"Highlight correct answer" checkbox exists, on by default');
-  ok(d.querySelectorAll('#opts-menu input[type=checkbox]').length === 4, 'four checkboxes in the menu: categories, shuffle, extra letters, highlight');
+  ok(!$('opts-menu') && !$('menu-btn') && d.querySelectorAll('#setup input[type=checkbox]').length === 4, 'no ⋮ menu on this page: the four checkboxes (categories, shuffle, extra letters, highlight) are in the session popup');
   ok(vis().every(b => !b.classList.contains('te')) && vis()[0].textContent === 'a', 'forward keys show IPA (first key: a)');
 
   /* ── highlight checkbox, forward mode ── */
   front(x => x.ipa === 'k');
   byIpa('g'.replace('g', 'ɡ')).click();
   ok(lit() === 1 && byIpa('k').classList.contains('ok'), 'highlight ON: correct key lights up after a wrong guess');
-  ok($('feedback').textContent.trim() === '✗  /k/', 'forward feedback text unchanged: ' + $('feedback').textContent.trim());
+  ok($('feedback').textContent.trim() === '✗  /ɡ/' && !$('feedback').classList.contains('te'), 'the line under the card shows what was picked (/ɡ/), not the answer (/k/): ' + $('feedback').textContent.trim());
   await tick(); await tick();
   ok(lit() === 0, 'highlight clears again');
   $('highlight-correct').checked = false;
   front(x => x.ipa === 'k');
   const wrongBtn = byIpa('ɡ'); wrongBtn.click();
   ok(lit() === 0 && wrongBtn.classList.contains('err'), 'highlight OFF: wrong key turns red, correct key is NOT lit');
-  ok($('feedback').textContent.trim() === '✗  /k/', 'answer text is still shown with highlight off');
+  ok($('feedback').textContent.trim() === '✗  /ɡ/' && !$('feedback').textContent.includes('k'), 'with highlight off nothing gives the answer: the line shows the pick, ✗ /ɡ/');
   await tick(); await tick();
   ok(P.misses().find(m => m.game === 'phonemes' && m.key === 'క'), 'miss still recorded with highlight off');
   $('highlight-correct').checked = true;
 
   /* ── reverse: switch ── */
   const doneBefore = G().completed;
-  byIpa('a'); front(x => x.ipa === 'a'); byIpa('a').click(); await tick(); await tick();
+  byIpa('a'); front(x => x.ipa === 'a'); byIpa('a').click();
+  ok($('feedback').textContent.trim() === '✓  /a/' && $('feedback').classList.contains('ok'), 'a right pick is shown the same way: ✓ /a/');
+  ok(/GameCore\.create\(\{[^}]*?errMs:\s*1500\b/.test(require('fs').readFileSync(require('path').join(require('./config').SITE_DIR, 'alphabet/01_phonemes.html'), 'utf8')), 'Phonemes: a wrong pick stays on screen for 1.5 seconds (errMs: 1500)');
+  await tick(); await tick();
   ok(G().completed === 1, 'one card cleared before switching');
-  $('rev-btn').click();
+  h.flip();
   ok($('g-title').textContent === 'IPA → Telugu' && $('rev-btn').getAttribute('aria-pressed') === 'true', 'title flips to IPA → Telugu, button pressed');
   ok(G().completed === 0 && G().deck.length === 51 && G().total === 51, 'switching starts a fresh round (0 cleared, 51 cards)');
 
@@ -69,7 +71,7 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   front(x => x.ipa === '\u0261');
   const wrong = byCh('క'); wrong.click();
   ok($('char-card').classList.contains('wrong') && wrong.classList.contains('err'), 'wrong key marks card and key');
-  ok($('feedback').textContent.trim() === '✗  గ' && $('feedback').classList.contains('te'), 'feedback reveals the Telugu letter: ' + $('feedback').textContent.trim());
+  ok($('feedback').textContent.trim() === '✗  క' && $('feedback').classList.contains('te'), 'reversed: the line shows the Telugu letter that was picked (క), not the answer (గ): ' + $('feedback').textContent.trim());
   ok(lit() === 1 && byCh('గ').classList.contains('ok'), 'correct Telugu key highlighted');
   await tick(); await tick();
   const m = P.misses().find(x => x.game === 'phonemes-reverse');
@@ -85,9 +87,9 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   $('highlight-correct').checked = true;
 
   /* extras in reverse */
-  $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change'));
+  h.setup(() => { $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change')); });
   ok(G().total === 54 && vis().length === 54 && !!byCh('ఌ') && !!byCh('ఱ') && vis().every(b => b.classList.contains('te')), 'extras on in reverse: 54 Telugu keys incl. ఌ ఱ');
-  $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change'));
+  h.setup(() => { $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change')); });
   ok(vis().length === 51 && vis().every(b => b.classList.contains('te')), 'extras off: back to 51, still Telugu-faced');
 
   /* full reverse session */
@@ -96,11 +98,11 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   ok($('g-complete').classList.contains('show') && G().completed === 51, 'reverse session completes (51)');
   ok($('c-sub').textContent === 'All 51 IPA phonemes correctly matched to their Telugu akshara.', 'complete text mentions the direction: ' + $('c-sub').textContent);
   ok(P.isComplete('phonemes'), 'finishing reverse also checks off the Phonemes tile');
-  $('retry-btn').click();
+  h.again();
   ok(!$('g-complete').classList.contains('show') && $('g-title').textContent === 'IPA → Telugu' && vis()[0].textContent === 'అ', 'Practice Again stays in reverse mode');
 
   /* back to forward */
-  $('rev-btn').click();
+  h.flip();
   ok($('g-title').textContent === 'Telugu → IPA' && $('rev-btn').getAttribute('aria-pressed') === 'false', 'toggle back: title Telugu → IPA');
   ok(vis().length === 51 && vis().every(b => !b.classList.contains('te')) && vis()[0].textContent === 'a', 'IPA keys restored');
   ok(!$('tel-char').classList.contains('ipa-face') && G().current.ch === $('tel-char').textContent, 'card shows the Telugu letter again');

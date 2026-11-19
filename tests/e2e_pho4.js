@@ -11,41 +11,25 @@ const same   = (a, b) => [...a.split('|')].sort().join() === [...b.split('|')].s
 const clickBox = id => $(id).click();                       // like a tap on the label
 const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles: true }));
 (async () => {
-  /* ── the ⋮ menu ── */
+  /* ── no ⋮ menu: every option is in the session popup ── */
   ok(!d.querySelector('.g-controls') && !d.querySelector('.g-controls-sep'), 'the old controls bar is gone');
-  ok($('menu-btn') && $('menu-btn').closest('.g-right') && $('menu-btn').closest('.g-header-top') && $('g-title').closest('.g-header-top'), 'the ⋮ button is in the header');
-  ok($('menu-btn').closest('.g-header-top').lastElementChild === $('menu-btn').closest('.g-right') && $('menu-btn').closest('.g-right').lastElementChild === $('menu-wrap'), 'and it is the last item: top right');
-  ok($('menu-btn').querySelectorAll('circle').length === 3 && $('menu-btn').getAttribute('aria-label') === 'Options', 'three dots, labeled "Options"');
-  ok($('opts-menu').hidden && $('menu-btn').getAttribute('aria-expanded') === 'false', 'menu starts closed');
-  ok([...d.querySelectorAll('#opts-menu .menu-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include extra letters|Highlight correct answer', 'menu items, in order');
+  ok(!$('menu-btn') && !$('menu-wrap') && !$('opts-menu') && !d.querySelector('.g-header .menu-btn') && $('g-title').closest('.g-header-top') && $('g-title').closest('.g-header-top').lastElementChild.querySelector('.g-stats'), 'the header has no ⋮ button: the title, then the counters');
+  ok([...d.querySelectorAll('#setup .setup-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include extra letters|Highlight correct answer', 'the popup holds the four checkboxes, in order');
+  ok([...d.querySelectorAll('#setup .setup-opt')].every(l => l.lastElementChild.type === 'checkbox' && l.firstElementChild.classList.contains('menu-txt')), 'each is a label with its checkbox after it (at the right of the row)');
   ok($('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked && $('highlight-correct').checked, 'defaults: categories on, highlight on, shuffle + extras off');
-
-  $('menu-btn').click();
-  ok(!$('opts-menu').hidden && $('menu-btn').getAttribute('aria-expanded') === 'true', '⋮ opens the menu');
-  clickBox('highlight-correct');
-  ok(!$('highlight-correct').checked && !$('opts-menu').hidden, 'a checkbox is clickable inside the menu, and the menu stays open');
-  clickBox('highlight-correct');
-  pointerdown($('opts-menu').querySelector('.menu-opt'));
-  ok(!$('opts-menu').hidden, 'tapping inside the menu does not close it');
-  pointerdown($('kb-area'));
-  ok($('opts-menu').hidden && $('menu-btn').getAttribute('aria-expanded') === 'false', 'tapping outside closes it');
-  $('menu-btn').click(); $('menu-btn').click();
-  ok($('opts-menu').hidden, '⋮ again closes it');
-  $('menu-btn').click();
   d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  ok($('opts-menu').hidden && d.activeElement === $('menu-btn'), 'Escape closes it and returns focus to ⋮');
-  d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-  ok($('opts-menu').hidden, 'Escape with the menu closed does nothing');
+  ok($('setup').hidden && G().total === 51, 'Escape during play does nothing');
 
-  /* every option still works from the menu */
-  $('menu-btn').click();
+  /* every option works from the popup */
   front(x => x.ipa === 'k'); clickBox('highlight-correct');
   vis().find(b => b.dataset.ipa === 'ɡ').click();
-  ok(d.querySelectorAll('.kb-btn.ok').length === 0, 'highlight option works from the menu');
+  ok(d.querySelectorAll('.kb-btn.ok').length === 0, 'the highlight option works');
   await tick(); await tick(); clickBox('highlight-correct');
-  clickBox('include-extra'); ok(G().total === 54 && vis().length === 54, 'extra letters option works from the menu (54)');
-  clickBox('include-extra'); ok(G().total === 51, '…and off again (51)');
-  clickBox('show-cat'); ok(groups() === 1 && labels() === 0 && $('cat-badge').style.visibility === 'hidden', 'categories option works from the menu (flat, card label hidden)');
+  clickBox('include-extra'); ok(G().total === 51, 'checking "Include extra letters" does not restart the session in play');
+  clickBox('include-extra');
+  h.setup(() => clickBox('include-extra')); ok(G().total === 54 && vis().length === 54, 'the extra letters come in at Start (54)');
+  h.setup(() => clickBox('include-extra')); ok(G().total === 51, '…and go out again (51)');
+  clickBox('show-cat'); ok(groups() === 1 && labels() === 0 && $('cat-badge').style.visibility === 'hidden', 'the categories box (now in the session popup) still works (flat, card label hidden)');
   clickBox('show-cat'); ok(groups() === 9 && labels() === 9 && $('cat-badge').style.visibility === '', '…and back');
 
   /* ── shuffle keyboard ── */
@@ -58,7 +42,7 @@ const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles:
   const A = order();
   ok(vis().length === 51 && same(A, alpha) && A !== alpha, 'IPA keys: all 51, same letters, random order (not alphabetical)');
   ok(vis().every(b => !b.classList.contains('te')), 'IPA face');
-  $('show-cat').dispatchEvent(new w.Event('change'));        // the menu asks the page to redraw its keyboard
+  $('show-cat').dispatchEvent(new w.Event('change'));        // the box asks the page to redraw its keyboard
   ok(order() === A, 'the order is stable within a round (rebuilds keep it)');
   clickBox('highlight-correct'); clickBox('highlight-correct');
   ok(order() === A, 'toggling other options does not reshuffle');
@@ -71,13 +55,13 @@ const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles:
   ok(same(B, alpha) && B !== A, 'each new round reshuffles');
 
   /* Telugu keyboard */
-  $('rev-btn').click();
+  h.flip();
   const T = order();
   ok(vis().length === 51 && vis().every(b => b.classList.contains('te')) && same(T, alpha) && T !== alpha && groups() === 1 && labels() === 0, 'Telugu keys: shuffled too, flat, unlabeled');
   ok($('shuffle-kb').checked && $('show-cat').disabled, 'shuffle setting survives switching direction');
-  $('include-extra').click();
+  h.setup(() => $('include-extra').click());
   ok(vis().length === 54 && vis().some(b => b.dataset.ch === 'ఌ') && groups() === 1, 'extra letters join the shuffled keyboard (54)');
-  $('include-extra').click();
+  h.setup(() => $('include-extra').click());
   front(x => x.ipa === 'k'); vis().find(b => b.dataset.ch === 'క').click();
   ok($('char-card').classList.contains('correct'), 'shuffled Telugu keyboard plays too');
   await tick(); await tick();
