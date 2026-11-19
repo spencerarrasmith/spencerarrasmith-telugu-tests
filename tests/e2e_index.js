@@ -99,6 +99,33 @@ ok(d.querySelectorAll('a.tile').length === 44 && d.querySelectorAll('a.tile.soon
     ok(folded(v) === 'Reference', 'with storage blocked the arrow still works for this visit');
     ok(/\.section-toggle\[aria-expanded="false"\] svg \{ transform: rotate\(-90deg\); \}/.test(fs.readFileSync(dir + 'home.css', 'utf8')) && /\.section\.collapsed/.test(fs.readFileSync(dir + 'home.css', 'utf8')), 'home.css turns the arrow to the side and tightens a folded section');
   }
+  /* ── the title turns over: "Telugu Telusu" ⇄ తెలుగు తెలుసు, a card to a syllable, every 5 seconds ── */
+  {
+    const open = before => new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost/index.html', beforeParse: before }).window;
+    const timers = [], v = open(win => { win.setInterval = (fn, ms) => { timers.push({ fn, ms }); return timers.length; }; }), vd = v.document;
+    const h1 = vd.getElementById('hero-title'), t = vd.getElementById('flip-title'), cards = [...t.querySelectorAll('.flip')], css = fs.readFileSync(dir + 'home.css', 'utf8');
+    ok(/<h1 class="hero-title" id="hero-title">Telugu Telusu<\/h1>/.test(src) && h1.querySelector('.sr-only').textContent === 'Telugu Telusu' && t.getAttribute('aria-hidden') === 'true' && h1.children.length === 2,
+      'the title is plain "Telugu Telusu" in the page; the script adds the cards, and a screen reader still gets "Telugu Telusu"');
+    ok(cards.map(c => c.querySelector('.flip-face.la').textContent + '/' + c.querySelector('.flip-face.te').textContent).join(' ') === 'Te/తె lu/లు gu/గు Te/తె lu/లు su/సు', 'six cards, Latin on the front and Telugu on the back: Te/తె lu/లు gu/గు · Te/తె lu/లు su/సు');
+    ok([...t.querySelectorAll('.flip-word')].map(wd => wd.querySelectorAll('.flip').length).join() === '3,3' && t.textContent === 'Teతెluలుguగు Teతెluలుsuసు' && cards.every(c => c.querySelector('.te').getAttribute('lang') === 'te' && c.children.length === 1 && c.firstElementChild.className === 'flip-in'),
+      'two words of three cards, with a space between; each Telugu face is marked lang="te"');
+    ok(cards.map(c => c.getAttribute('style').replace(/\s|;/g, '')).join() === '--i:0,--i:1,--i:2,--i:3,--i:4,--i:5', 'the cards are numbered left to right, so they turn one after another');
+    ok(timers.length === 1 && timers[0].ms === 5000 && !t.classList.contains('is-te'), 'it starts in Latin, with one timer: every 5 seconds');
+    timers[0].fn(); ok(t.classList.contains('is-te'), 'the timer turns the title to Telugu');
+    timers[0].fn(); ok(!t.classList.contains('is-te'), 'and the next time back to Latin');
+    vd.getElementById('home').hidden = true; timers[0].fn();
+    ok(!t.classList.contains('is-te'), 'while a lesson is open (the home view hidden) it stays as it is');
+    vd.getElementById('home').hidden = false; timers[0].fn(); ok(t.classList.contains('is-te'), 'and carries on when Home is back');
+    const turn = +(css.match(/\.flip \{[^}]*--turn: ([\d.]+)s;/) || [])[1], lag = +(css.match(/\.flip \{[^}]*--wait: calc\(var\(--i, 0\) \* (\d+)ms\);/) || [])[1];
+    ok(turn > 0 && lag > 0 && Math.abs(turn + 5 * lag / 1000 - 0.5) < 0.051, 'the whole flip takes about half a second: ' + turn + ' s a card, the last of six starting ' + 5 * lag + ' ms after the first (home.css)');
+    ok(/\.flip-title\.is-te \.flip-in \{ transform: rotateY\(180deg\); \}/.test(css) && /\.flip-in \{[^}]*transform-style: preserve-3d;[^}]*transition: transform var\(--turn\) ease var\(--wait\)/.test(css) && /\.flip-face \{[^}]*backface-visibility: hidden/.test(css) && /\.flip-face\.te \{[^}]*transform: rotateY\(180deg\);[^}]*Noto Sans Telugu/.test(css),
+      'a card turns about its upright axis, its two faces back to back, the Telugu one in the Telugu font (home.css)');
+    ok(/\.flip \{[^}]*width: var\(--la, auto\);[^}]*transition: width var\(--turn\) ease var\(--wait\)/.test(css) && /\.flip-title\.is-te \.flip \{ width: var\(--te, auto\); \}/.test(css), 'a card is as wide as the face it shows, and changes width as it turns (home.css)');
+    ok(/@media \(prefers-reduced-motion: reduce\) \{ \.flip, \.flip-in \{ transition: none; \} \}/.test(css), 'no turning animation for a reader who asked for reduced motion (home.css)');
+    // reduced motion: the cards are there, but nothing sets them turning
+    const calm = [], q = open(win => { win.setInterval = (fn, ms) => { calm.push(ms); return 1; }; win.matchMedia = m => ({ matches: /prefers-reduced-motion: reduce/.test(m), media: m, addEventListener() {}, removeEventListener() {} }); });
+    ok(calm.length === 0 && q.document.querySelectorAll('#flip-title .flip').length === 6 && q.document.querySelector('#hero-title .sr-only').textContent === 'Telugu Telusu', 'with reduced motion asked for, the title is built but never flips');
+  }
   // placeholder pages themselves: e2e_placeholder
   console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
 })();

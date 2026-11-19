@@ -34,6 +34,19 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(150);
   const top = pg.mainFrame();
   ok(await css(top, 'body', 'background-color') === 'rgb(11, 12, 24)' && await css(top, 'a.tile', 'border-radius') === '16px' && await css(top, '.tiles', 'display') === 'grid', 'home page is styled by home.css on top of base.css');
+  // The title: six cards that turn from "Telugu Telusu" to తెలుగు తెలుసు. Each is as wide as the face it shows.
+  const titleNow = () => top.evaluate(() => { const t = document.getElementById('flip-title'), px = e => parseFloat(getComputedStyle(e).width);
+    return { te: t.classList.contains('is-te'), cards: [...t.querySelectorAll('.flip')].map(c => ({ w: px(c), la: px(c.querySelector('.la')), te: px(c.querySelector('.te')), m: getComputedStyle(c.querySelector('.flip-in')).transform, vars: !!c.style.getPropertyValue('--la') && !!c.style.getPropertyValue('--te') })),
+      line: t.getBoundingClientRect().height, sr: document.querySelector('#hero-title .sr-only').getBoundingClientRect().width }; });
+  await top.waitForFunction(() => !document.getElementById('flip-title').classList.contains('is-te'), null, { timeout: 7000 }); await pg.waitForTimeout(700);
+  let tn = await titleNow();
+  ok(tn.cards.length === 6 && tn.cards.every(c => c.vars && c.la > 5 && c.te > 5 && Math.abs(c.w - c.la) < 0.6 && (c.m === 'none' || /^matrix\(1, 0, 0, 1, 0, 0\)$/.test(c.m))) && tn.line < 45 && tn.sr <= 1,
+    'the title shows "Telugu Telusu": six cards, each measured and as wide as its Latin face, on one line');
+  await top.waitForFunction(() => document.getElementById('flip-title').classList.contains('is-te'), null, { timeout: 7000 });
+  ok(true, 'left alone, the title turns over by itself (within the 5 seconds between flips)');
+  await pg.waitForTimeout(700);
+  tn = await titleNow();
+  ok(tn.cards.every(c => Math.abs(c.w - c.te) < 0.6 && /^matrix3d\(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0,/.test(c.m)) && tn.cards.some(c => Math.abs(c.la - c.te) > 2), 'about half a second later every card has turned to its Telugu face and taken that face\'s width');
   ok(await css(top, ':root', '--accent-glow') === 'rgba(201, 152, 26, 0.16)', 'home page takes its color tokens from base.css (accent glow 0.16)');
   // a section folds away to its heading line, and opens again
   const fold = () => top.evaluate(() => { const s = document.querySelectorAll('.section')[1], b = s.querySelector('.section-toggle');
