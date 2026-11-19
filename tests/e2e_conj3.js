@@ -105,7 +105,7 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   while (!$('g-complete').classList.contains('show') && guard++ < 200) { G().current.parts.forEach(p => key(p.ch).click()); await tick(); await tick(); }
   ok($('g-complete').classList.contains('show') && G().completed === 40 && $('c-accuracy').textContent === '100%', 'reverse round completes (40 cards, 100%)');
   ok($('c-sub').textContent === 'All 40 sounds correctly written as Telugu conjuncts.', 'complete screen names the direction');
-  ok(P.isComplete('conjuncts'), 'finishing the reverse direction checks off the Conjuncts tile');
+  { const r = P.runs('conjuncts').at(-1); ok(r && r.ok === G().completed && r.tries === G().attempts && r.n === G().total && r.end === 'done' && r.dir === 'reverse' && !('isComplete' in P), 'the reverse session is recorded for the Profile page as reversed'); }
 
   /* ── and back ── */
   h.flip();

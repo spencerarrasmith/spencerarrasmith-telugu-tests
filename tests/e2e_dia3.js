@@ -111,7 +111,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   while (!$('g-complete').classList.contains('show') && g++ < 400) { const c = cur(); btn('c', c.c.ipa).click(); btn('v', c.v.ipa).click(); await tick(); await tick(); }
   ok($('g-complete').classList.contains('show') && G().completed === 51 && $('c-accuracy').textContent === '100%', 'reverse round completes (51 cards, 100%)');
   ok($('c-sub').textContent === 'All 51 sounds correctly written as Telugu syllables.', 'complete text names the direction');
-  ok(P.isComplete('diacritics'), 'finishing in reverse checks off the Diacritics tile');
+  { const r = P.runs('diacritics').at(-1); ok(r && r.ok === G().completed && r.tries === G().attempts && r.n === G().total && r.end === 'done' && r.dir === 'reverse' && !('isComplete' in P), 'the reverse session is recorded for the Profile page as reversed'); }
   h.again();
   ok(!$('g-complete').classList.contains('show') && $('g-title').textContent === 'IPA → Diacritics' && kb('c')[0].classList.contains('te'), 'Practice Again stays in reverse');
 

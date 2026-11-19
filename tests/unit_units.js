@@ -7,6 +7,10 @@ let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); 
 ok(U.sections.map(s => s.title).join(' · ') === 'Reference · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'five sections, Reference first');
 ok(U.sections.map(s => s.tiles.length).join() === '7,8,8,12,8' && U.tiles.length === 43, 'tile counts 7/8/8/12/8 = 43');
 ok(U.featured.map(t => t.id).join() === 'review' && U.all.length === 44 && U.all[0].id === 'review', 'Review is featured; all = Review + the 43 tiles');
+// pages that are not tiles (reached from the top right of the home page), and the games whose sessions the Profile page charts
+ok(JSON.stringify(U.pages) === '[{"id":"profile","title":"Profile","src":"profile.html"}]' && fs.existsSync(path.join(SITE_DIR, 'profile.html')) && !U.all.some(t => U.pages.some(p => p.id === t.id || p.src === t.src)), 'pages: Profile, with its own id and file, and not among the tiles');
+const charted = U.all.filter(t => t.stats).map(t => t.id), onCore = U.all.filter(t => !t.soon && /<script src="[^"]*game-core\.js">/.test(fs.readFileSync(path.join(SITE_DIR, t.src), 'utf8'))).map(t => t.id);
+ok(charted.join() === 'phonemes,diacritics,conjuncts,lookalikes' && onCore.join() === charted.join() && U.all.every(t => t.stats === undefined || t.stats === true), 'stats: true marks the four practice games, which are exactly the pages built on game-core.js (it records their sessions)');
 ok(new Set(U.all.map(t => t.id)).size === 44 && new Set(U.all.map(t => t.src)).size === 44, 'ids and page paths are unique');
 ok(U.all.every(t => t.id && t.icon && t.title && t.desc && t.src && /^[a-z0-9-]+$/.test(t.id)), 'every tile has id, icon, title, desc, and src');
 ok(U.all.every(t => fs.existsSync(path.join(SITE_DIR, t.src))), 'every src is a file');

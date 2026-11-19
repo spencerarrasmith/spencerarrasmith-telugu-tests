@@ -42,7 +42,7 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   let g = 0;
   while (!$('g-complete').classList.contains('show') && g++ < 600) { const c = cur(); btn('c', c.c.ipa).click(); btn('v', c.v.ipa).click(); await tick(); await tick(); }
   ok($('g-complete').classList.contains('show') && G().deck.length === 0 && G().completed === 51 + 2, 'default session completes (51 deck + 2 injected test cards)');
-  ok(P.isComplete('diacritics'), 'completion recorded for the Diacritics tile');
+  { const r = P.runs('diacritics').at(-1); ok(r && r.ok === G().completed && r.tries === G().attempts && r.n === G().total && r.end === 'done' && !('dir' in r) && !('isComplete' in P), 'the session is recorded for the Profile page (forward); nothing is marked complete'); }
 
   $('retry-btn').click();
   ok(!$('setup').hidden && $('g-complete').classList.contains('show'), '"Practice Again" opens the session popup');

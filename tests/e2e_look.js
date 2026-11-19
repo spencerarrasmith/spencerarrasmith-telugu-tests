@@ -103,7 +103,7 @@ const upload = (text, name = 'mine.csv') => new Promise(res => { w.eval('onFile'
   const N = total();
   for (let i = 0; i < N; i++) { const c = cur(); key(c.item.text).click(); await tick(); await tick(); }
   ok($('g-complete').classList.contains('show') && $('c-attempts').textContent === String(N) + '' && $('c-accuracy').textContent === '100%', 'perfect run → complete screen: ' + $('c-attempts').textContent + ' attempts, ' + $('c-accuracy').textContent);
-  ok(P.isComplete('lookalikes'), 'completion recorded for the home-page ✓');
+  { const r = P.runs('lookalikes').at(-1); ok(r && r.ok === G().completed && r.tries === G().attempts && r.n === G().total && r.end === 'done' && !('dir' in r) && !('isComplete' in P), 'the session is recorded for the Profile page; nothing is marked complete'); }
   $('retry-btn').click();
   ok(!$('g-complete').classList.contains('show') && total() === 40, 'Practice Again starts a new session');
 

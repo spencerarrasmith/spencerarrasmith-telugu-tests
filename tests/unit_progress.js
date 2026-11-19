@@ -14,7 +14,8 @@ function load(w) { delete require.cache[require.resolve((SITE_DIR + '/progress.j
   // module picks `window` when defined
   const api = require((SITE_DIR + '/progress.js')); g.window = old; return api; }
 let w = fakeWin(false), P = load(w);
-ok(P.persistent && P.missCount() === 0 && P.doneIds().length === 0, 'starts empty, persistent');
+ok(P.persistent && P.missCount() === 0 && P.runCount() === 0 && JSON.stringify(P.runs()) === '{}' && P.runs('phonemes').length === 0, 'starts empty, persistent');
+ok(!('complete' in P) && !('isComplete' in P) && !('doneIds' in P) && !('clearRuns' in P), 'nothing is marked "complete" any more: no complete(), isComplete(), or doneIds()');
 let changes = 0; P.onChange(() => changes++);
 P.miss({ game: 'phonemes', key: 'క', prompt: 'క', answer: '/k/', note: 'Velar' });
 P.miss({ game: 'phonemes', key: 'క', prompt: 'క', answer: '/k/', note: 'Velar' });
@@ -28,16 +29,30 @@ ok(r.cleared && P.missCount() === 1, 'two "got it" in a row clear the item');
 P.miss({ game: 'phonemes', key: 'క', prompt: 'క', answer: '/k/' }); P.review('phonemes', 'క', true);
 P.miss({ game: 'phonemes', key: 'క', prompt: 'క', answer: '/k/' });
 ok(P.misses().find(m => m.key === 'క').streak === 0, 'a new miss resets the streak');
-P.complete('phonemes', { accuracy: 80, attempts: 60 }); P.complete('phonemes', { accuracy: 95 }); P.complete('phonemes', { accuracy: 70 });
-ok(P.isComplete('phonemes') && !P.isComplete('conjuncts') && P.doneIds().join() === 'phonemes', 'completion tracked per unit');
-const saved = JSON.parse(w.store['telugu.progress.v1']);
-ok(saved.done.phonemes.runs === 3 && saved.done.phonemes.best === 95, 'runs counted; best accuracy kept');
+/* ── runs: every session a game plays to its end (the Profile page's statistics) ── */
+const before = changes, t0 = Date.now();
+P.run('phonemes', { total: 51, correct: 51, attempts: 60 });
+P.run('phonemes', { total: 5, correct: 1, attempts: 5, ended: 'out', variant: 'reverse' });
+P.run('conjuncts', { total: 40, correct: 40, attempts: 40 });
+const saved = JSON.parse(w.store['telugu.progress.v1']), runs = P.runs('phonemes');
+ok(runs.length === 2 && P.runs('conjuncts').length === 1 && P.runs('diacritics').length === 0 && P.runCount() === 3 && Object.keys(P.runs()).sort().join() === 'conjuncts,phonemes', 'runs are kept per game, oldest first');
+ok(JSON.stringify(Object.keys(runs[0]).sort()) === '["end","n","ok","t","tries"]' && runs[0].n === 51 && runs[0].ok === 51 && runs[0].tries === 60 && runs[0].end === 'done' && runs[0].t >= t0, 'a run stores when it ended, the cards, the correct answers, the answers given, and how it ended');
+ok(runs[1].end === 'out' && runs[1].dir === 'reverse' && runs[1].ok === 1 && runs[1].tries === 5 && !('dir' in P.runs('conjuncts')[0]), 'a session stopped by mistakes is stored as "out"; the way it was played (reverse) only when there is one');
+ok(changes === before + 3 && saved.runs.phonemes.length === 2 && !('done' in saved), 'each run is a change, saved with the rest; the store has no "done" record');
+runs.push({ t: 0 }); ok(P.runs('phonemes').length === 2, 'runs() hands out a copy');
+P.run('phonemes', { total: 5, correct: 0, attempts: 0 }); P.run('', { total: 5, correct: 5, attempts: 5 }); P.run('phonemes', { total: 'x', correct: 5, attempts: 5 }); P.run('phonemes');
+ok(P.runCount() === 3, 'a session with no answers, no game, or no numbers is not a run');
+P.run('phonemes', { total: 3, correct: 9, attempts: 4, ended: 'sideways' });
+ok(P.runs('phonemes')[2].ok === 4 && P.runs('phonemes')[2].end === 'done', 'correct answers never exceed the answers given; an unknown ending counts as finished');
+for (let i = 0; i < P.RUN_CAP + 5; i++) P.run('capped', { total: i + 1, correct: 1, attempts: 1 });
+ok(P.RUN_CAP === 100 && P.runs('capped').length === 100 && P.runs('capped')[0].n === 6 && P.runs('capped')[99].n === 105, 'the last 100 runs of a game are kept; the oldest go first');
 // a second "frame" sharing storage sees the same data
 const P2 = load(Object.assign(fakeWin(false), { localStorage: w.localStorage }));
-ok(P2.missCount() === 2 && P2.isComplete('phonemes'), 'another page sharing storage sees the same data');
+ok(P2.missCount() === 2 && P2.runs('phonemes').length === 3 && P2.runCount() === P.runCount(), 'another page sharing storage sees the same data');
 P.miss({ game: 'x', key: '', prompt: 'p', answer: 'a' }); ok(P.missCount() === 2, 'empty key is ignored');
-P.clearMisses(); ok(P.missCount() === 0 && P.isComplete('phonemes'), 'clearMisses keeps completions');
-P.reset(); ok(P.doneIds().length === 0, 'reset clears everything');
+P.clearMisses(); ok(P.missCount() === 0 && P.runs('phonemes').length === 3, 'clearMisses keeps the runs');
+P.miss({ game: 'phonemes', key: 'క', ask: 'telugu' });
+P.reset(); ok(P.runCount() === 0 && P.missCount() === 0 && JSON.stringify(P.runs()) === '{}' && JSON.stringify(Object.keys(JSON.parse(w.store['telugu.progress.v1'])).sort()) === '["misses","runs","v"]', 'reset erases every record of earlier attempts: runs and misses alike');
 w.localStorage.setItem('telugu.progress.v1', '{not json'); ok(P.missCount() === 0, 'corrupt storage is treated as empty');
 /* ── what a miss stores (v2): the character and what was asked, not the text on screen ── */
 w = fakeWin(false); P = load(w);
@@ -69,7 +84,7 @@ const V1 = { v: 1, done: { phonemes: { at: 1, runs: 2, best: 90 } }, misses: {
 w = fakeWin(false); w.store['telugu.progress.v1'] = JSON.stringify(V1); P = load(w);
 let seen = 0; P.onChange(() => seen++);
 const up = Object.fromEntries(P.misses().map(m => [m.game, m]));
-ok(P.missCount() === 8 && P.isComplete('phonemes') && stored().v === 2 && stored().done.phonemes.best === 90, 'a v1 store is upgraded to v2 on first read; nothing is lost');
+ok(P.missCount() === 8 && stored().v === 2 && !('done' in stored()) && JSON.stringify(stored().runs) === '{}' && P.runCount() === 0, 'a v1 store is upgraded to v2 on first read: every miss kept, its old "done" record dropped, no runs yet');
 ok(['phonemes', 'diacritics', 'conjuncts'].every(g => up[g].ask === 'telugu') && ['phonemes-reverse', 'diacritics-reverse', 'conjuncts-reverse', 'lookalikes'].every(g => up[g].ask === 'sound'), 'each script game\'s misses get the direction they were asked in');
 ok(['diacritics', 'diacritics-reverse', 'conjuncts', 'conjuncts-reverse'].every(g => up[g].syllable === true) && ['phonemes', 'phonemes-reverse', 'lookalikes'].every(g => !('syllable' in up[g])), 'Diacritics and Conjuncts misses are marked as syllables; Phonemes and Lookalikes as letters');
 ok(Object.values(up).filter(m => m.ask).every(m => !('prompt' in m) && !('answer' in m)), 'the old IPA text is dropped from converted misses');
@@ -80,6 +95,12 @@ const once = w.store['telugu.progress.v1']; P.missCount(); P.misses();
 ok(w.store['telugu.progress.v1'] === once, 'and happens once');
 // blocked storage: still works in-memory
 const B = load(fakeWin(true));
-B.miss({ game: 'g', key: 'k', prompt: 'p', answer: 'a' }); B.complete('u');
-ok(B.missCount() === 1 && B.isComplete('u') && B.persistent === false, 'blocked storage: works in memory, persistent=false');
+B.miss({ game: 'g', key: 'k', prompt: 'p', answer: 'a' }); B.run('u', { total: 2, correct: 2, attempts: 3 });
+ok(B.missCount() === 1 && B.runs('u').length === 1 && B.runs('u')[0].tries === 3 && B.persistent === false, 'blocked storage: works in memory, persistent=false');
+B.reset(); ok(B.missCount() === 0 && B.runCount() === 0, 'and reset works there too');
+// a store written by the version that had ✓ marks, and one from before runs were kept
+w = fakeWin(false); w.store['telugu.progress.v1'] = JSON.stringify({ v: 2, done: { phonemes: { at: 1, runs: 2, best: 90 } }, misses: {} }); P = load(w);
+ok(P.runCount() === 0 && P.runs('phonemes').length === 0 && P.missCount() === 0, 'an older store (a "done" record, no runs) reads as no runs');
+P.run('phonemes', { total: 1, correct: 1, attempts: 1 });
+ok(!('done' in JSON.parse(w.store['telugu.progress.v1'])) && P.runs('phonemes').length === 1, 'and its "done" record is gone at the next save');
 console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);

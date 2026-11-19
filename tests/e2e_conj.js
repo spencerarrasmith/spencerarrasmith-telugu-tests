@@ -43,7 +43,7 @@ const inject = glyphEscaped => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.gly
   let g = 0;
   while (!$('g-complete').classList.contains('show') && g++ < 800) { cur().parts.forEach(p => btn(p.ipa).click()); await tick(); await tick(); }
   ok($('g-complete').classList.contains('show'), 'default session completes');
-  ok(P.isComplete('conjuncts'), 'completion recorded for the Conjuncts tile');
+  { const r = P.runs('conjuncts').at(-1); ok(r && r.ok === G().completed && r.tries === G().attempts && r.n === G().total && r.end === 'done' && !('dir' in r) && !('isComplete' in P), 'the session is recorded for the Profile page (forward); nothing is marked complete'); }
 
   $('retry-btn').click();
   ok(!$('setup').hidden && $('g-complete').classList.contains('show'), '"Practice Again" opens the session popup');

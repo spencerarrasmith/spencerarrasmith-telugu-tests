@@ -30,7 +30,7 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
     key('ఖ').click(); ok($('char-card').classList.contains('correct'), 'Phonemes reversed: ఖ answers kha');
     await tick(); await tick();
     let guard = 0; while (!$('g-complete').classList.contains('show') && guard++ < 200) { key(G().current.ch).click(); await tick(); await tick(); }
-    ok($('c-sub').textContent === 'All 51 ISO spellings correctly matched to their Telugu akshara.' && P.isComplete('phonemes'), 'Phonemes: the complete screen says "ISO spellings"; the tile is checked as usual');
+    ok($('c-sub').textContent === 'All 51 ISO spellings correctly matched to their Telugu akshara.' && P.runs('phonemes').at(-1).end === 'done' && P.runs('phonemes').at(-1).n === 51, 'Phonemes: the complete screen says "ISO spellings"; the session is recorded as usual');
   }
 
   /* ── Diacritics ── */

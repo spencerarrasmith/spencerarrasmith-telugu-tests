@@ -81,7 +81,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   await tick();
   ok($('g-complete').classList.contains('show') && $('c-title').textContent === 'Out of mistakes' && $('c-trophy').hidden && $('c-sub').textContent === '1 of 5 cleared. 3 mistakes were allowed.', 'the complete screen: "Out of mistakes" · ' + $('c-sub').textContent);
   ok($('c-attempts').textContent === '5' && $('c-accuracy').textContent === '20%' && $('c-errors').textContent === '4', 'its numbers: 5 attempts, 20%, 4 errors');
-  ok(!P.isComplete('phonemes') && P.misses().length >= 1 && P.misses().every(m => m.game === 'phonemes-reverse'), 'no ✓ for the unit; the misses still go to Review');
+  ok(JSON.stringify(P.runs('phonemes').map(r => [r.n, r.ok, r.tries, r.end, r.dir])) === '[[5,1,5,"out","reverse"]]' && P.misses().length >= 1 && P.misses().every(m => m.game === 'phonemes-reverse'), 'the session is recorded as one that ran out of mistakes (5 cards, 1 correct, 5 answers, reversed); the misses still go to Review');
 
   /* ── Practice Again asks again, with the last choices ── */
   $('retry-btn').click();
@@ -91,7 +91,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   ok(!open() && G().total === 3 && G().limit === null && $('g-title').textContent === 'Telugu → IPA' && lives() === 'hidden' && !$('g-complete').classList.contains('show'), 'Enter starts: 3 rounds, forward, unlimited (no misses counter)');
   for (let i = 0; i < 3; i++) { if (i === 1) { wrong().click(); await tick(); } right().click(); await tick(); }
   ok($('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && !$('c-trophy').hidden && $('c-attempts').textContent === '4' && $('c-accuracy').textContent === '75%' && $('c-errors').textContent === '1', 'a short session finishes as usual: 4 attempts, 75%, 1 error');
-  ok(!P.isComplete('phonemes'), 'but a session shorter than the full set does not check off the unit');
+  ok(JSON.stringify(P.runs('phonemes').slice(1).map(r => [r.n, r.ok, r.tries, r.end, r.dir])) === '[[3,3,4,"done",null]]', 'and it is recorded like any other session: 3 cards, 3 correct, 4 answers, forward');
 
   /* ── Cancel, once something has been played, only closes the popup ── */
   $('retry-btn').click(); $('show-cat').click(); $('rev-btn').click(); slide('setup-rounds', 40);
@@ -105,9 +105,9 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
 
   /* ── all the characters again: the ✓ comes back ── */
   $('retry-btn').click(); slide('setup-rounds', 51); $('setup-start').click();
-  ok(G().total === 51 && !G().short && w.GameSetup && $('setup-rounds').value === '51', 'the slider at its top end is "all": 51');
+  ok(G().total === 51 && w.GameSetup && $('setup-rounds').value === '51', 'the slider at its top end is "all": 51');
   while (G().deck.length) { right().click(); await tick(); }
-  ok(P.isComplete('phonemes') && $('c-sub').textContent === 'All 51 Telugu akshara correctly matched to their IPA phonemes.', 'a full session checks off the unit as before');
+  ok(P.runs('phonemes').at(-1).n === 51 && P.runs('phonemes').at(-1).tries === 51 && P.runs('phonemes').at(-1).end === 'done' && $('c-sub').textContent === 'All 51 Telugu akshara correctly matched to their IPA phonemes.', 'a full session is recorded with all 51, without a mistake');
 
   /* ── the checkboxes: live in the popup, settled by Start, put back by Cancel ── */
   $('retry-btn').click(); $('setup-start').click();
@@ -120,9 +120,9 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   slide('setup-rounds', 10); $('include-extra').click();
   ok($('setup-rounds').max === '54' && $('setup-rounds').value === '10' && $('setup-rounds-n').value === '10', 'a chosen number stays put when the top end moves: 10 of 54');
   $('setup-start').click();
-  ok(G().total === 10 && G().short && keys() === 54 && $('include-extra').checked, 'Start: 10 rounds drawn from the 54, with all 54 keys');
+  ok(G().total === 10 && keys() === 54 && $('include-extra').checked, 'Start: 10 rounds drawn from the 54, with all 54 keys');
   reopen(); slide('setup-rounds', 54); $('setup-start').click();
-  ok(G().total === 54 && !G().short, 'the slider at its top end with the extras on: all 54');
+  ok(G().total === 54, 'the slider at its top end with the extras on: all 54');
   // Cancel puts every checkbox back, and what follows them follows them back
   reopen();
   $('include-extra').click(); $('shuffle-kb').click(); $('highlight-correct').click();
@@ -193,24 +193,24 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     ok($('setup-rounds').max === '57' && $('setup-rounds').value === '57' && G().total === 51 && kb('c').length === 35, 'Diacritics: "Include extra letters" takes the slider to 57; nothing is dealt until Start');
     $('include-extra').click(); $('rev-btn').click(); slide('setup-rounds', 6); slide('setup-misses', 3);
     $('setup-start').click();
-    ok($('setup').hidden && $('g-title').textContent === 'IPA → Diacritics' && G().total === 6 && G().limit === 3 && G().short && lives() === L3 && kb('c').length === 35 && kb('v').length === 17 && kb('c').every(b => b.classList.contains('te')),
+    ok($('setup').hidden && $('g-title').textContent === 'IPA → Diacritics' && G().total === 6 && G().limit === 3 && lives() === L3 && kb('c').length === 35 && kb('v').length === 17 && kb('c').every(b => b.classList.contains('te')),
       'Diacritics: Start deals 6 rounds, reversed, with 3 mistakes allowed (three hearts); both keyboards are whole (35 + 17 Telugu keys)');
     wrong(); await tick(); await tick(); right(); await tick(); await tick(); wrong(); await tick(); await tick();
     ok(lives() === L1 && !G().over, 'Diacritics: two mistakes, one heart left');
     wrong(); await tick(); await tick();
     ok(lives() === RING && !G().over && !$('g-complete').classList.contains('show'), 'Diacritics: three mistakes, an empty ring (⭕), still playing');
     wrong(); await tick(); await tick();
-    ok(G().over && $('g-complete').classList.contains('show') && $('c-title').textContent === 'Out of mistakes' && $('c-sub').textContent === '1 of 6 cleared. 3 mistakes were allowed.' && !P.isComplete('diacritics'), 'Diacritics: the fourth mistake ends the session: ' + $('c-sub').textContent);
+    ok(G().over && $('g-complete').classList.contains('show') && $('c-title').textContent === 'Out of mistakes' && $('c-sub').textContent === '1 of 6 cleared. 3 mistakes were allowed.' && P.runs('diacritics').at(-1).end === 'out' && P.runs('diacritics').at(-1).dir === 'reverse', 'Diacritics: the fourth mistake ends the session (recorded as out of mistakes, reversed): ' + $('c-sub').textContent);
     $('retry-btn').click();
     ok(!$('setup').hidden && $('setup-rounds').value === '6' && $('setup-misses-out').textContent === '3' && $('setup-dir').textContent === 'IPA → Diacritics', 'Diacritics: "Practice Again" opens the popup with the last choices');
     $('rev-btn').click(); slide('setup-rounds', 51); slide('setup-misses', w.GameSetup.MISS_STOPS + 1); $('include-extra').click(); $('shuffle-kb').click();
     ok($('setup-rounds').max === '57' && $('setup-rounds').value === '57' && !$('show-cat').checked && $('show-cat').disabled && !$('cat-note').hidden, 'Diacritics: extras on with the slider at its top keeps "all" (57); "Shuffle keyboard" holds categories off');
     $('setup-start').click();
-    ok(G().total === 57 && !G().short && G().limit === null && lives() === 'hidden' && kb('c').length === 36 && kb('v').length === 19 && d.querySelectorAll('.kb-col[data-kind="c"] .kb-group').length === 1 && $('g-title').textContent === 'Diacritics → IPA',
+    ok(G().total === 57 && G().limit === null && lives() === 'hidden' && kb('c').length === 36 && kb('v').length === 19 && d.querySelectorAll('.kb-col[data-kind="c"] .kb-group').length === 1 && $('g-title').textContent === 'Diacritics → IPA',
       'Diacritics: Start deals all 57, forward, unlimited, on a shuffled keyboard with the extras (36 + 19 keys)');
     w.GameSetup.current.open(); $('include-extra').click(); $('shuffle-kb').click(); $('show-cat').click(); $('setup-start').click();
     let n = 0; while (G().deck.length && n++ < 200) { right(); await tick(); await tick(); }
-    ok(G().total === 51 && $('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && P.isComplete('diacritics'), 'Diacritics: a full session of 51 checks off the unit as before');
+    ok(G().total === 51 && $('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && P.runs('diacritics').at(-1).end === 'done' && P.runs('diacritics').at(-1).n === 51 && !P.runs('diacritics').at(-1).dir, 'Diacritics: a full session of 51 is recorded for the Profile page');
     w.GameSetup.current.open(); $('include-extra').click(); $('shuffle-kb').click(); $('setup-cancel').click();
     ok($('setup').hidden && !$('include-extra').checked && !$('shuffle-kb').checked && $('show-cat').checked && !$('show-cat').disabled, 'Diacritics: Cancel puts the checkboxes back');
     let went = null; const f = load(PAGE, { setup: 'open', before: win => { Object.defineProperty(win, 'parent', { configurable: true, value: { location: { set hash(v) { went = v; } } } }); } });
@@ -237,13 +237,13 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     ok($('setup-rounds').max === '92' && $('setup-rounds').value === '40' && $('setup-rounds-n').max === '92', 'Conjuncts: "Include uncommon clusters" takes the top to 92; the 40 stays');
     $('include-uncommon').click();
     $('setup-start').click();
-    ok($('setup').hidden && G().total === 40 && !G().short && G().limit === null && lives() === 'hidden' && kb().length === 34, 'Conjuncts: Start with the defaults deals the usual 40');
+    ok($('setup').hidden && G().total === 40 && G().limit === null && lives() === 'hidden' && kb().length === 34, 'Conjuncts: Start with the defaults deals the usual 40');
     let n = 0; while (G().deck.length && n++ < 200) { right(); await tick(); await tick(); }
-    ok($('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && P.isComplete('conjuncts'), 'Conjuncts: the usual 40 checks off the unit as before');
+    ok($('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && P.runs('conjuncts').length === 1 && P.runs('conjuncts')[0].n === 40 && P.runs('conjuncts')[0].end === 'done', 'Conjuncts: the usual 40 is recorded for the Profile page');
     $('retry-btn').click();
     ok(!$('setup').hidden && $('setup-rounds').value === '40', 'Conjuncts: "Practice Again" opens the popup, still at 40');
     slide('setup-rounds', 83); $('setup-start').click();
-    ok(G().total === 83 && !G().short && new Set(G().deck.map(c => c.glyph)).size === 83 && G().deck.every(c => c.core), 'Conjuncts: the slider at its top end deals every common cluster once: 83');
+    ok(G().total === 83 && new Set(G().deck.map(c => c.glyph)).size === 83 && G().deck.every(c => c.core), 'Conjuncts: the slider at its top end deals every common cluster once: 83');
     w.GameSetup.current.open();
     ok($('setup-rounds').value === '83', 'Conjuncts: the top end is remembered');
     $('include-uncommon').click();
@@ -251,7 +251,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     $('setup-start').click();
     ok(G().total === 92 && kb().length === 35 && !!key('ɽ'), 'Conjuncts: all 92, with ఱ on the keyboard');
     w.GameSetup.current.open(); $('include-uncommon').click(); $('rev-btn').click(); slide('setup-rounds', 5); slide('setup-misses', 3); $('setup-start').click();
-    ok(G().total === 5 && G().short && G().limit === 3 && $('g-title').textContent === 'IPA → Conjuncts' && lives() === L3 && kb().length === 34 && kb().every(b => b.classList.contains('te')), 'Conjuncts: 5 rounds, reversed, 3 mistakes allowed (three hearts): the whole keyboard (34 Telugu keys)');
+    ok(G().total === 5 && G().limit === 3 && $('g-title').textContent === 'IPA → Conjuncts' && lives() === L3 && kb().length === 34 && kb().every(b => b.classList.contains('te')), 'Conjuncts: 5 rounds, reversed, 3 mistakes allowed (three hearts): the whole keyboard (34 Telugu keys)');
     wrong(); await tick(); await tick(); wrong(); await tick(); await tick();
     ok(lives() === L1 && !G().over, 'Conjuncts: two mistakes, one heart left');
     wrong(); await tick(); await tick();

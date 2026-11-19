@@ -154,9 +154,19 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
       id + ': the header stays in view when the page scrolls'); }
   // The notation chosen on the home page reaches the next page opened (each page is loaded afresh from Home)
   await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(150);
-  ok(await top.evaluate(() => [...document.querySelectorAll('#prefs .seg-opt')].map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join(' ')) === 'IPA* ISO', 'home shows the IPA | ISO control, IPA selected');
-  ok(await css(top, '.seg-opt.on', 'background-color') !== await css(top, '.seg-opt:not(.on)', 'background-color') && await css(top, '.prefs', 'margin-left') !== '0px', 'the control is styled by home.css (selected option highlighted, set to the right of the title)');
+  // It is in the Settings menu, which the ☰ button at the top right opens
+  ok(await top.evaluate(() => { const x = s => document.querySelector(s).getBoundingClientRect(), hero = x('.hero'), title = x('.hero-title'), prof = x('#profile-btn'), set = x('#settings-btn');
+    return prof.left > title.right && set.left > prof.right && Math.abs(set.right - hero.right) < 1 && Math.abs(prof.top - set.top) < 1 && prof.width >= 36 && set.width >= 36 && x('#settings-menu').width === 0
+      && getComputedStyle(document.querySelector('#settings-btn svg')).fill === 'none'; }), 'the top right of the home page: the Profile button, then ☰ against the right edge, both on the title\'s line; the menu is closed');
+  await pg.click('#settings-btn'); await pg.waitForTimeout(100);
+  ok(await top.evaluate(() => { const x = s => document.querySelector(s).getBoundingClientRect(), menu = x('#settings-menu'), btn = x('#settings-btn'), seg = x('#prefs .seg-opt.on');
+    return menu.width > 150 && menu.top >= btn.bottom && Math.abs(menu.right - btn.right) < 1 && menu.left >= 0 && menu.right <= innerWidth
+      && document.querySelector('#settings-menu').contains(document.elementFromPoint(seg.left + seg.width / 2, seg.top + seg.height / 2)) && document.documentElement.scrollWidth <= innerWidth; }),
+    '☰ opens the Settings menu under itself, lined up with its right edge, over the page and inside the window');
+  ok(await top.evaluate(() => [...document.querySelectorAll('#prefs .seg-opt')].map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join(' ')) === 'IPA* ISO', 'the menu shows the IPA | ISO control, IPA selected');
+  ok(await css(top, '.seg-opt.on', 'background-color') !== await css(top, '.seg-opt:not(.on)', 'background-color') && await css(top, '.settings-menu', 'position') === 'absolute', 'the control is styled by home.css (selected option highlighted)');
   await pg.click('#prefs .seg-opt[data-value="iso"]');
+  ok(await top.evaluate(() => !document.getElementById('settings-menu').hidden && document.querySelector('#prefs .seg-opt.on').textContent === 'ISO'), 'choosing ISO leaves the menu open, with ISO selected');
   fr0 = await frameOf('phonemes');
   ok(await fr0.evaluate(() => document.getElementById('g-title').textContent + '|' + [...document.querySelectorAll('.kb-btn')].find(b => b.dataset.ch === 'క').textContent + '|' + TeluguData.notation.id) === 'Telugu → ISO|ka|iso', 'after choosing ISO, Phonemes opens in ISO (title "Telugu → ISO", key "ka")');
   fr0 = await frameOf('conjuncts');
@@ -166,16 +176,43 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   fr0 = await frameOf('review');
   ok(await fr0.evaluate(() => !!window.TeluguData && TeluguData.notation.id === 'iso'), 'Review loads the letter data and the notation too');
   await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(150);
-  ok(await top.evaluate(() => document.querySelector('#prefs .seg-opt.on').textContent) === 'ISO', 'the choice is still selected back on Home');
-  await pg.click('#prefs .seg-opt[data-value="ipa"]');
+  ok(await top.evaluate(() => document.querySelector('#prefs .seg-opt.on').textContent + '|' + document.getElementById('settings-menu').hidden) === 'ISO|true', 'the choice is still selected back on Home (the menu closed when a page was opened)');
+  await pg.click('#settings-btn'); await pg.click('#prefs .seg-opt[data-value="ipa"]');
   fr0 = await frameOf('phonemes');
   ok(await fr0.evaluate(() => document.getElementById('g-title').textContent + '|' + [...document.querySelectorAll('.kb-btn')].find(b => b.dataset.ch === 'క').textContent) === 'Telugu → IPA|k', 'and choosing IPA again puts Phonemes back in IPA');
-  // progress still flows from a game in the iframe to the home page's ✓
+  // Sessions recorded by a game inside its folder reach the Profile page, which charts them. No ✓ appears on Home.
   await pg.evaluate(() => { location.hash = '#/phonemes'; }); await pg.waitForTimeout(250);
   const fr = pg.frames().find(f => f.url().endsWith('alphabet/01_phonemes.html'));
-  const wrote = await fr.evaluate(() => { TeluguProgress.complete('phonemes'); return TeluguProgress.isComplete('phonemes'); });
+  await fr.evaluate(() => { TeluguProgress.reset();
+    [[51, 51, 80, 'done'], [51, 51, 66, 'done'], [51, 9, 14, 'out'], [20, 20, 22, 'done', 'reverse'], [51, 51, 53, 'done']].forEach(([total, correct, attempts, ended, variant]) => TeluguProgress.run('phonemes', { total, correct, attempts, ended, variant }));
+    TeluguProgress.miss({ game: 'phonemes', key: 'క', ask: 'telugu' }); });
   await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(250);
-  ok(wrote && await pg.evaluate(() => !!document.querySelector('.tile-check')), 'completing a game inside its folder still puts the ✓ on the home tile');
+  ok(await pg.evaluate(() => !document.querySelector('.tile-check') && !/✓/.test(document.getElementById('sections').textContent) && document.querySelector('.tile.review .tile-badge').textContent === '1 to revisit'), 'back on Home there is no ✓ on any tile (the Review strip still counts the miss)');
+  await pg.click('#profile-btn'); await pg.waitForTimeout(400);
+  const pf = pg.frames().find(f => f.url().endsWith('/profile.html'));
+  ok(await pg.evaluate(() => location.hash === '#/profile' && !document.getElementById('app').hidden && document.getElementById('app-title').textContent === 'Profile') && !!pf, 'the Profile button opens the Profile page in the app view');
+  ok(await pf.evaluate(() => { const x = e => e.getBoundingClientRect(), cards = [...document.querySelectorAll('.pf-card')], svg = document.querySelector('[data-chart="phonemes"] svg'), host = svg.parentElement;
+    return cards.length === 4 && cards.map(c => c.dataset.game).join() === 'phonemes,diacritics,conjuncts,lookalikes' && document.getElementById('stat').textContent === '5 sessions'
+      && Math.abs(x(svg).width - x(host).width) < 1 && x(svg).height > 200 && svg.querySelectorAll('path.line').length === 2 && svg.querySelectorAll('circle.dot.early').length === 2
+      && getComputedStyle(svg.querySelectorAll('path.line')[0]).stroke !== getComputedStyle(svg.querySelectorAll('path.line')[1]).stroke && getComputedStyle(svg.querySelector('path.line')).strokeWidth === '2px'
+      && getComputedStyle(svg.querySelector('circle.dot.early')).fill === getComputedStyle(document.querySelector('.pf-card')).backgroundColor
+      && document.querySelectorAll('.pf-empty').length === 3 && x(document.querySelector('.pf-empty')).height > 30 && document.documentElement.scrollWidth <= innerWidth; }),
+    'Profile: a card for each of the four games; Phonemes has its chart (two lines in two colors, a hollow dot on each for the session that ran out of mistakes), the other three say "No sessions yet"');
+  await pf.hover('[data-chart="phonemes"] svg', { position: { x: 200, y: 120 } }); await pg.waitForTimeout(100);
+  ok(await pf.evaluate(() => { const tip = document.querySelector('[data-chart="phonemes"] .pf-tip'), box = tip.getBoundingClientRect(), host = tip.parentElement.getBoundingClientRect();
+    return !tip.hidden && box.width > 100 && box.left >= host.left - 1 && box.right <= host.right + 1 && /^Run \d · /.test(tip.textContent) && /correct of \d+ cards/.test(tip.textContent) && /% errors \(\d+ of \d+ answers\)/.test(tip.textContent)
+      && getComputedStyle(document.querySelector('[data-chart="phonemes"] .cross')).visibility === 'visible'; }), 'Profile: pointing at the chart reads out the nearest run (its number and date, correct answers, error rate) beside a reading line');
+  ok(await pf.evaluate(() => { const x = s => document.querySelector(s).getBoundingClientRect(), zone = document.querySelector('.pf-danger'), btn = document.getElementById('reset'), last = [...document.querySelectorAll('.pf-card')].pop().getBoundingClientRect(), bg = getComputedStyle(btn).backgroundColor.match(/\d+/g).map(Number);
+    return x('.pf-danger').top >= last.bottom && zone.querySelector('h2').textContent === 'Danger Zone' && zone.contains(btn) && !btn.disabled && btn.textContent === 'Reset statistics'
+      && bg[0] > 200 && bg[1] < 140 && bg[2] < 140 && getComputedStyle(zone.querySelector('h2')).color === getComputedStyle(btn).backgroundColor && getComputedStyle(zone).borderTopColor !== getComputedStyle(document.querySelector('.pf-card')).borderTopColor; }),
+    'Profile: the Danger Zone sits under all the charts, labeled in red, with a red "Reset statistics" button');
+  await pf.click('#reset');
+  ok(await pf.evaluate(() => document.getElementById('reset').textContent === 'Click again to erase all history' && TeluguProgress.runCount() === 5), 'Profile: the first click only asks for a second one');
+  await pf.click('#reset'); await pg.waitForTimeout(150);
+  ok(await pf.evaluate(() => TeluguProgress.runCount() === 0 && TeluguProgress.missCount() === 0 && document.querySelectorAll('.pf-empty').length === 4 && !document.querySelector('[data-chart]') && document.getElementById('stat').textContent === '0 sessions' && document.getElementById('reset').disabled),
+    'Profile: the second click erases every session and the Review list; the four cards are empty and the button has nothing left to erase');
+  await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(250);
+  ok(await pg.evaluate(() => document.querySelector('.tile.review .tile-badge').textContent === 'All clear'), 'and Home shows Review all clear');
   ok(errs.length === 0, 'no script errors on any page' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
   ok(missing.length === 0, 'no 404s' + (missing.length ? ': ' + missing.slice(0, 5).join(' | ') : ''));
   await b.close(); srv.close(); console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);

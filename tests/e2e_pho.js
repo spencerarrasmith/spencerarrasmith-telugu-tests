@@ -41,7 +41,7 @@ const keys = () => vis().length;
   let g = 0;
   while (!$('g-complete').classList.contains('show') && g++ < 600) { btn(cur().ipa).click(); await tick(); await tick(); }
   ok($('g-complete').classList.contains('show') && G().completed === 51, 'session completes with all 51 cleared');
-  ok(P.isComplete('phonemes'), 'completion recorded for the Phonemes tile');
+  { const r = P.runs('phonemes').at(-1); ok(r && r.ok === G().completed && r.tries === G().attempts && r.n === G().total && r.end === 'done' && !('dir' in r) && !('isComplete' in P), 'the session is recorded for the Profile page (forward); nothing is marked complete'); }
 
   // extras on
   h.again();

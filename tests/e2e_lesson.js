@@ -32,19 +32,17 @@ const P = w.TeluguProgress;
   const missed = prompt(); wrong.click();
   const m = P.misses().find(x => x.game === 'lesson-template');
   ok(m && m.key === missed && m.ask === 'telugu' && !('answer' in m) && m.note === 'Velar', 'ctx.miss({key, ask}) reaches the Review store as the letter and what was asked: ' + (m && m.key + ' ' + m.ask));
-  ok(!P.isComplete('lesson-template') && $('#ls-done').hidden, 'not complete yet');
+  ok(!$('#ls-done') && !d.querySelector('.pill') && !d.querySelector('.title-row'), 'a lesson has no "Completed" pill');
   let g = 0; while ($('#d-opts').children.length && g++ < 20) [...d.querySelectorAll('#d-opts button')].find(b => b.dataset.ipa === ipaOf(prompt())).click();
-  ok(P.isComplete('lesson-template') && !$('#ls-done').hidden, 'ctx.complete marks the unit done and shows the pill');
-  ok(!!$('.toast') && $('.toast').textContent.includes('completed'), 'completion toast shown');
-  const saved = JSON.parse(w.localStorage.getItem('telugu.progress.v1')).done['lesson-template'];
-  ok(saved.runs === 1 && saved.best > 0 && saved.best < 100, 'accuracy saved (' + saved.best + '%, one wrong answer)');
+  ok($('#d-prompt').textContent === '✓' && $('#d-fb').textContent === 'Done' && !$('#d-opts').children.length, 'the practice runs to its end and says "Done"');
+  const saved = JSON.parse(w.localStorage.getItem('telugu.progress.v1'));
+  ok(!$('#ls-done') && !$('.toast') && !('done' in saved) && Object.keys(saved.misses).length === 1, 'finishing it marks nothing as completed: no pill, no toast, no "done" record (the miss is still kept for Review)');
+  const shellSrc = fs.readFileSync(dir + 'lesson-shell.js', 'utf8'), shellCss = fs.readFileSync(dir + 'shell.css', 'utf8');
+  ok(!/complete\(|isComplete|ls-done|toast/.test(shellSrc.split('════════ */')[1] || shellSrc) && !/ctx\.complete/.test(html) && !/\.pill\.done|\.toast/.test(shellCss), 'lesson-shell.js, the template, and shell.css have no completion left (ctx gives a lesson id and miss() only)');
 
-  // reopening a completed lesson shows the pill from the start
-  const dom2 = new JSDOM(html, { runScripts: 'dangerously', url: 'http://localhost/lesson-template.html' });
-  dom2.window.localStorage.setItem('telugu.progress.v1', w.localStorage.getItem('telugu.progress.v1'));
-  // (fresh jsdom has fresh storage; mount again on same window instead)
+  // a lesson with only one step
   const again = w.LessonShell.mount({ id: 'lesson-template', section: 'S', title: 'T', learn: ['x'] }, d.getElementById('lesson'));
-  ok(!$('#ls-done').hidden && again.stages.join() === 'learn', 'a completed lesson shows its pill on load; unused steps are hidden');
+  ok(!$('#ls-done') && again.stages.join() === 'learn' && Object.keys(again.ctx).sort().join() === 'id,miss', 'unused steps are hidden; ctx is { id, miss }');
   ok($('#ls-back').hidden && $('#ls-next').hidden, 'single-step lesson shows no Back/Next');
   let threw = false; try { w.LessonShell.mount({ id: 'x', section: 's', title: 't' }); } catch (e) { threw = /nothing to show/.test(e.message); }
   ok(threw, 'mount() with no content fails loudly');

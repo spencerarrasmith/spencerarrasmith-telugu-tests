@@ -77,8 +77,9 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
   await tick();
   ok($('g-complete').classList.contains('show') && $('g-main').style.display === 'none' && g.completed === 3 && g.deck.length === 0 && g.current === null, 'last card cleared: complete screen shown, playing area hidden');
   ok($('c-sub').textContent === 'All 3 done.' && $('c-attempts').textContent === '6' && $('c-accuracy').textContent === '50%' && $('c-errors').textContent === '3', 'complete screen: doneText, 6 attempts, 50%, 3 errors');
-  const saved = JSON.parse(w.localStorage.getItem('telugu.progress.v1')).done.demo;
-  ok(P.isComplete('demo') && saved.best === 50 && saved.runs === 1, 'the unit is marked done with its accuracy');
+  const saved = JSON.parse(w.localStorage.getItem('telugu.progress.v1')), run = P.runs('demo')[0];
+  ok(P.runs('demo').length === 1 && run.n === 3 && run.ok === 3 && run.tries === 6 && run.end === 'done' && !('dir' in run) && run.t <= Date.now() && !('done' in saved) && !('isComplete' in P),
+    'the session is recorded for the Profile page (3 cards, 3 correct, 6 answers, finished); nothing is marked "complete"');
   g.judge(true); ok(g.attempts === 6, 'judge() after the round is over does nothing');
 
   /* Practice Again */
@@ -131,9 +132,9 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
     const cards = [1, 2, 3, 4, 5, 6].map(k => ({ k })); let retried = 0;
     const g = w.GameCore.create({ id: 'sized', pool: () => cards, render() {}, onRetry: () => { retried++; } }), P = w.TeluguProgress;
     g.start();
-    ok(g.total === 6 && g.limit === null && g.left === null && g.misses === 0 && !g.short && !g.over && lives() === 'hidden' && !$('s-lives').hasAttribute('aria-label'), 'by default: every card, no limit on mistakes, and the hearts hidden');
+    ok(g.total === 6 && g.limit === null && g.left === null && g.misses === 0 && !('short' in g) && !g.over && lives() === 'hidden' && !$('s-lives').hasAttribute('aria-label'), 'by default: every card, no limit on mistakes, and the hearts hidden');
     g.start({ size: 4, misses: 3 });
-    ok(g.total === 4 && g.deck.length === 4 && g.limit === 3 && g.left === 3 && g.short && lives() === L3 && $('s-lives').getAttribute('aria-label') === 'Mistakes left: 3', 'start({ size: 4, misses: 3 }): 4 cards, 3 mistakes allowed, shown as three hearts, green white orange (read out as "Mistakes left: 3")');
+    ok(g.total === 4 && g.deck.length === 4 && g.limit === 3 && g.left === 3 && lives() === L3 && $('s-lives').getAttribute('aria-label') === 'Mistakes left: 3', 'start({ size: 4, misses: 3 }): 4 cards, 3 mistakes allowed, shown as three hearts, green white orange (read out as "Mistakes left: 3")');
     g.start();
     ok(g.total === 4 && g.limit === 3, 'both stay in force for a plain start()');
     g.start(new w.Event('change'));
@@ -148,7 +149,7 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
     ok(g.over && g.misses === 4 && lives() === RING, 'the fourth is one too many: the session is over as soon as it is made');
     await tick();
     ok($('g-complete').classList.contains('show') && $('g-main').style.display === 'none' && $('c-title').textContent === 'Out of mistakes' && $('c-trophy').hidden && $('c-sub').textContent === '1 of 4 cleared. 3 mistakes were allowed.', 'and the complete screen says so: ' + $('c-sub').textContent);
-    ok($('c-attempts').textContent === '5' && $('c-accuracy').textContent === '20%' && $('c-errors').textContent === '4' && !P.isComplete('sized'), 'its numbers are for what was played; the unit is not marked done');
+    ok($('c-attempts').textContent === '5' && $('c-accuracy').textContent === '20%' && $('c-errors').textContent === '4' && JSON.stringify(P.runs('sized').map(r => [r.n, r.ok, r.tries, r.end])) === '[[4,1,5,"out"]]', 'its numbers are for what was played, and it is recorded as a session that ran out of mistakes (4 cards, 1 correct, 5 answers)');
     g.judge(true); ok(g.attempts === 5, 'judge() after it does nothing');
     $('retry-btn').click();
     ok(retried === 1 && g.over && $('g-complete').classList.contains('show'), 'with onRetry, "Practice Again" hands over to the page and deals nothing itself');
@@ -167,15 +168,21 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
     g.start({ size: 2, misses: null });
     ok(g.limit === null && lives() === 'hidden' && g.total === 2, 'misses: null lifts the limit');
     g.judge(true); await tick(); g.judge(true); await tick();
-    ok($('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && !$('c-trophy').hidden && !P.isComplete('sized'), 'a session shorter than the usual length finishes normally but does not mark the unit done');
+    ok($('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && !$('c-trophy').hidden && JSON.stringify(P.runs('sized').slice(-1).map(r => [r.n, r.ok, r.tries, r.end])) === '[[2,2,2,"done"]]', 'a short session finishes normally and is recorded like any other (2 cards, 2 answers)');
     g.start({ size: null }); for (let i = 0; i < 6; i++) { g.judge(true); await tick(); }
-    ok(g.total === 6 && !g.short && P.isComplete('sized'), 'size: null goes back to the usual length, and finishing that marks it done');
-    g.start({ size: 99 }); ok(g.total === 6 && !g.short, 'a size past the pool is the whole pool');
+    ok(g.total === 6 && P.runs('sized').length === 5 && P.runs('sized').map(r => r.end).join() === 'out,out,out,done,done' && P.runs('sized')[4].n === 6, 'size: null goes back to the usual length; five sessions were played to their end, and five are recorded (the ones left half way are not)');
+    g.start({ size: 99 }); ok(g.total === 6, 'a size past the pool is the whole pool');
     // a game with its own session length (size: 3 of 6): that length is the usual one
     const g3 = w.GameCore.create({ id: 'sampled', size: 3, pool: () => cards, render() {} });
-    g3.start(); ok(g3.total === 3 && !g3.short, 'a game that samples (size: 3) deals 3, and that is a whole session');
-    g3.start({ size: 5 }); ok(g3.total === 5 && !g3.short, 'it can be asked for more');
-    g3.start({ size: 2 }); ok(g3.total === 2 && g3.short, 'or for fewer, which is a short session');
+    g3.start(); ok(g3.total === 3, 'a game that samples (size: 3) deals 3');
+    g3.start({ size: 5 }); ok(g3.total === 5, 'it can be asked for more');
+    g3.start({ size: 2 }); ok(g3.total === 2, 'or for fewer');
+    // a game played more than one way says which (variant), and that is kept with the run
+    let way = 'reverse';
+    const gv = w.GameCore.create({ id: 'turned', variant: () => way, pool: () => cards.slice(0, 1), render() {} });
+    gv.start(); gv.judge(true); await tick(); way = ''; gv.start(); gv.judge(false); await tick(); gv.judge(true); await tick();
+    ok(P.runs('turned').length === 2 && P.runs('turned')[0].dir === 'reverse' && !('dir' in P.runs('turned')[1]) && P.runs('turned')[1].tries === 2, 'variant() is stored with the run ("reverse"); the usual way stores nothing');
+    ok(P.runs('sampled').length === 0, 'a session that is not finished is not recorded');
   }
 
   /* every game is built on it and keeps no copy of the round */

@@ -45,7 +45,7 @@ ok([game, shell, home, ref].every(c => !/:root\s*\{/.test(c)) && /:root\s*\{/.te
   const fonts = files.filter(f => /fonts\.googleapis/.test(read(f)));
   ok(fonts.join() === 'alphabet/04_lookalike-builder.html', 'only the Lookalike Builder links fonts of its own (its extra Telugu faces): ' + fonts.join(', '));
   const styled = walk(dir).filter(f => /\.html$/.test(f)).map(f => path.relative(dir, f)).filter(f => /<style/.test(read(f))).sort();
-  ok(styled.join() === 'alphabet/02_diacritics.html,alphabet/03_conjuncts.html,alphabet/04_lookalike-builder.html,alphabet/05_lookalikes.html,reference/01_rosetta.html,reference/02_signs-conjuncts.html,reference/03_sound-charts.html,review.html', 'inline <style> only where a page has layout of its own (8 pages): ' + styled.length);
+  ok(styled.join() === 'alphabet/02_diacritics.html,alphabet/03_conjuncts.html,alphabet/04_lookalike-builder.html,alphabet/05_lookalikes.html,profile.html,reference/01_rosetta.html,reference/02_signs-conjuncts.html,reference/03_sound-charts.html,review.html', 'inline <style> only where a page has layout of its own (9 pages): ' + styled.length);
 })();
 ok(!/cat-toggle|g-controls/.test(game), 'game.css has no dead controls-bar rules');
 ok(/fonts\.googleapis/.test(base) && [shell, game, home, ref].every(c => !/fonts\.googleapis/.test(c)), 'the font import lives only in base.css');

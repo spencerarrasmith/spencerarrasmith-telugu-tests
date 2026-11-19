@@ -36,23 +36,46 @@ ok(d.querySelectorAll('a.tile').length === 44 && d.querySelectorAll('a.tile.soon
   ok(!d.getElementById('home').hidden && d.getElementById('app').hidden && !frame.hasAttribute('src'), 'home resets the iframe');
   w.location.hash = '#/nonsense'; await wait();
   ok(!d.getElementById('home').hidden, 'unknown route falls back to home');
-  // Review tile + ✓ marks driven by progress
+  // Review tile driven by progress. Nothing is ever marked "complete": no ✓ on a tile, no "done" in a count.
   const P = w.TeluguProgress;
   ok(d.querySelector('.tile.review .tile-badge').textContent === 'All clear' && d.querySelectorAll('.tile-check').length === 0, 'fresh start: Review says "All clear", no ✓');
   P.miss({ game: 'phonemes', key: 'క', prompt: 'క', answer: '/k/' }); P.miss({ game: 'conjuncts', key: 'క్ష', prompt: 'క్ష', answer: '/kʂa/' });
   ok(d.querySelector('.tile.review .tile-badge').textContent === '2 to revisit', 'a miss in any game updates the Review tile live');
-  P.complete('phonemes', { accuracy: 90 });
+  P.run('phonemes', { total: 51, correct: 51, attempts: 51 });
   const tile = id => d.querySelector(`a.tile[href="#/${id}"]`);
-  ok(!!tile('phonemes').querySelector('.tile-check') && !tile('diacritics').querySelector('.tile-check'), '✓ appears only on the completed tile');
-  ok(d.querySelectorAll('.section-count')[1].textContent === '5 of 8 ready · 1 done', 'Alphabet count shows "· 1 done": ' + d.querySelectorAll('.section-count')[1].textContent);
-  ok(!tile('phonemes').classList.contains('soon') && !tile('spelling').querySelector('.tile-check'), 'placeholder tiles never get a ✓');
+  ok(d.querySelectorAll('.tile-check').length === 0 && !tile('phonemes').textContent.includes('✓') && !/✓/.test(d.getElementById('sections').textContent), 'a session played to its end, without a mistake, puts no ✓ on its tile');
+  ok(d.querySelectorAll('.section-count')[1].textContent === '5 of 8 ready' && [...d.querySelectorAll('.section-count')].every(c => /^\d+ of \d+ ready$/.test(c.textContent)), 'a section counts its ready pages and nothing else: ' + d.querySelectorAll('.section-count')[1].textContent);
+  ok(!tile('phonemes').classList.contains('soon') && tile('spelling').querySelector('.tile-badge').textContent === 'Soon' && !/tile-check|doneIds|Completed/.test(src) && !/tile-check/.test(fs.readFileSync(dir + 'home.css', 'utf8')), 'a tile carries a badge only when it is "Soon"; the ✓ is gone from the page and its stylesheet');
   // coming back home from a game refreshes
   w.location.hash = '#/phonemes'; await wait(); P.miss({ game: 'diacritics', key: 'కా', prompt: 'కా', answer: '/kaː/' });
   w.location.hash = '#/'; await wait();
   ok(d.querySelector('.tile.review .tile-badge').textContent === '3 to revisit', 'returning home picks up changes');
+  /* ── the top right of the home page: Profile, and the Settings menu (☰) ── */
+  {
+    const sbtn = d.getElementById('settings-btn'), menu = d.getElementById('settings-menu'), prof = d.getElementById('profile-btn'), FOLLOWS = 4;
+    const key = (k, target = d) => target.dispatchEvent(new w.KeyboardEvent('keydown', { key: k, bubbles: true })), tapOn = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles: true }));
+    ok(prof.closest('header.hero .hero-tools') && sbtn.closest('header.hero .hero-tools') && (d.querySelector('.hero-title').compareDocumentPosition(prof) & FOLLOWS) && (prof.compareDocumentPosition(sbtn) & FOLLOWS), 'the hero ends with two buttons after the title: Profile, then Settings');
+    ok(prof.tagName === 'A' && prof.getAttribute('href') === '#/profile' && prof.getAttribute('aria-label') === 'Profile' && prof.title === 'Profile' && !!prof.querySelector('svg[aria-hidden="true"]'), 'Profile is a link to #/profile, named for a screen reader');
+    ok(sbtn.tagName === 'BUTTON' && sbtn.getAttribute('aria-label') === 'Settings' && sbtn.getAttribute('aria-haspopup') === 'true' && sbtn.getAttribute('aria-controls') === 'settings-menu' && sbtn.querySelector('svg path').getAttribute('d').split('M').length === 4, 'Settings is a ☰ button (three lines) that owns the menu');
+    ok(menu.hidden && sbtn.getAttribute('aria-expanded') === 'false', 'the menu starts closed');
+    ok(menu.contains(d.getElementById('prefs')) && menu.querySelector('.settings-title').textContent === 'Settings' && d.querySelectorAll('#prefs').length === 1 && !!menu.querySelector('.pref[role=radiogroup] .seg-opt'), 'the IPA | ISO control lives in the menu, under the heading "Settings", and nowhere else');
+    sbtn.click(); ok(!menu.hidden && sbtn.getAttribute('aria-expanded') === 'true', '☰ opens it');
+    tapOn(menu.querySelector('.seg')); ok(!menu.hidden, 'a tap inside the menu leaves it open');
+    tapOn(d.getElementById('sections')); ok(menu.hidden && sbtn.getAttribute('aria-expanded') === 'false', 'a tap anywhere else closes it');
+    sbtn.click(); key('Escape'); ok(menu.hidden && d.activeElement === sbtn, 'Escape closes it and hands the focus back to ☰');
+    sbtn.click(); sbtn.click(); ok(menu.hidden, '☰ again closes it');
+    sbtn.click(); w.location.hash = '#/rosetta'; await wait(); ok(menu.hidden, 'opening a page closes it');
+    w.location.hash = '#/'; await wait();
+    // Profile is a page, not a tile: it opens in the app view like any tile does
+    w.location.hash = '#/profile'; await wait();
+    ok(d.getElementById('home').hidden && !d.getElementById('app').hidden && frame.getAttribute('src') === 'profile.html' && d.getElementById('app-title').textContent === 'Profile' && d.title === 'Profile · Telugu Suite', '#/profile opens profile.html in the app view, titled "Profile"');
+    ok(JSON.stringify(U.pages) === '[{"id":"profile","title":"Profile","src":"profile.html"}]' && !U.all.some(t => t.id === 'profile') && !d.querySelector('a.tile[href="#/profile"]') && /const PAGES = TeluguUnits\.pages/.test(src), 'it is listed in units.js as a page (not a tile), which is where the home page takes it from');
+    w.location.hash = '#/'; await wait();
+    ok(!d.getElementById('home').hidden && !frame.hasAttribute('src') && d.title === 'Telugu Suite', 'and Home comes back from it');
+  }
   /* ── how sounds are written: the one app-wide setting, chosen here ── */
   const seg = () => [...d.querySelectorAll('#prefs .seg-opt')], on = () => seg().filter(b => b.classList.contains('on')).map(b => b.dataset.value).join();
-  ok(d.querySelector('header.hero #prefs .pref[role=radiogroup]') && seg().map(b => b.textContent).join('|') === 'IPA|ISO' && seg().every(b => b.getAttribute('role') === 'radio' && b.title.length > 10), 'the hero holds a "Sounds as" control with two options, IPA and ISO');
+  ok(d.querySelector('header.hero #prefs .pref[role=radiogroup]') && seg().map(b => b.textContent).join('|') === 'IPA|ISO' && seg().every(b => b.getAttribute('role') === 'radio' && b.title.length > 10), 'the Settings menu holds a "Sounds as" control with two options, IPA and ISO');
   ok(on() === 'ipa' && seg()[0].getAttribute('aria-checked') === 'true' && seg()[1].getAttribute('aria-checked') === 'false' && d.getElementById('pref-eg').textContent === 'క is written /k/', 'IPA is selected on a first visit; the example reads "క is written /k/"');
   ok(w.localStorage.getItem('telugu.settings.v1') === null, 'nothing is stored until a choice is made');
   seg()[1].click();
@@ -74,14 +97,14 @@ ok(d.querySelectorAll('a.tile').length === 44 && d.querySelectorAll('a.tile.soon
     btn('Alphabet').click();
     ok(tiles('Alphabet').hidden && sec('Alphabet').classList.contains('collapsed') && btn('Alphabet').getAttribute('aria-expanded') === 'false' && btn('Alphabet').getAttribute('aria-label') === 'Show Alphabet' && btn('Alphabet').title === 'Show Alphabet',
       'the arrow folds its section: tiles hidden, button now reads "Show Alphabet"');
-    ok(sec('Alphabet').querySelector('.section-title').textContent === 'Alphabet' && sec('Alphabet').querySelector('.section-count').textContent === '5 of 8 ready · 1 done', 'the heading line stays, with its name and count');
+    ok(sec('Alphabet').querySelector('.section-title').textContent === 'Alphabet' && sec('Alphabet').querySelector('.section-count').textContent === '5 of 8 ready', 'the heading line stays, with its name and count');
     ok(S.filter(s => s.title !== 'Alphabet').every(s => !tiles(s.title).hidden && btn(s.title).getAttribute('aria-expanded') === 'true'), 'the other sections are not touched');
     ok(stored(w).join() === 'Alphabet', 'the folded section is remembered in this browser');
     ok(d.querySelectorAll('a.tile').length === 44 && tiles('Alphabet').querySelectorAll('a.tile').length === 8, 'its tiles are still there, only hidden');
     w.location.hash = '#/rosetta'; await wait(); w.location.hash = '#/'; await wait();
     ok(tiles('Alphabet').hidden && btn('Alphabet').getAttribute('aria-expanded') === 'false' && !tiles('Reference').hidden, 'it is still folded after opening a page and coming back');
-    P.complete('diacritics', { accuracy: 80 });
-    ok(tiles('Alphabet').hidden && sec('Alphabet').querySelector('.section-count').textContent === '5 of 8 ready · 2 done', 'a folded section keeps counting: ' + sec('Alphabet').querySelector('.section-count').textContent);
+    P.miss({ game: 'diacritics', key: 'కీ', ask: 'telugu', syllable: true });
+    ok(tiles('Alphabet').hidden && sec('Alphabet').querySelector('.section-count').textContent === '5 of 8 ready', 'a folded section stays folded when the page is redrawn (a new miss): ' + sec('Alphabet').querySelector('.section-count').textContent);
     w.location.hash = '#/phonemes'; await wait();
     ok(!d.getElementById('app').hidden && frame.getAttribute('src') === 'alphabet/01_phonemes.html', 'a page in a folded section still opens by its address');
     w.location.hash = '#/'; await wait();
