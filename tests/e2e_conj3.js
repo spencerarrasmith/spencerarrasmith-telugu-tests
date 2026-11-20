@@ -14,6 +14,8 @@ const put    = g => G().put(D.clusters.find(c => c.glyph === g));
 const clickBox = id => $(id).click();
 const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = 'ఙ్క';
 (async () => {
+  ok(!$('show-cat').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'categories are off to begin with: a plain keyboard, no label on the card');
+  $('show-cat').click();                                    // on for the rest of this suite, which is about the grouped keyboard
   /* ── the swap button ── */
   ok($('rev-btn') && $('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false', 'swap button present (same 🔀 as Phonemes and Diacritics)');
   ok($('rev-btn').closest('#setup') && !d.querySelector('.g-header .rev-btn'), 'it is in the session popup, and no longer in the header');

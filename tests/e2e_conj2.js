@@ -16,11 +16,13 @@ const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}'
   ok(!d.querySelector('.g-controls') && !d.querySelector('.g-controls-sep') && !d.querySelector('.cat-toggle'), 'the old controls bar is gone');
   ok(!$('menu-btn') && !$('opts-menu') && !$('menu-wrap'), 'no ⋮ menu on this page');
   ok([...d.querySelectorAll('#setup .menu-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include uncommon clusters|Missed guesses reappear', 'the checkboxes are in the session popup, in order');
-  ok($('show-cat').checked && !$('shuffle-kb').checked && !$('include-uncommon').checked, 'defaults: categories on, shuffle + uncommon off');
+  ok(!$('show-cat').checked && !$('shuffle-kb').checked && !$('include-uncommon').checked && $('missed-again').checked, 'defaults: categories, shuffle, and uncommon off ("Missed guesses reappear" on)');
   ok($('setup').hidden && G().total === 40, 'the suite starts in a session with the defaults (the harness pressed Start)');
 
   /* ── show / hide categories ── */
-  ok(groups() > 1 && labels() === groups(), 'grouped by default, every block labeled');
+  ok(groups() === 1 && labels() === 0 && $('cat-badge').style.visibility === 'hidden', 'to begin with the keyboard is one plain block, and the card has no category label');
+  clickBox('show-cat');
+  ok(groups() > 1 && labels() === groups() && $('cat-badge').style.visibility === '', 'checked: grouped, every block labeled, and the card labeled');
   clickBox('show-cat');
   ok(groups() === 1 && labels() === 0 && kb().length === 34 && order() === alpha(), 'unchecked: one unlabeled block, all 34 keys, alphabet order');
   ok($('cat-badge').style.visibility === 'hidden', 'card category label hidden');

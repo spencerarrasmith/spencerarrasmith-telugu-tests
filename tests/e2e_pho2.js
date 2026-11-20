@@ -8,6 +8,8 @@ const byIpa = ipa => vis().find(b => b.dataset.ipa === ipa);
 const cur  = () => G().current;
 const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
 (async () => {
+  ok(!$('show-cat').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'categories are off to begin with: a plain keyboard, no label on the card');
+  $('show-cat').click();                                    // on for the rest of this suite, which is about the grouped keyboard
   /* ── controls + defaults ── */
   ok($('g-title').textContent === 'Telugu → IPA', 'forward title: Telugu → IPA');
   ok($('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false' && $('rev-btn').closest('#setup') && !$('g-title').closest('.g-header').querySelector('.rev-btn'), 'the 🔀 button is in the session popup, not pressed; the header no longer has one');

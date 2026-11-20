@@ -6,6 +6,8 @@ const cur = () => G().current;
 const n = kind => d.querySelectorAll(`.kb-btn[data-kind="${kind}"]`).length;
 const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa==='${cIpa}'),v=VOWELS.find(x=>x.sign==='${vSign}');GameCore.current.put({c,v,glyph:c.ch+v.sign,cat:c.cat,uncommon:c.uncommon||v.uncommon});})()`); };
 (async () => {
+  ok(!$('show-cat').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'categories are off to begin with: a plain keyboard, no label on the card');
+  $('show-cat').click();                                    // on for the rest of this suite, which is about the grouped keyboard
   ok(!$('include-extra').checked && $('include-extra').parentElement.textContent.includes('Include extra letters'), 'extras unchecked by default, labeled "Include extra letters"');
   ok(G().total === 51, 'default: 51 cards (17 vowel signs × 3)');
   ok(n('c') === 35 && n('v') === 17, 'default keys: 35 consonants (ఱ out, క్ష in) / 17 vowels (ౢ ౣ out)');
@@ -17,6 +19,10 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   ok(blocks()[0] === 'Short · long: a aː i iː u uː e eː o oː' && blocks().map(b => b.split(':')[0]).join(' | ') === 'Short · long | Diphthong | Vocalic | Nasal · aspirate | Pure consonant' && blocks()[1] === 'Diphthong: ai au' && blocks()[2] === 'Vocalic: r̩ r̩ː',
     'with categories shown they are one block, "Short · long", ahead of the others: ' + blocks().map(b => b.split(':')[0]).join(' | '));
   ok(w.TeluguData.signs.slice(0, 10).map(s => s.grp).join() === 'Short,Short,Short,Short,Short,Long,Long,Long,Long,Long', 'the shared data still lists the five short signs, then the five long (the other pages group them that way)');
+  // the card's label names the consonant's category and the vowel's
+  const badge = () => $('cat-badge').textContent, kinds = [];
+  for (const grp of ['Short', 'Long', 'Diphthong', 'Vocalic', 'Nasal · aspirate', 'Pure consonant']) { front(x => x.v.grp === grp); kinds.push(badge() === cur().c.cat + ' + ' + grp && $('cat-badge').style.visibility === '' ? grp : 'WRONG: ' + badge()); }
+  ok(kinds.join(' | ') === 'Short | Long | Diphthong | Vocalic | Nasal · aspirate | Pure consonant', 'the card label is "<consonant category> + <vowel category>", for every kind of sign: ' + badge());
   const pairs = [...d.querySelectorAll('.kb-col[data-kind="v"] .kb-pair')].map(p => [...p.children].map(b => b.dataset.ipa));
   ok(pairs.length === 6 && pairs.every(p => p.length === 2 && p[1] === p[0] + 'ː') && pairs.map(p => p[0]).join(' ') === 'a i u e o r̩' && !d.querySelector('.kb-col[data-kind="c"] .kb-pair')
     && /\.kb-pair \{ display: inline-flex; gap: inherit; \}/.test(require('fs').readFileSync(require('path').join(require('./config').SITE_DIR, 'alphabet/02_diacritics.html'), 'utf8')),

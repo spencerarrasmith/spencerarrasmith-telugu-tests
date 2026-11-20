@@ -6,6 +6,8 @@ const btn = ipa => vis().find(b => b.dataset.ipa === ipa);
 const cur = () => G().current;
 const keys = () => vis().length;
 (async () => {
+  ok(!$('show-cat').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'categories are off to begin with: a plain keyboard, no label on the card');
+  $('show-cat').click();                                    // on for the rest of this suite, which is about the grouped keyboard
   ok(!$('include-extra').checked, '"Include extra letters" is unchecked by default');
   ok($('include-extra').parentElement.textContent.includes('Include extra letters') && $('include-extra').closest('#setup'), 'label reads "Include extra letters"; the box is in the session popup');
   ok(G().total === 51 && keys() === 51, 'book set by default: 51 cards / 51 keys');

@@ -7,7 +7,7 @@ const fs = require('fs'), path = require('path'), { SITE_DIR } = require('./conf
 const PAGE = 'profile.html', KEY = 'telugu.progress.v1';
 const raw = fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8');
 
-// Sample history. Phonemes: 14 runs, the error rate falling from 38% to 4%; run 3 ran out of mistakes, runs 5 and 10
+// Sample history. Phonemes: 14 runs, the error rate falling from 38% to 4%; run 3 ended in game over, runs 5 and 10
 // were reversed, run 6 was a short session. Diacritics: 40 runs (more than a chart marks one by one). Conjuncts: one.
 const DAY = 864e5, NOW = Date.UTC(2026, 10, 19, 9, 0);
 function history() {
@@ -73,8 +73,8 @@ const MISS = { 'phonemes|క': { game: 'phonemes', key: 'క', ask: 'telugu', no
     ok(a.every((p, i) => p[0] === b[i][0]) && a.every((p, i) => !i || p[0] > a[i - 1][0]) && a[0][1] === a[13][1] && a[2][1] > a[0][1] && a[5][1] > a[0][1] && b[13][1] > b[0][1] && Math.max(...a.map(p => p[1])) < Math.min(...b.map(p => p[1])),
       'both lines share the runs left to right; the correct line dips for the session cut short and the short session, the error line falls; the first panel sits wholly above the second');
     ok(s.querySelectorAll('circle.dot:not([visibility])').length === 28 && s.querySelectorAll('circle.dot.early').length === 2 && [...s.querySelectorAll('circle.dot.early')].every(c => c.getAttribute('cx') === String(a[2][0]) || Math.abs(c.getAttribute('cx') - a[2][0]) < 0.06) && s.querySelector('circle.dot.early').getAttribute('style').includes('var(--correct)'),
-      'every run has a dot on each line; run 3, which ran out of mistakes, is hollow on both');
-    ok(card('phonemes').querySelector('.pf-key').textContent === 'a session that ran out of mistakes' && !card('conjuncts').querySelector('.pf-key'), 'the hollow dot is explained under the chart, only where there is one');
+      'every run has a dot on each line; run 3, which ended in game over, is hollow on both');
+    ok(card('phonemes').querySelector('.pf-key').textContent === 'a session that ended in game over' && !card('conjuncts').querySelector('.pf-key'), 'the hollow dot is explained under the chart, only where there is one');
     const css = raw.match(/<style>([\s\S]*?)<\/style>/)[1];
     ok(/--correct: #3987e5; --errors: #d95926;/.test(css) && /\.pf-chart \.line \{[^}]*stroke-width: 2;/.test(css) && /\.pf-chart \.dot  \{ stroke: var\(--surface\); stroke-width: 2; \}/.test(css) && /\.pf-chart text \{[^}]*fill: var\(--text-muted\)/.test(css),
       'the two colors are set once; lines are 2px, dots ringed in the card\'s own color, chart text in the text color');
@@ -97,7 +97,7 @@ const MISS = { 'phonemes|క': { game: 'phonemes', key: 'క', ask: 'telugu', no
     key('Home'); ok(/^Run 1 · .+ \/ 51 correct of 51 cards \/ 38% errors \(31 of 82 answers\)$/.test(said()) && Math.abs(cross().getAttribute('x1') - a[0][0]) < 0.06, 'Home reads the first: ' + said());
     key('ArrowLeft'); ok(/^Run 1 · /.test(said()), '← at the first run stays there');
     key('ArrowRight'); key('ArrowRight');
-    ok(/^Run 3 · .+ \/ 9 correct of 51 cards \/ 36% errors \(5 of 14 answers\) \/ Ended early: out of mistakes$/.test(said()), 'a run that ran out of mistakes says so: ' + said());
+    ok(/^Run 3 · .+ \/ 9 correct of 51 cards \/ 36% errors \(5 of 14 answers\) \/ Ended early: game over$/.test(said()), 'a run that ended in game over says so: ' + said());
     key('ArrowRight'); key('ArrowRight'); ok(/^Run 5 · .+ · reversed \/ /.test(said()), 'a reversed session says so: ' + said().split(' / ')[0]);
     key('ArrowRight'); ok(/20 correct of 20 cards/.test(said()), 'a short session shows its own size: ' + said().split(' / ')[1]);
     key('End'); key('ArrowRight'); ok(/^Run 14 · /.test(said()), 'End reads the last; → stays there');
@@ -115,7 +115,7 @@ const MISS = { 'phonemes|క': { game: 'phonemes', key: 'క', ask: 'telugu', no
     /* the same numbers as a table */
     const table = card('phonemes').querySelector('details.pf-table'), rows = [...table.querySelectorAll('tbody tr')].map(r => [...r.children].map(c => c.textContent));
     ok(!table.open && table.querySelector('summary').textContent === 'Show as a table' && [...table.querySelectorAll('thead th')].map(t => t.textContent).join('|') === 'Run|When|Correct|Cards|Errors|Error rate|Ended', 'every chart comes with "Show as a table", closed to begin with');
-    ok(rows.length === 14 && rows[0][0] === '14' && rows[13][0] === '1' && rows[0].slice(2).join('|') === '51|51|2|4%|Finished' && rows[11].slice(2).join('|') === '9|51|5|36%|Out of mistakes' && / · reversed$/.test(rows[9][1]) && !/reversed/.test(rows[0][1]),
+    ok(rows.length === 14 && rows[0][0] === '14' && rows[13][0] === '1' && rows[0].slice(2).join('|') === '51|51|2|4%|Finished' && rows[11].slice(2).join('|') === '9|51|5|36%|Game over' && / · reversed$/.test(rows[9][1]) && !/reversed/.test(rows[0][1]),
       'the table lists all 14 runs, newest first, with what the chart shows and how each ended');
 
     /* ── Danger Zone: Reset statistics ── */

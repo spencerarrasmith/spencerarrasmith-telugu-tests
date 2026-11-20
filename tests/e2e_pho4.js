@@ -16,7 +16,10 @@ const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles:
   ok(!$('menu-btn') && !$('menu-wrap') && !$('opts-menu') && !d.querySelector('.g-header .menu-btn') && $('g-title').closest('.g-header-top') && $('g-title').closest('.g-header-top').lastElementChild.querySelector('.g-stats'), 'the header has no ⋮ button: the title, then the counters');
   ok([...d.querySelectorAll('#setup .setup-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include extra letters|Highlight correct answer|Missed guesses reappear', 'the popup holds the five checkboxes, in order');
   ok([...d.querySelectorAll('#setup .setup-opt')].every(l => l.lastElementChild.type === 'checkbox' && l.firstElementChild.classList.contains('menu-txt')), 'each is a label with its checkbox after it (at the right of the row)');
-  ok($('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked && $('highlight-correct').checked, 'defaults: categories on, highlight on, shuffle + extras off');
+  ok(!$('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked && $('highlight-correct').checked && $('missed-again').checked, 'defaults: highlight and "Missed guesses reappear" on; categories, shuffle, and extras off');
+  ok(groups() === 1 && labels() === 0 && $('cat-badge').style.visibility === 'hidden', 'so the keyboard starts as one plain block, and the card has no category label');
+  clickBox('show-cat');
+  ok($('show-cat').checked && groups() > 1 && labels() === groups() && $('cat-badge').style.visibility === '', 'checking "Show categories" groups and labels the keyboard, and labels the card');
   d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   ok($('setup').hidden && G().total === 51, 'Escape during play does nothing');
 

@@ -11,6 +11,8 @@ const inject = (cIpa, vIpa) => w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa===
 const cur = () => G().current;
 const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
 (async () => {
+  ok(!$('show-cat').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'categories are off to begin with: a plain keyboard, no label on the card');
+  $('show-cat').click();                                    // on for the rest of this suite, which is about the grouped keyboard
   /* ── the swap button ── */
   ok($('rev-btn') && $('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false', 'swap button present (same 🔀 as Phonemes)');
   ok($('rev-btn').closest('#setup') && !d.querySelector('.g-header .rev-btn') && $('setup-dir').textContent === 'Diacritics → IPA', 'it is in the session popup, next to the direction, and no longer in the header');
@@ -36,7 +38,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   /* ── the card ── */
   inject('k', AA);
   ok($('tel-char').classList.contains('ipa-face') && $('tel-char').textContent === '/kaː/', 'card shows the sound: ' + $('tel-char').textContent);
-  ok($('cat-badge').textContent === 'Velar' && $('cat-badge').style.visibility === '', 'category label still shown (consonant place)');
+  ok($('cat-badge').textContent === 'Velar + Long' && $('cat-badge').style.visibility === '', 'category label still shown, for the consonant and the vowel: "Velar + Long"');
   inject('k', '∅'); ok($('tel-char').textContent === '/k/', 'pure consonant is just /k/');
   inject('k', 'a'); ok($('tel-char').textContent === '/ka/', 'no sign: /ka/');
   inject(KH, 'au'); ok($('tel-char').style.fontSize !== '' && $('tel-char').style.fontSize !== '5rem', 'longer sounds step down a size (' + $('tel-char').style.fontSize + ')');

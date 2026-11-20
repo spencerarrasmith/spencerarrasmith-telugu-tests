@@ -8,7 +8,9 @@ const labels = () => [...d.querySelectorAll('#kb-area .kb-label')].map(e => e.te
 const showCat = on => { $('show-cat').checked = on; $('show-cat').dispatchEvent(new w.Event('change')); };
 const alpha = D.letters.filter(l => l.core).map(l => l.ch).join('|');
 (async () => {
-  /* forward (IPA) keyboard is always grouped, whatever the checkbox says */
+  ok(!$('show-cat').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'categories are off to begin with: a plain keyboard, no label on the card');
+  $('show-cat').click();                                    // on for the rest of this suite, which is about the grouped keyboard
+  /* forward (IPA) keyboard, with categories shown */
   ok(groups() === 9 && labels().length === 9, 'forward: 9 labeled groups');
   showCat(false);
   ok(groups() === 1 && labels().length === 0 && vis().length === 51 && vis()[0].textContent === 'a' && vis().every(b => !b.classList.contains('te')), 'forward: unchecking "Show categories" flattens the IPA keyboard too');

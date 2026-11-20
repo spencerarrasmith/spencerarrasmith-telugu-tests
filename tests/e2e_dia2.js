@@ -16,11 +16,13 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   ok(!d.querySelector('.g-controls') && !d.querySelector('.g-controls-sep') && !d.querySelector('.cat-toggle'), 'the old controls bar is gone');
   ok(!$('menu-btn') && !$('opts-menu') && !$('menu-wrap'), 'no ⋮ menu on this page');
   ok([...d.querySelectorAll('#setup .menu-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include extra letters|Missed guesses reappear', 'the checkboxes are in the session popup, in order');
-  ok($('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked, 'defaults: categories on, shuffle + extras off');
+  ok(!$('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked && $('missed-again').checked, 'defaults: categories, shuffle, and extras off ("Missed guesses reappear" on)');
   ok($('setup').hidden && G().total === 51, 'the suite starts in a session with the defaults (the harness pressed Start)');
 
   /* ── show / hide categories ── */
-  ok(groups('c') > 1 && groups('v') > 1 && labels('c') === groups('c') && labels('v') === groups('v'), 'grouped by default: both panels labeled');
+  ok(groups('c') === 1 && groups('v') === 1 && labels('c') === 0 && labels('v') === 0 && $('cat-badge').style.visibility === 'hidden', 'to begin with each panel is one plain block, and the card has no category label');
+  clickBox('show-cat');
+  ok(groups('c') > 1 && groups('v') > 1 && labels('c') === groups('c') && labels('v') === groups('v'), 'checked: both panels grouped and labeled');
   ok($('cat-badge').style.visibility === '', 'card category label shown');
   clickBox('show-cat');
   ok(groups('c') === 1 && groups('v') === 1 && labels('c') === 0 && labels('v') === 0, 'unchecked: each panel is one unlabeled block');
