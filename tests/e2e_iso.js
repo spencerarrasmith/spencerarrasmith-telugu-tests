@@ -91,7 +91,7 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
 
   /* ── Lookalikes ── */
   {
-    const h = load('alphabet/06_lookalikes.html', ISO); const { w, d, tick, $ } = h, G = h.game, L = w.LookalikeData, P = w.TeluguProgress;
+    const h = load('training/02_lookalikes.html', ISO); const { w, d, tick, $ } = h, G = h.game, L = w.LookalikeData, P = w.TeluguProgress;
     const opt = t => [...d.querySelectorAll('#kb-area .kb-btn')].find(b => b.textContent.replace(/rare$/, '') === t || b.dataset.text === t);
     const card = (t, others) => G().put({ item: L.item(t), options: [t, ...others].map(L.item) });
     ok(d.querySelector('.kb-label').textContent === 'Which one is spelled this way?', 'Lookalikes: the question is about the spelling');
@@ -112,7 +112,7 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
     opt('క్').click(); ok($('char-card').classList.contains('correct'), 'Lookalikes: క్ answers k');
   }
   {
-    const h = load('alphabet/06_lookalikes.html'); const { d, $ } = h, G = h.game, L = h.w.LookalikeData;
+    const h = load('training/02_lookalikes.html'); const { d, $ } = h, G = h.game, L = h.w.LookalikeData;
     const opt = t => [...d.querySelectorAll('#kb-area .kb-btn')].find(b => b.textContent.replace(/rare$/, '') === t || b.dataset.text === t);
     G().put({ item: L.item('క'), options: ['క', 'క్', 'ఖ'].map(L.item) }); opt('క్').click();
     ok($('tel-char').textContent === '/k/' && $('char-card').classList.contains('correct') && d.querySelector('.kb-label').textContent === 'Which one makes this sound?', 'Lookalikes in IPA (for contrast): /k/ is answered by క or క్, and the question is about the sound');
@@ -120,7 +120,7 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
 
   /* ── Lookalike Builder ── */
   {
-    const h = load('alphabet/05_lookalike-builder.html', ISO); const { w, d, $ } = h, D = w.TeluguData;
+    const h = load('training/01_lookalike-builder.html', ISO); const { w, d, $ } = h, D = w.TeluguData;
     const name = () => $('promptName').querySelector('b').textContent, key = ch => [...d.querySelectorAll('.key')].find(b => b.dataset.ch === ch);
     const title = k => k.title.replace(' (the character shown)', '');
     key('అ').click();
@@ -173,7 +173,7 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
   /* ── no page prints a sound without asking the notation ── */
   {
     const fs = require('fs'), path = require('path'), { SITE_DIR } = require('./config');
-    const pages = ['alphabet/01_phonemes.html', 'alphabet/02_diacritics.html', 'alphabet/03_conjuncts.html', 'alphabet/05_lookalike-builder.html', 'alphabet/06_lookalikes.html', 'reference/02_signs-conjuncts.html', 'review.html', 'lesson-template.html'];
+    const pages = ['alphabet/01_phonemes.html', 'alphabet/02_diacritics.html', 'alphabet/03_conjuncts.html', 'training/01_lookalike-builder.html', 'training/02_lookalikes.html', 'reference/02_signs-conjuncts.html', 'review.html', 'lesson-template.html'];
     const bad = [];
     pages.forEach(f => { const s = fs.readFileSync(path.join(SITE_DIR, f), 'utf8').split('<script>').pop();
       s.split('\n').forEach((ln, i) => { const code = ln.replace(/\/\/.*$/, '');

@@ -121,5 +121,15 @@ const P = w.TeluguProgress, $ = s => d.querySelector(s), click = s => $(s).click
   const F = mk(null); F.P.miss({ game: 'phonemes', key: 'zz', ask: 'telugu' });
   await new Promise(r => setTimeout(r, 5));
   ok(F.play('phonemes') === 'zz → This character is no longer in the app.', 'a stored character that can\'t be read any more says so and can still be cleared');
+  /* ── a whole word (the Words game): stored as the word, shown with its meaning, answered with its sound ── */
+  const Wd = mk(null), Wi = mk('iso'), Wz = mk(null);
+  for (const x of [Wd, Wi]) x.P.miss({ game: 'words', key: 'పుస్తకం', ask: 'word', note: 'book' });
+  Wz.P.miss({ game: 'words', key: 'zz', ask: 'word', note: '?' });
+  await new Promise(r => setTimeout(r, 5));
+  ok([...Wd.win.document.querySelectorAll('.rv-game')].map(g => g.querySelector('.name').textContent + ':' + g.querySelector('.count').textContent).join() === 'Words:1', 'a missed word is listed under Words');
+  { const shown = Wd.play('words'); ok(shown === 'పుస్తకం → /pust\u032Aaka\u0303/ [book]', 'its card shows the word with its meaning, and answers with its sound: ' + shown); }
+  ok(Wi.play('words') === 'పుస్తకం → pustakaṁ [book]', 'in ISO for a reader who chose ISO: పుస్తకం → pustakaṁ');
+  ok(Wz.play('words') === 'zz → This word can no longer be read. [?]', 'a stored word that can\'t be read any more says so');
+  ok(/Letters, syllables, and words you get wrong/.test(html), 'the empty page says words collect here too');
   console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
 })();

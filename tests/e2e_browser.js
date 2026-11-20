@@ -27,7 +27,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(opened === 42, 'every tile loads its page in the iframe at the right path: ' + opened + '/42');
   ok(titled === 42, 'every loaded page has a title');
   // the live pages actually initialize (their shared scripts were found)
-  const live = { 'alphabet/01_phonemes.html': 'TeluguData', 'alphabet/02_diacritics.html': 'TeluguData', 'alphabet/03_conjuncts.html': 'TeluguData', 'alphabet/05_lookalike-builder.html': 'LookalikeData', 'alphabet/06_lookalikes.html': 'LookalikeData', 'reference/01_rosetta.html': 'RosettaData', 'reference/02_signs-conjuncts.html': 'SignsConjunctsData', 'reference/03_sound-charts.html': 'SoundChartsData' };
+  const live = { 'alphabet/01_phonemes.html': 'TeluguData', 'alphabet/02_diacritics.html': 'TeluguData', 'alphabet/03_conjuncts.html': 'TeluguData', 'alphabet/04_words.html': 'TeluguWords', 'training/01_lookalike-builder.html': 'LookalikeData', 'training/02_lookalikes.html': 'LookalikeData', 'reference/01_rosetta.html': 'RosettaData', 'reference/02_signs-conjuncts.html': 'SignsConjunctsData', 'reference/03_sound-charts.html': 'SoundChartsData' };
   for (const [src, g] of Object.entries(live)) {
     const id = tiles.find(t => t.src === src).id; await pg.evaluate(i => { location.hash = '#/' + i; }, id); await pg.waitForTimeout(250);
     const fr = pg.frames().find(f => f.url().endsWith('/' + src)); const has = fr && await fr.evaluate(n => !!window[n] && !!window.TeluguData, g);
@@ -56,19 +56,19 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(!tn.te && tn.cards.every(latin), 'and turned again, it is back to "Telugu Telusu"');
   ok(await css(top, ':root', '--accent-glow') === 'rgba(201, 152, 26, 0.16)', 'home page takes its color tokens from base.css (accent glow 0.16)');
   // a section folds away to its heading line, and opens again
-  const fold = () => top.evaluate(() => { const s = document.querySelectorAll('.section')[1], b = s.querySelector('.section-toggle');
+  const fold = () => top.evaluate(() => { const s = document.querySelectorAll('.section')[2], b = s.querySelector('.section-toggle');      // Alphabet, the third section
     return { h: Math.round(s.getBoundingClientRect().height), tiles: getComputedStyle(s.querySelector('.tiles')).display, turned: getComputedStyle(b.querySelector('svg')).transform !== 'none', line: getComputedStyle(s.querySelector('.section-head')).borderBottomWidth }; });
   const open0 = await fold();
-  await pg.click('.section:nth-of-type(2) .section-toggle'); await pg.waitForTimeout(250);
+  await pg.click('.section:nth-of-type(3) .section-toggle'); await pg.waitForTimeout(250);
   const shut0 = await fold();
   ok(open0.h > 200 && open0.tiles === 'grid' && !open0.turned && shut0.h < 40 && shut0.tiles === 'none' && shut0.turned && shut0.line === '1px', 'the arrow folds a section down to its heading line (' + open0.h + 'px → ' + shut0.h + 'px) and turns to the side');
-  await pg.click('.section:nth-of-type(2) .section-toggle'); await pg.waitForTimeout(250);
+  await pg.click('.section:nth-of-type(3) .section-toggle'); await pg.waitForTimeout(250);
   ok((await fold()).h === open0.h, 'and opens it again');
   let fr0 = await frameOf('vocab-greetings');
   ok(await css(fr0, '.unit-icon', 'width') === '52px' && await css(fr0, '.facts', 'border-radius') === '16px' && await css(fr0, 'body', 'background-color') === 'rgb(11, 12, 24)', 'a placeholder is styled by shell.css');
   ok(await fr0.evaluate(() => document.querySelector('h1').textContent + '|' + document.querySelectorAll('.fact').length) === 'Greetings|3', 'a placeholder draws its title and three lines from units.js');
   let soonOk = 0; for (const t of tiles.filter(t => t.soon)) { const f = await frameOf(t.id); if (f && await f.evaluate(want => document.querySelector('h1') && document.querySelector('h1').textContent === want && !!document.querySelector('.pill.soon'), t.title)) soonOk++; else console.log('   placeholder not drawn:', t.id); }
-  ok(soonOk === 32, 'all 32 placeholders draw in the browser: ' + soonOk + '/32');
+  ok(soonOk === 31, 'all 31 placeholders draw in the browser: ' + soonOk + '/31');
   for (const id of ['rosetta', 'signs-conjuncts', 'sound-charts']) { const f = await frameOf(id);
     ok(await css(f, '.g-header', 'position') === 'sticky' && await css(f, 'html', 'overflow-y') === 'auto' && await css(f, 'body', 'overflow-y') === 'visible' && await css(f, '.jump a', 'border-radius') === '999px' && await css(f, '.wrap', 'display') === 'grid', id + ' is styled by reference.css on top of game.css'); }
   ok(await css(await frameOf('signs-conjuncts'), '.wrap', 'row-gap') === '16px' && await css(await frameOf('rosetta'), '.wrap', 'row-gap') === '14px', 'a reference page\'s own <style> still wins over reference.css');
@@ -83,7 +83,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
     return v.width > 300 && v.height > 150 && g('#cons .ph.both').backgroundColor !== g('#cons .ph.te').backgroundColor && g('#cons th.row').position === 'sticky' && g('#vowel-chart').overflowX === 'auto' && g('#cons .tel .te').fontFamily.includes('Noto Sans Telugu'); }),
     'Sound Charts draws the vowel chart and the grid: shared sounds highlighted, row names pinned, both charts scroll sideways inside their own box');
   ok(await fr0.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Sound Charts never makes the page itself scroll sideways');
-  for (const [id, total] of [['phonemes', 51], ['diacritics', 51], ['conjuncts', 40], ['lookalikes', 40]]) { fr0 = await frameOf(id);
+  for (const [id, total] of [['phonemes', 51], ['diacritics', 51], ['conjuncts', 40], ['words', 20], ['lookalikes', 40]]) { fr0 = await frameOf(id);
     ok(await fr0.evaluate(([id, total]) => !!window.GameCore && GameCore.current.id === id && GameCore.current.total === total && GameCore.current.deck.length === total && document.querySelectorAll('.kb-btn').length > 1 && !!document.getElementById('retry-btn') && document.getElementById('s-total').textContent === String(total), [id, total]), id + ' runs on game-core.js (' + total + ' cards dealt, complete screen in place)'); }
   // Phonemes opens with the session popup over everything; Enter starts, and Cancel on a fresh open goes back to Home
   fr0 = await frameOf('phonemes');
@@ -135,6 +135,63 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
       return seen.every(s => s.w === seen[0].w && s.total === seen[0].total && s.rem === seen[0].rem && s.fits && s.flush); }),
       title + ': the hearts keep one width with no limit (❤️×♾️), at 20, 4, 3, 2, and 1 left, and at game over (⭕), at the right of their box, so the counters beside them do not move');
     await pg.evaluate(() => { location.hash = '#/'; }); await pg.waitForTimeout(150);
+  }
+  // Words: a whole word on a wider card, its meaning above, a row of boxes under it; the character being spelled in the accent color
+  fr0 = await frameOf('words');
+  ok(await fr0.evaluate(() => { const s = document.getElementById('setup'), r = s.getBoundingClientRect(), x = i => document.getElementById(i).getBoundingClientRect();
+    return !s.hidden && r.width === innerWidth && r.height === innerHeight && document.getElementById('setup-title').textContent === 'Words' && document.getElementById('setup-rounds').value === '20' && document.getElementById('setup-rounds').max === '250'
+      && !document.getElementById('rev-btn') && !document.getElementById('setup-dir-row') && x('setup-rounds').bottom < x('setup-misses').top && x('setup-misses').bottom < x('show-cat').top && !document.querySelector('.menu-btn') && document.activeElement.id === 'setup-start'; }),
+    'Words opens with the session popup (20 rounds of 250), with no direction row and no ⋮ menu');
+  await fr0.press('#setup-start', 'Enter'); await pg.waitForTimeout(150);
+  const ACCENT = 'rgb(201, 152, 26)', TEXT = 'rgb(251, 248, 238)', ERROR = 'rgb(248, 113, 113)', SUCCESS = 'rgb(74, 222, 128)';
+  const wordsLook = () => fr0.evaluate(() => { const x = e => e.getBoundingClientRect(), $ = i => document.getElementById(i), card = x($('char-card')), syl = [...document.querySelectorAll('#tel-char .syl')];
+    const boxes = [...document.querySelectorAll('.sp-slot')].map(x), cols = [...document.querySelectorAll('.kb-col')].map(x);
+    return { en: x($('word-en')), card, word: x($('tel-char')), spell: x($('spell')), fb: x($('feedback')), kb: x($('kb-area')), cols, boxRows: new Set(boxes.map(b => Math.round(b.top))).size, boxes: boxes.length,
+      colors: syl.map(e => getComputedStyle(e).color), size: parseFloat(getComputedStyle($('tel-char')).fontSize), enText: $('word-en').textContent, enFont: getComputedStyle($('word-en')).fontFamily }; });
+  await fr0.evaluate(() => { GameCore.current.put(TeluguWords.get('పుస్తకం')); });
+  let wl = await wordsLook();
+  ok(wl.enText === 'book' && wl.en.bottom <= wl.card.top && wl.en.height >= 18 && Math.abs((wl.en.left + wl.en.right) / 2 - (wl.card.left + wl.card.right) / 2) < 1 && /Inter/.test(wl.enFont), 'Words: the meaning sits above the card, centered on it');
+  ok(Math.round(wl.card.width) === 420 && Math.round(wl.card.height) === 144 && wl.card.bottom <= wl.spell.top && wl.spell.bottom <= wl.fb.top && wl.fb.bottom <= wl.kb.top, 'Words: the card is wider than a single character\'s (420 × 144); under it the row of boxes, the feedback line, then the keyboards');
+  ok(wl.colors.join('|') === [ACCENT, TEXT, TEXT].join('|'), 'Words: the character being spelled is in the accent color (gold), the rest of the word in the text color');
+  ok(wl.boxes === 8 && wl.boxRows === 1 && wl.cols.length === 2 && wl.cols[0].right < wl.cols[1].left && Math.abs(wl.cols[0].top - wl.cols[1].top) < 1 && wl.cols[0].width > wl.cols[1].width, 'Words: eight boxes in one row; the consonant and vowel keyboards side by side');
+  ok(await fr0.evaluate(() => { const pairs = [...document.querySelectorAll('.kb-col[data-kind="v"] .kb-pair')].map(p => [...p.children].map(b => b.getBoundingClientRect())), row = document.querySelector('.kb-col[data-kind="v"] .kb-row');
+    return pairs.length === 6 && pairs.every(([a, b]) => Math.abs(a.top - b.top) < 1 && b.left > a.right && Math.abs(b.left - a.right - parseFloat(getComputedStyle(row).columnGap)) < 1); }),
+    'Words: each vowel key has its long form right beside it on the same row, as on Diacritics (the layout is in game.css)');
+  // every word fits its card, at the size its length gives it
+  const fits = () => fr0.evaluate(() => { const G = GameCore.current, card = document.getElementById('char-card'), tel = document.getElementById('tel-char'), bad = [], sizes = {};
+    for (const w of TeluguWords.words) { G.put(w); const c = card.getBoundingClientRect(), t = tel.getBoundingClientRect(); sizes[w.syllables.length] = parseFloat(getComputedStyle(tel).fontSize);
+      if (t.width > c.width - 24 || t.left < c.left + 10 || t.right > c.right - 10 || document.getElementById('spell').getBoundingClientRect().width > innerWidth) bad.push(w.te); }
+    G.start(); return { bad, sizes, sideways: document.documentElement.scrollWidth > innerWidth }; });
+  let ft = await fits();
+  ok(ft.bad.length === 0 && !ft.sideways && ft.sizes[1] === ft.sizes[2] && ft.sizes[2] > ft.sizes[3] && ft.sizes[3] > ft.sizes[4] && ft.sizes[4] > ft.sizes[5] && ft.sizes[5] >= 40,
+    'Words: all 250 words fit inside the card with room to spare; longer words are set smaller (' + [1, 2, 3, 4, 5].map(n => ft.sizes[n]).join(', ') + 'px) ' + ft.bad.join(' '));
+  // a wrong pick: the character turns red, the key pressed red, the right key lit, for a second and a half
+  await fr0.evaluate(() => { GameCore.current.put(TeluguWords.get('పుస్తకం')); const hit = ipa => [...document.querySelectorAll('.kb-btn')].find(b => b.dataset.ipa === ipa).click(); hit('p'); hit('u'); hit('s'); hit('k'); });
+  await pg.waitForTimeout(500);
+  ok(await fr0.evaluate(([ACCENT, TEXT, ERROR, SUCCESS]) => { const c = s => getComputedStyle(document.querySelector(s)), key = ipa => getComputedStyle([...document.querySelectorAll('.kb-btn')].find(b => b.dataset.ipa === ipa));
+    const syl = [...document.querySelectorAll('#tel-char .syl')].map(e => getComputedStyle(e).color), boxes = [...document.querySelectorAll('.sp-slot')];
+    return syl.join('|') === [TEXT, ERROR, TEXT].join('|') && key('k').borderTopColor === ERROR && key('t̪').borderTopColor === SUCCESS && c('#feedback').color === ERROR && document.getElementById('feedback').textContent === '✗  /k/'
+      && getComputedStyle(boxes[3]).borderTopColor === ERROR && getComputedStyle(boxes[3]).color === ERROR && getComputedStyle(boxes[4]).borderTopStyle === 'dashed' && boxes.slice(0, 5).map(b => b.textContent).join(' ') === 'p u s t̪ a' && GameCore.current.locked; }, [ACCENT, TEXT, ERROR, SUCCESS]),
+    'Words: a wrong pick turns that character red; the key pressed is red, the right key green, the missed box red, the box never asked dashed; the game is held');
+  await pg.waitForTimeout(1300);
+  ok(await fr0.evaluate(([ACCENT, TEXT, ERROR]) => [...document.querySelectorAll('#tel-char .syl')].map(e => getComputedStyle(e).color).join('|') === [TEXT, ERROR, ACCENT].join('|') && !GameCore.current.locked && document.getElementById('feedback').textContent === ''
+      && !document.querySelector('.kb-btn.ok, .kb-btn.err') && !!document.querySelector('.sp-syl.now .sp-slot.cur'), [ACCENT, TEXT, ERROR]),
+    'Words: a second and a half later play has moved on: the next character is gold, the missed one stays red, the keys are clear');
+  // on a phone: the vowel keyboard comes first, the longest words still fit, nothing scrolls sideways
+  await pg.evaluate(() => { location.hash = '#/'; }); await pg.waitForTimeout(150);
+  {
+    const ph = await b.newPage({ viewport: { width: 390, height: 780 } }); ph.on('pageerror', e => errs.push('words (phone): ' + e.message));
+    await ph.goto('http://localhost:8779/alphabet/04_words.html'); await ph.waitForTimeout(400); await ph.click('#setup-start'); await ph.waitForTimeout(150);
+    const r = await ph.evaluate(() => { const G = GameCore.current, card = document.getElementById('char-card'), tel = document.getElementById('tel-char'), bad = [], sizes = {};
+      for (const w of TeluguWords.words) { G.put(w); const c = card.getBoundingClientRect(), t = tel.getBoundingClientRect(); sizes[w.syllables.length] = parseFloat(getComputedStyle(tel).fontSize);
+        if (t.width > c.width - 16 || t.left < c.left + 6 || t.right > c.right - 6 || document.documentElement.scrollWidth > innerWidth) bad.push(w.te); }
+      G.put(TeluguWords.get('ధన్యవాదాలు'));
+      const x = e => e.getBoundingClientRect(), cols = [...document.querySelectorAll('.kb-col')], v = x(cols.find(c => c.dataset.kind === 'v')), c = x(cols.find(c => c.dataset.kind === 'c')), sp = x(document.getElementById('spell'));
+      return { bad, sizes, card: Math.round(x(card).width), vFirst: v.bottom <= c.top && Math.abs(v.left - c.left) < 1, spell: sp.left >= 0 && sp.right <= innerWidth, boxes: [...document.querySelectorAll('.sp-slot')].every(b => x(b).left >= 0 && x(b).right <= innerWidth),
+        en: x(document.getElementById('word-en')).bottom <= x(card).top, sideways: document.documentElement.scrollWidth > innerWidth, header: x(document.getElementById('s-lives')).right <= innerWidth }; });
+    ok(r.bad.length === 0 && !r.sideways && r.card === 358 && r.sizes[5] < r.sizes[4] && r.sizes[4] < r.sizes[3], 'Words on a phone (390px): the card takes the width there is (358px) and every word still fits, the long ones a size smaller (' + [3, 4, 5].map(n => r.sizes[n]).join(', ') + 'px) ' + r.bad.join(' '));
+    ok(r.vFirst && r.spell && r.boxes && r.en && r.header, 'Words on a phone: the vowel keyboard comes first, above the consonants; the eleven boxes of the longest word wrap inside the screen; the header fits');
+    await ph.close();
   }
   fr0 = await frameOf('lookalike-builder');
   ok(await fr0.evaluate(() => document.querySelectorAll('#kCons .key').length === TeluguData.consonants.length && document.querySelectorAll('#kDigits .key').length === TeluguData.digits.length && !!LookalikeData.rows), 'the Lookalike Builder draws its keys from TeluguData and has LookalikeData\'s CSV reader');
@@ -196,7 +253,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   const pf = pg.frames().find(f => f.url().endsWith('/profile.html'));
   ok(await pg.evaluate(() => location.hash === '#/profile' && !document.getElementById('app').hidden && document.getElementById('app-title').textContent === 'Profile') && !!pf, 'the Profile button opens the Profile page in the app view');
   ok(await pf.evaluate(() => { const x = e => e.getBoundingClientRect(), cards = [...document.querySelectorAll('.pf-card')], svg = document.querySelector('[data-chart="phonemes"] svg'), host = svg.parentElement;
-    return cards.length === 4 && cards.map(c => c.dataset.game).join() === 'phonemes,diacritics,conjuncts,lookalikes' && document.getElementById('stat').textContent === '5 sessions'
+    return cards.length === 4 && cards.map(c => c.dataset.game).join() === 'phonemes,diacritics,conjuncts,words' && document.getElementById('stat').textContent === '5 sessions'
       && Math.abs(x(svg).width - x(host).width) < 1 && x(svg).height > 200 && svg.querySelectorAll('path.line').length === 2 && svg.querySelectorAll('circle.dot.early').length === 2
       && getComputedStyle(svg.querySelectorAll('path.line')[0]).stroke !== getComputedStyle(svg.querySelectorAll('path.line')[1]).stroke && getComputedStyle(svg.querySelector('path.line')).strokeWidth === '2px'
       && getComputedStyle(svg.querySelector('circle.dot.early')).fill === getComputedStyle(document.querySelector('.pf-card')).backgroundColor

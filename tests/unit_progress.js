@@ -29,6 +29,12 @@ ok(r.cleared && P.missCount() === 1, 'two "got it" in a row clear the item');
 P.miss({ game: 'phonemes', key: 'క', prompt: 'క', answer: '/k/' }); P.review('phonemes', 'క', true);
 P.miss({ game: 'phonemes', key: 'క', prompt: 'క', answer: '/k/' });
 ok(P.misses().find(m => m.key === 'క').streak === 0, 'a new miss resets the streak');
+// a whole word (the Words game) is stored like a character: the word, 'word', and its meaning as the note
+P.miss({ game: 'words', key: 'అమ్మ', ask: 'word', note: 'mother' });
+{ const m = P.misses().find(x => x.game === 'words');
+  ok(m.key === 'అమ్మ' && m.ask === 'word' && m.note === 'mother' && m.count === 1 && !('prompt' in m) && !('answer' in m) && !('syllable' in m), 'a missed word is stored as the word and what was asked (ask: "word"), not as text: Review writes its sound');
+  P.miss({ game: 'words', key: 'అమ్మ', ask: 'word', note: 'mother' }); ok(P.misses().find(x => x.game === 'words').count === 2, 'missing it again counts up');
+  P.review('words', 'అమ్మ', true); P.review('words', 'అమ్మ', true); ok(!P.misses().some(x => x.game === 'words'), 'two "got it" in a row clear it, like any other miss'); }
 /* ── runs: every session a game plays to its end (the Profile page's statistics) ── */
 const before = changes, t0 = Date.now();
 P.run('phonemes', { total: 51, correct: 51, attempts: 60 });
@@ -44,6 +50,14 @@ P.run('phonemes', { total: 5, correct: 0, attempts: 0 }); P.run('', { total: 5, 
 ok(P.runCount() === 3, 'a session with no answers, no game, or no numbers is not a run');
 P.run('phonemes', { total: 3, correct: 9, attempts: 4, ended: 'sideways' });
 ok(P.runs('phonemes')[2].ok === 4 && P.runs('phonemes')[2].end === 'done', 'correct answers never exceed the answers given; an unknown ending counts as finished');
+// a game whose cards take several answers each (Words: a card is a word, an answer is one of its sounds) says how many were wrong
+P.run('words', { total: 20, correct: 14, attempts: 118, misses: 9 });
+P.run('words', { total: 3, correct: 2, attempts: 3, misses: 1 });
+P.run('words', { total: 2, correct: 0, attempts: 4, misses: 99, ended: 'out' });
+{ const r = P.runs('words');
+  ok(r[0].miss === 9 && r[0].ok === 14 && r[0].tries === 118 && JSON.stringify(Object.keys(r[0]).sort()) === '["end","miss","n","ok","t","tries"]', 'a run can carry its own count of wrong answers (miss), when that is not answers − correct: 9 of 118');
+  ok(!('miss' in r[1]) && !('miss' in P.runs('phonemes')[0]) && !('miss' in P.runs('conjuncts')[0]), 'it is left out when it is answers − correct, as in every game with one answer to a card');
+  ok(r[2].miss === 4 && r[2].end === 'out', 'and it never exceeds the answers given'); }
 for (let i = 0; i < P.RUN_CAP + 5; i++) P.run('capped', { total: i + 1, correct: 1, attempts: 1 });
 ok(P.RUN_CAP === 100 && P.runs('capped').length === 100 && P.runs('capped')[0].n === 6 && P.runs('capped')[99].n === 105, 'the last 100 runs of a game are kept; the oldest go first');
 // a second "frame" sharing storage sees the same data

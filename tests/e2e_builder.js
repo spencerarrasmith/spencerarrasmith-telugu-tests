@@ -1,9 +1,9 @@
-// Lookalike Builder (alphabet/05_lookalike-builder.html): one keyboard with a Character / Looks like switch.
+// Lookalike Builder (training/01_lookalike-builder.html): one keyboard with a Character / Looks like switch.
 // Choose a character, tap what looks like it, export the groups as a CSV for the Lookalikes game.
 const { SITE_DIR } = require('./config');
 const { JSDOM } = require('jsdom'); const fs = require('fs'), path = require('path');
 (async () => {
-const dir = (SITE_DIR + '/'), PAGE = 'alphabet/05_lookalike-builder.html', KEY = 'telugu-lookalikes-v1';
+const dir = (SITE_DIR + '/'), PAGE = 'training/01_lookalike-builder.html', KEY = 'telugu-lookalikes-v1';
 const raw = fs.readFileSync(dir + PAGE, 'utf8');
 const html = raw.replace(/<link[^>]*>/g, '').replace(/<script src="([^"]+)"><\/script>/g, (m, src) => '<script>' + fs.readFileSync(path.resolve(dir, path.dirname(PAGE), src), 'utf8') + '</script>');
 // a fresh visit; `storage` is what the browser already holds

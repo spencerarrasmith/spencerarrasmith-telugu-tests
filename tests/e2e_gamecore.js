@@ -214,8 +214,84 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
     ok(once.again === true && once.deck.length === 6 && once.deck.includes(again) && once.dropped === 0, 'again: true brings missed cards back as before');
   }
 
+  /* a card that takes several answers: step() for each, judge({ counted }) when the card is finished (the Words game) */
+  {
+    const { w, $, delays, tick } = page(); const C = w.GameCore, P = w.TeluguProgress;
+    const CARDS = [{ k: 'a' }, { k: 'b' }, { k: 'c' }]; let draws = 0;
+    const g = C.create({ id: 'steps', pool: () => CARDS, render: () => { draws++; }, okMs: 300, errMs: 900 });
+    g.start(); const card = g.current; delays.length = 0;
+    $('feedback').textContent = 'a hint'; $('feedback').className = 'feedback hint';
+    g.step(true);
+    ok(g.attempts === 1 && g.misses === 0 && g.completed === 0 && g.current === card && g.deck.length === 3 && !g.locked && draws === 1, 'step(true): one answer counted; the card stays, nothing is redrawn, the game is not locked');
+    ok($('feedback').textContent === '' && $('feedback').className === 'feedback' && !$('char-card').classList.contains('correct') && delays.length === 0, 'a right step clears the line under the card and leaves the card unmarked');
+    g.step(false, { feedback: '✗  /k/', miss: { key: 'క', ask: 'telugu', note: 'n' } });
+    ok(g.attempts === 2 && g.misses === 1 && g.current === card && g.deck.length === 3 && !g.locked && !g.over, 'step(false): one answer, one mistake; the card still stays');
+    ok($('feedback').textContent === '✗  /k/' && $('feedback').className === 'feedback err' && $('char-card').classList.contains('wrong') && delays.join() === '900', 'it shows its line and marks the card for errMs');
+    ok(JSON.stringify(P.misses().map(m => [m.game, m.key, m.ask])) === '[["steps","క","telugu"]]', 'its miss goes to Review, under the game\'s id');
+    await tick();
+    ok($('feedback').textContent === '' && !$('char-card').classList.contains('wrong') && !g.locked, 'then the line and the mark clear by themselves');
+    g.step(false, { feedback: '✗ te', te: true }); ok($('feedback').className === 'feedback err te' && g.misses === 2, 'te marks the line as Telugu');
+    g.step(true); ok($('feedback').textContent === '' && !$('char-card').classList.contains('wrong') && g.attempts === 4, 'a right step clears a wrong one\'s line at once');
+
+    // after: the wrong answer is held on screen, then play goes on
+    let afters = 0; delays.length = 0;
+    g.step(false, { feedback: '✗ held', after: () => { afters++; } });
+    ok(g.locked && afters === 0 && g.misses === 3 && $('feedback').textContent === '✗ held' && delays.join() === '900', 'step(false, { after }): the game is locked for errMs with the answer showing');
+    { const a = g.attempts; g.step(true); g.step(false); g.judge(true); ok(g.attempts === a && g.misses === 3 && g.current === card, 'nothing counts while it is held'); }
+    await tick();
+    ok(afters === 1 && !g.locked && $('feedback').textContent === '' && !$('char-card').classList.contains('wrong') && g.current === card, 'then after() runs, once, with the marks cleared and the game unlocked');
+
+    // the card is finished: nothing more is counted
+    g.judge(false, { counted: true, feedback: '✗  1 of 2 right', miss: { key: 'zz', prompt: 'p', answer: 'a' } });
+    ok(g.attempts === 5 && g.misses === 3 && g.locked && $('feedback').textContent === '✗  1 of 2 right' && $('feedback').classList.contains('err') && $('char-card').classList.contains('wrong') && delays.at(-1) === 900,
+      'judge(false, { counted }): no answer and no mistake are added; the card looks wrong and is held for errMs');
+    ok(g.completed === 0 && g.deck.length === 3 && g.deck[0] !== card && g.deck.includes(card) && P.missCount() === 1, 'the card goes back into the deck like any missed card; no second miss is filed');
+    await tick();
+    g.step(true); g.judge(true, { counted: true, feedback: '✓  done' });
+    ok(g.attempts === 6 && g.completed === 1 && g.deck.length === 2 && $('feedback').classList.contains('ok') && $('char-card').classList.contains('correct') && delays.at(-1) === 300, 'judge(true, { counted }): the card is cleared, looks right, and nothing but the step was counted');
+    await tick();
+    g.front(c => c !== card); g.step(true); g.judge(true, { counted: true }); await tick();
+    g.step(true); g.step(true); g.step(true); g.judge(true, { counted: true }); await tick();      // the card that was sent back, last
+    ok($('g-complete').classList.contains('show') && $('c-sub').textContent === 'All 3 cards cleared.' && $('c-attempts').textContent === '10' && $('c-accuracy').textContent === '70%' && $('c-errors').textContent === '3',
+      'the complete screen counts answers, not cards: 10 answers, 3 wrong, 70%');
+    ok(JSON.stringify(P.runs('steps').map(r => [r.n, r.ok, r.tries, r.miss, r.end])) === '[[3,3,10,3,"done"]]', 'the run keeps its own count of wrong answers: 3 cards, 3 cleared, 10 answers, 3 wrong');
+
+    // game over on a step: at once, and after() is not called
+    g.start({ misses: 2 }); afters = 0;
+    g.step(false, { after: () => { afters++; } }); await tick();
+    ok(afters === 1 && !g.over && g.left === 1, 'with a game over set, a first mistake is held and goes on');
+    g.step(true); g.step(false, { feedback: '✗ last', after: () => { afters++; } });
+    ok(g.over && g.locked && g.left === 0 && $('feedback').textContent === '✗ last' && !$('g-complete').classList.contains('show'), 'the mistake that is game over ends the session on the step itself');
+    await tick();
+    ok(afters === 1 && $('g-complete').classList.contains('show') && $('c-title').textContent === 'Game Over' && $('c-sub').textContent === '0 of 3 cleared. Game over at 2 mistakes.' && $('c-attempts').textContent === '3' && $('c-accuracy').textContent === '33%' && $('c-errors').textContent === '2',
+      'after() is not called; the complete screen: 3 answers, 2 wrong, 33%');
+    ok(JSON.stringify(P.runs('steps').at(-1)).includes('"miss":2') && P.runs('steps').at(-1).end === 'out' && P.runs('steps').at(-1).ok === 0, 'recorded as game over, with its 2 wrong answers');
+
+    // a new round cancels a hold left over from the last one
+    g.start({ misses: null }); afters = 0;
+    g.step(false, { after: () => { afters++; } }); g.start();
+    ok(!g.locked && g.attempts === 0 && g.misses === 0, 'start() during a hold deals a fresh, unlocked round');
+    await tick();
+    ok(afters === 0 && !g.locked, 'and the old round\'s after() never runs');
+
+    // one answer to a card, as before: the numbers are unchanged
+    g.start(); g.judge(false); await tick(); for (let i = 0; i < 3; i++) { g.judge(true); await tick(); }
+    ok($('c-attempts').textContent === '4' && $('c-accuracy').textContent === '75%' && $('c-errors').textContent === '1' && !('miss' in P.runs('steps').at(-1)), 'a game that only judges reads as it always did (4 answers, 75%, 1 error), and its run carries no count of its own');
+  }
+
+  /* record: false → a game whose sessions are not kept (Lookalikes: a training tool with no chart) */
+  {
+    const { w, $, tick } = page(); const C = w.GameCore, P = w.TeluguProgress;
+    const g = C.create({ id: 'quiet', record: false, pool: () => [{ k: 'a' }, { k: 'b' }], render: () => {} });
+    g.start(); g.judge(false, { miss: { key: 'క', ask: 'telugu' } }); await tick(); g.judge(true); await tick(); g.judge(true); await tick();
+    ok($('g-complete').classList.contains('show') && $('c-attempts').textContent === '3' && P.runs('quiet').length === 0 && P.runCount() === 0, 'record: false: the session plays to its complete screen and no run is kept');
+    ok(P.missCount() === 1 && P.misses()[0].game === 'quiet', 'its misses still go to Review');
+    const k = C.create({ id: 'kept', pool: () => [{ k: 'a' }], render: () => {} }); k.start(); k.judge(true); await tick();
+    ok(P.runs('kept').length === 1, 'without it a session is kept, as before');
+  }
+
   /* every game is built on it and keeps no copy of the round */
-  const GAMES = { Phonemes: 'alphabet/01_phonemes.html', Diacritics: 'alphabet/02_diacritics.html', Conjuncts: 'alphabet/03_conjuncts.html', Lookalikes: 'alphabet/06_lookalikes.html' };
+  const GAMES = { Phonemes: 'alphabet/01_phonemes.html', Diacritics: 'alphabet/02_diacritics.html', Conjuncts: 'alphabet/03_conjuncts.html', Words: 'alphabet/04_words.html', Lookalikes: 'training/02_lookalikes.html' };
   for (const [name, file] of Object.entries(GAMES)) {
     const src = fs.readFileSync(dir + file, 'utf8');
     ok(/<script src="\.\.\/game-core\.js"><\/script>/.test(src) && /GameCore\.create\(\{/.test(src) && /game\.judge\(/.test(src), name + ' loads game-core.js, creates its round with it, and judges answers through it');

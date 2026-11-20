@@ -25,7 +25,7 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   ok(kinds.join(' | ') === 'Short | Long | Diphthong | Vocalic | Nasal · aspirate | Pure consonant', 'the card label is "<consonant category> + <vowel category>", for every kind of sign: ' + badge());
   const pairs = [...d.querySelectorAll('.kb-col[data-kind="v"] .kb-pair')].map(p => [...p.children].map(b => b.dataset.ipa));
   ok(pairs.length === 6 && pairs.every(p => p.length === 2 && p[1] === p[0] + 'ː') && pairs.map(p => p[0]).join(' ') === 'a i u e o r̩' && !d.querySelector('.kb-col[data-kind="c"] .kb-pair')
-    && /\.kb-pair \{ display: inline-flex; gap: inherit; \}/.test(require('fs').readFileSync(require('path').join(require('./config').SITE_DIR, 'alphabet/02_diacritics.html'), 'utf8')),
+    && /\.kb-pair \{ display: inline-flex; gap: inherit; \}/.test(require('fs').readFileSync(require('path').join(require('./config').SITE_DIR, 'game.css'), 'utf8')),      // game.css: Words lays its vowels out the same way
     'a vowel and its long form are one unit in the row (six pairs: a i u e o r̩), so a row never breaks between them');
 
   // క్ష + sign

@@ -29,6 +29,7 @@ module.exports = function load(file, opts = {}) {
   // A stored miss as Review would show it now: { prompt, answer } (the store keeps the character, not the text)
   const shown = m => {
     if (!m || !m.ask) return m ? { prompt: m.prompt, answer: m.answer } : {};
+    if (m.ask === 'word') return { prompt: m.key, answer: w.TeluguData.notation.wrap(w.TeluguData.notation.word(w.TeluguData.syllables(m.key))) };      // a whole word (Words)
     const N = w.TeluguData.notation, r = w.TeluguData.read(m.key, { syllable: !!m.syllable, any: true });
     const sound = N.wrap(N.of(r)) + (r.spoken ? `  ·  usually said /${r.spoken}/` : '');
     return m.ask === 'sound' ? { prompt: sound, answer: m.key } : { prompt: m.key, answer: sound };

@@ -1,4 +1,4 @@
-const h = require('./harness')('alphabet/06_lookalikes.html');
+const h = require('./harness')('training/02_lookalikes.html');
 const { w, d, tick, ok, $ } = h;
 const G = h.game;                                          // the round: G().deck, .current, .total, .completed
 const fs = require('fs');
@@ -103,7 +103,7 @@ const upload = (text, name = 'mine.csv') => new Promise(res => { w.eval('onFile'
   const N = total();
   for (let i = 0; i < N; i++) { const c = cur(); key(c.item.text).click(); await tick(); await tick(); }
   ok($('g-complete').classList.contains('show') && $('c-attempts').textContent === String(N) + '' && $('c-accuracy').textContent === '100%', 'perfect run → complete screen: ' + $('c-attempts').textContent + ' attempts, ' + $('c-accuracy').textContent);
-  { const r = P.runs('lookalikes').at(-1); ok(r && r.ok === G().completed && r.tries === G().attempts && r.n === G().total && r.end === 'done' && !('dir' in r) && !('isComplete' in P), 'the session is recorded for the Profile page; nothing is marked complete'); }
+  ok(P.runs('lookalikes').length === 0 && P.runCount() === 0 && G().completed === N && !('isComplete' in P), 'a training tool: the finished session is not recorded (it has no chart on the Profile page), and nothing is marked complete');
   $('retry-btn').click();
   ok(!$('g-complete').classList.contains('show') && total() === 40, 'Practice Again starts a new session');
 

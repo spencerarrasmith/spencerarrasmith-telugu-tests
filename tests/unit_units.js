@@ -4,28 +4,39 @@ const fs = require('fs'), path = require('path');
 const U = require(path.join(SITE_DIR, 'units.js'));
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
 
-ok(U.sections.map(s => s.title).join(' · ') === 'Reference · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'five sections, Reference first');
-ok(U.sections.map(s => s.tiles.length).join() === '7,6,8,12,8' && U.tiles.length === 41, 'tile counts 7/6/8/12/8 = 41');
+ok(U.sections.map(s => s.title).join(' · ') === 'Reference · Training · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'six sections: Reference first, then Training, above Alphabet');
+ok(U.sections.map(s => s.tiles.length).join() === '7,2,4,8,12,8' && U.tiles.length === 41, 'tile counts 7/2/4/8/12/8 = 41');
 ok(U.featured.map(t => t.id).join() === 'review' && U.all.length === 42 && U.all[0].id === 'review', 'Review is featured; all = Review + the 41 tiles');
 // pages that are not tiles (reached from the top right of the home page), and the games whose sessions the Profile page charts
 ok(JSON.stringify(U.pages) === '[{"id":"profile","title":"Profile","src":"profile.html"}]' && fs.existsSync(path.join(SITE_DIR, 'profile.html')) && !U.all.some(t => U.pages.some(p => p.id === t.id || p.src === t.src)), 'pages: Profile, with its own id and file, and not among the tiles');
 const charted = U.all.filter(t => t.stats).map(t => t.id), onCore = U.all.filter(t => !t.soon && /<script src="[^"]*game-core\.js">/.test(fs.readFileSync(path.join(SITE_DIR, t.src), 'utf8'))).map(t => t.id);
-ok(charted.join() === 'phonemes,diacritics,conjuncts,lookalikes' && onCore.join() === charted.join() && U.all.every(t => t.stats === undefined || t.stats === true), 'stats: true marks the four practice games, which are exactly the pages built on game-core.js (it records their sessions)');
+ok(charted.join() === 'phonemes,diacritics,conjuncts,words' && U.all.every(t => t.stats === undefined || t.stats === true), 'stats: true marks the four games the Profile page charts: Phonemes, Diacritics, Conjuncts, Words');
+// A game is recorded exactly when it is charted: every page built on game-core.js either has `stats` on its tile or tells the core to keep no record
+const keepsNone = id => /GameCore\.create\(\{[^]*?\n\s*record:\s*false,/.test(fs.readFileSync(path.join(SITE_DIR, U.get(id).src), 'utf8'));
+ok(onCore.join() === 'lookalikes,phonemes,diacritics,conjuncts,words' && onCore.every(id => charted.includes(id) !== keepsNone(id)) && keepsNone('lookalikes'),
+  'the five games are built on game-core.js; the four charted ones are recorded, and Lookalikes (a training tool) asks for no record: record: false');
 ok(new Set(U.all.map(t => t.id)).size === 42 && new Set(U.all.map(t => t.src)).size === 42, 'ids and page paths are unique');
 ok(U.all.every(t => t.id && t.icon && t.title && t.desc && t.src && /^[a-z0-9-]+$/.test(t.id)), 'every tile has id, icon, title, desc, and src');
 ok(U.all.every(t => fs.existsSync(path.join(SITE_DIR, t.src))), 'every src is a file');
 const soon = U.tiles.filter(t => t.soon);
-// the Alphabet section: Spelling pitfalls, Writing, and Alphabet Chart are gone; Words (a placeholder for now) follows Conjuncts
-ok(U.sections[1].tiles.map(t => t.id).join() === 'phonemes,diacritics,conjuncts,words,lookalike-builder,lookalikes' && ['spelling', 'writing', 'alphabet-chart'].every(id => !U.get(id))
-  && ['06_spelling.html', '07_writing.html', '08_alphabet-chart.html'].every(f => !fs.existsSync(path.join(SITE_DIR, 'alphabet', f))),
-  'Alphabet: Phonemes, Diacritics, Conjuncts, Words, Lookalike Builder, Lookalikes; the three removed tiles and their pages are gone');
-ok(!!U.get('words').soon && !U.get('words').stats && U.get('words').src === 'alphabet/04_words.html' && !/[.!?]$/.test(U.get('words').desc), 'Words is a "Coming soon" tile, fourth in its section: ' + U.get('words').desc);
+// the Training section (the two lookalike pages, moved out of Alphabet into a folder of their own), and what is left in Alphabet
+ok(U.sections[1].title === 'Training' && U.sections[1].tiles.map(t => t.id + ' ' + t.src).join() === 'lookalike-builder training/01_lookalike-builder.html,lookalikes training/02_lookalikes.html'
+  && U.sectionOf('lookalikes').title === 'Training' && !U.get('lookalikes').stats && !U.get('lookalike-builder').stats,
+  'Training: Lookalike Builder, Lookalikes, in training/, numbered from 01; neither is charted on the Profile page');
+ok(U.sections[2].title === 'Alphabet' && U.sections[2].tiles.map(t => t.id).join() === 'phonemes,diacritics,conjuncts,words' && ['spelling', 'writing', 'alphabet-chart'].every(id => !U.get(id))
+  && fs.readdirSync(path.join(SITE_DIR, 'alphabet')).sort().join() === '01_phonemes.html,02_diacritics.html,03_conjuncts.html,04_words.html,words-data.js',
+  'Alphabet: Phonemes, Diacritics, Conjuncts, Words, and nothing else in its folder but the word list');
+{ // nothing in the app still points at where those pages used to be
+  const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]);
+  const stale = walk(SITE_DIR).filter(f => /\.(html|js|css|md)$/.test(f) && /alphabet\/0\d_lookalike|0[456]_lookalike|06_spelling|07_writing|08_alphabet-chart/.test(fs.readFileSync(f, 'utf8'))).map(f => path.relative(SITE_DIR, f));
+  ok(stale.length === 0 && fs.readdirSync(path.join(SITE_DIR, 'training')).sort().join() === '01_lookalike-builder.html,02_lookalikes.html', 'no file mentions the old alphabet/ paths of the lookalike pages or the removed pages; training/ holds exactly the two ' + stale.join(' ')); }
+ok(!U.get('words').soon && U.get('words').stats === true && U.get('words').src === 'alphabet/04_words.html' && !/[.!?]$/.test(U.get('words').desc) && U.label('words') === 'Words', 'Words is a built game, fourth in Alphabet, charted on the Profile page: ' + U.get('words').desc);
 // pages are named NN_name.html, numbered in the order their tiles appear (README, "Conventions")
 const fileNo = t => +path.basename(t.src).slice(0, 2);
 ok(U.sections.every(sec => sec.tiles.every((t, i) => /^\d\d_/.test(path.basename(t.src)) && (i === 0 || fileNo(t) === fileNo(sec.tiles[i - 1]) + 1))),
   'in every section the file numbers follow the tile order, with none skipped (a removed page renumbers the ones after it)');
-ok(soon.length === 32 && soon.every(t => ['learn', 'practice', 'fits'].every(k => typeof t.soon[k] === 'string' && t.soon[k].length > 10)), '32 placeholders, each with its three lines (learn, practice, fits)');
-ok(U.tiles.filter(t => !t.soon).map(t => t.id).join() === 'links,rosetta,signs-conjuncts,sound-charts,phonemes,diacritics,conjuncts,lookalike-builder,lookalikes', 'the 9 built pages carry no `soon` block');
+ok(soon.length === 31 && soon.every(t => ['learn', 'practice', 'fits'].every(k => typeof t.soon[k] === 'string' && t.soon[k].length > 10)), '31 placeholders, each with its three lines (learn, practice, fits)');
+ok(U.tiles.filter(t => !t.soon).map(t => t.id).join() === 'links,rosetta,signs-conjuncts,sound-charts,lookalike-builder,lookalikes,phonemes,diacritics,conjuncts,words', 'the 10 built pages carry no `soon` block');
 ok(!soon.some(t => /once progress tracking exists/.test(JSON.stringify(t.soon))), 'no placeholder still talks about progress tracking as future work');
 
 // lookups
@@ -47,7 +58,7 @@ const reviewIds = U.all.flatMap(t => Object.keys(t.review || {}));
 ok(U.all.every(t => Object.keys(t.review || {}).every(g => g === t.id || g.startsWith(t.id + '-'))), 'every `review` id belongs to the tile it sits on: ' + reviewIds.join(' '));
 
 // the ids the built games actually record misses under all have a name here
-const games = { 'alphabet/01_phonemes.html': ['phonemes', 'phonemes-reverse'], 'alphabet/02_diacritics.html': ['diacritics', 'diacritics-reverse'], 'alphabet/03_conjuncts.html': ['conjuncts', 'conjuncts-reverse'], 'alphabet/06_lookalikes.html': ['lookalikes'] };
+const games = { 'alphabet/01_phonemes.html': ['phonemes', 'phonemes-reverse'], 'alphabet/02_diacritics.html': ['diacritics', 'diacritics-reverse'], 'alphabet/03_conjuncts.html': ['conjuncts', 'conjuncts-reverse'], 'training/02_lookalikes.html': ['lookalikes'] };
 ok(Object.entries(games).every(([f, ids]) => { const s = fs.readFileSync(path.join(SITE_DIR, f), 'utf8'); const g = (s.match(/const GAME\s*=\s*'([^']+)'/) || [])[1];
   return ids[0] === g && ids.every(id => U.get(id) || reviewIds.includes(id)) && (ids.length === 1 || /GAME \+ '-reverse'/.test(s)); }), 'each game\'s miss ids (GAME, GAME-reverse) are tiles or `review` names');
 

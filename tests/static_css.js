@@ -7,7 +7,7 @@ const game = read('game.css'), base = read('base.css'), shell = read('shell.css'
 const rules = css => { const m = new Map(); for (const r of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
   for (const sel of r[1].split(',').map(x => x.trim())) { const o = m.get(sel) || new Map(); r[2].split(';').forEach(d => { const i = d.indexOf(':'); if (i > 0) o.set(d.slice(0, i).trim(), d.slice(i + 1).trim().replace(/\s+/g, ' ')); }); m.set(sel, o); } } return m; };
 const gameRules = rules(game), refRules = rules(ref);
-const PAGES = ['alphabet/01_phonemes.html', 'alphabet/02_diacritics.html', 'alphabet/03_conjuncts.html', 'alphabet/06_lookalikes.html', 'reference/01_rosetta.html', 'reference/02_signs-conjuncts.html', 'reference/03_sound-charts.html'];
+const PAGES = ['alphabet/01_phonemes.html', 'alphabet/02_diacritics.html', 'alphabet/03_conjuncts.html', 'training/02_lookalikes.html', 'reference/01_rosetta.html', 'reference/02_signs-conjuncts.html', 'reference/03_sound-charts.html'];
 const SCROLLING = ['reference/01_rosetta.html', 'reference/02_signs-conjuncts.html', 'reference/03_sound-charts.html'];     // reference pages: no ⋮ menu, bigger inline style
 PAGES.forEach(f => {
   const s = read(f), inline = (s.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1];
@@ -45,7 +45,7 @@ ok([game, shell, home, ref].every(c => !/:root\s*\{/.test(c)) && /:root\s*\{/.te
   const fonts = files.filter(f => /fonts\.(googleapis|gstatic)|@font-face/.test(read(f)));
   ok(fonts.length === 0, 'no file but base.css declares a font, and none asks another site for one' + (fonts.length ? ' → ' + fonts.join(', ') : ''));
   const styled = walk(dir).filter(f => /\.html$/.test(f)).map(f => path.relative(dir, f)).filter(f => /<style/.test(read(f))).sort();
-  ok(styled.join() === 'alphabet/02_diacritics.html,alphabet/03_conjuncts.html,alphabet/05_lookalike-builder.html,alphabet/06_lookalikes.html,profile.html,reference/01_rosetta.html,reference/02_signs-conjuncts.html,reference/03_sound-charts.html,review.html', 'inline <style> only where a page has layout of its own (9 pages): ' + styled.length);
+  ok(styled.join() === 'alphabet/02_diacritics.html,alphabet/03_conjuncts.html,alphabet/04_words.html,profile.html,reference/01_rosetta.html,reference/02_signs-conjuncts.html,reference/03_sound-charts.html,review.html,training/01_lookalike-builder.html,training/02_lookalikes.html', 'inline <style> only where a page has layout of its own (10 pages): ' + styled.length);
 })();
 ok(!/cat-toggle|g-controls/.test(game), 'game.css has no dead controls-bar rules');
 // The fonts are files in this folder (fonts/), declared once in base.css; no other site is asked for them.
@@ -65,7 +65,7 @@ ok(!/cat-toggle|g-controls/.test(game), 'game.css has no dead controls-bar rules
 })();
 
 // The Lookalike Builder is a scrolling tool page, not a game: it links the same shared sheet and keeps its own layout inline.
-(() => { const f = 'alphabet/05_lookalike-builder.html', s = read(f), inline = (s.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1];
+(() => { const f = 'training/01_lookalike-builder.html', s = read(f), inline = (s.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1];
   ok(/<link rel="stylesheet" href="\.\.\/game\.css">/.test(s), f + ': links game.css');
   ok(!/:root\s*\{[^}]*--(bg|surface|border|accent):/.test(inline) && !/\*,\s*\*::before/.test(inline), f + ': no color tokens or reset of its own');
   const dup = []; rules(inline).forEach((props, sel) => props.forEach((v, p) => { const g = gameRules.get(sel); if (g && g.get(p) === v) dup.push(sel + '{' + p + ':' + v + '}'); }));

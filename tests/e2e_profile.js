@@ -32,7 +32,7 @@ const MISS = { 'phonemes|క': { game: 'phonemes', key: 'క', ask: 'telugu', no
     const h = first, { w, d, $ } = h, U = w.TeluguUnits;
     const cards = [...d.querySelectorAll('.pf-card')];
     ok(d.title === 'Profile' && d.querySelector('.g-header .g-title').textContent === 'Profile' && $('stat').textContent === '0 sessions', 'the page is titled "Profile"; nothing recorded reads "0 sessions"');
-    ok(cards.map(c => c.dataset.game).join() === 'phonemes,diacritics,conjuncts,lookalikes' && cards.map(c => c.dataset.game).join() === U.all.filter(t => t.stats).map(t => t.id).join(), 'a card for each game that units.js marks `stats`, in app order');
+    ok(cards.map(c => c.dataset.game).join() === 'phonemes,diacritics,conjuncts,words' && !d.querySelector('[data-game="lookalikes"]') && cards.map(c => c.dataset.game).join() === U.all.filter(t => t.stats).map(t => t.id).join(), 'a card for each game that units.js marks `stats`, in app order; none for Lookalikes');
     ok(cards.every(c => { const t = U.get(c.dataset.game); return c.querySelector('.pf-name').textContent === t.title && c.querySelector('.pf-icon').textContent === t.icon && c.querySelector('.pf-sub').textContent === t.desc; }), 'each card carries its tile\'s icon, title, and description');
     ok(cards.every(c => /^No sessions yet\. Play .+ to its end and it shows up here\.$/.test(c.querySelector('.pf-empty').textContent) && !c.querySelector('svg') && !c.querySelector('.pf-figs') && !c.querySelector('.pf-table')), 'with nothing recorded each card says so, and draws no chart');
     const zone = d.querySelector('.pf-danger'), FOLLOWS = 4;
@@ -56,7 +56,7 @@ const MISS = { 'phonemes|క': { game: 'phonemes', key: 'క', ask: 'telugu', no
     const card = id => d.querySelector(`.pf-card[data-game="${id}"]`), svg = id => card(id).querySelector('[data-chart] svg');
     const texts = (id, cls) => [...svg(id).querySelectorAll(cls ? 'text.' + cls : 'text:not([class])')].map(t => t.textContent);
     const figs = id => [...card(id).querySelectorAll('.pf-fig')].map(f => f.querySelector('.pf-fig-val').textContent + ' ' + f.querySelector('.pf-fig-lbl').textContent).join(' | ');
-    ok($('stat').textContent === '55 sessions' && d.querySelectorAll('.pf-empty').length === 1 && !!card('lookalikes').querySelector('.pf-empty') && !$('reset').disabled, '55 sessions across three games; Lookalikes, never played, still says so');
+    ok($('stat').textContent === '55 sessions' && d.querySelectorAll('.pf-empty').length === 1 && !!card('words').querySelector('.pf-empty') && !$('reset').disabled, '55 sessions across three games; Words, never played, still says so');
     ok(figs('phonemes') === '14 sessions | 4% errors, last session | 4% fewest errors' && figs('conjuncts') === '1 session | 20% errors, last session | 20% fewest errors', 'three figures per card: sessions, the last error rate, the lowest: ' + figs('phonemes'));
 
     /* the chart: two lines against the same runs */
@@ -131,6 +131,25 @@ const MISS = { 'phonemes|క': { game: 'phonemes', key: 'క', ask: 'telugu', no
     ok(P.runCount() === 0 && P.missCount() === 0 && JSON.stringify(P.runs()) === '{}', 'clicked twice in a row, it erases every record of earlier attempts: the sessions and the Review list');
     ok(JSON.stringify(Object.keys(JSON.parse(w.localStorage.getItem(KEY))).sort()) === '["misses","runs","v"]' && w.localStorage.getItem(KEY).length < 40, 'nothing of them is left in the browser\'s storage');
     ok($('stat').textContent === '0 sessions' && d.querySelectorAll('.pf-empty').length === 4 && !d.querySelector('[data-chart]') && $('reset').disabled && $('reset').textContent === 'Reset statistics' && !$('reset').classList.contains('armed'), 'the page redraws empty, and the button goes back to rest with nothing left to erase');
+  }
+
+  /* ══ Words: a card is a whole word, an answer is one of its sounds ══ */
+  {
+    // 20 words each time. Run 1: 14 cleared, 118 answers, 9 wrong. Run 2: game over after 31 answers, 5 wrong. Run 3: all 20, 112 answers, none wrong.
+    const words = [{ t: NOW - 2 * DAY, n: 20, ok: 14, tries: 118, miss: 9, end: 'done' }, { t: NOW - DAY, n: 20, ok: 3, tries: 31, miss: 5, end: 'out' }, { t: NOW - 3600e3, n: 20, ok: 20, tries: 112, miss: 0, end: 'done' }];
+    const h = load(PAGE, { storage: store({ words }) }), { w, d, $ } = h;
+    const card = d.querySelector('.pf-card[data-game="words"]'), s = card.querySelector('[data-chart] svg');
+    const figs = [...card.querySelectorAll('.pf-fig')].map(f => f.querySelector('.pf-fig-val').textContent + ' ' + f.querySelector('.pf-fig-lbl').textContent).join(' | ');
+    ok($('stat').textContent === '3 sessions' && d.querySelectorAll('.pf-empty').length === 3 && card.querySelector('.pf-name').textContent === 'Words', 'Words has a card and a chart like the other games');
+    ok(figs === '3 sessions | 0% errors, last session | 0% fewest errors' && [...s.querySelectorAll('text.end')].map(t => t.textContent).join() === '20,0%', 'its error rate is wrong answers out of all answers, not answers that were not a cleared word: ' + figs);
+    const said = () => [...card.querySelector('.pf-tip').children].map(e => e.textContent).join(' / ');
+    const key = k => s.dispatchEvent(new w.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    s.dispatchEvent(new w.FocusEvent('focus')); key('Home');
+    ok(/^Run 1 · .+ \/ 14 correct of 20 cards \/ 8% errors \(9 of 118 answers\)$/.test(said()), 'a run reads: words cleared, then the wrong answers it recorded: ' + said());
+    key('ArrowRight');
+    ok(/^Run 2 · .+ \/ 3 correct of 20 cards \/ 16% errors \(5 of 31 answers\) \/ Ended early: game over$/.test(said()), 'and one that ended in game over: ' + said());
+    const rows = [...card.querySelectorAll('details.pf-table tbody tr')].map(r => [...r.children].map(c => c.textContent).slice(2).join('|'));
+    ok(rows.join(' ; ') === '20|20|0|0%|Finished ; 3|20|5|16%|Game over ; 14|20|9|8%|Finished', 'the table gives the same numbers: ' + rows.join(' ; '));
   }
 
   /* ══ odds and ends ══ */
