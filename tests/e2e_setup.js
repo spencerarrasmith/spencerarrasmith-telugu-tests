@@ -7,7 +7,7 @@ const fs = require('fs'), path = require('path'), { SITE_DIR } = require('./conf
 const PAGE = 'alphabet/01_phonemes.html';
 const raw = fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8'), css = fs.readFileSync(path.join(SITE_DIR, 'game.css'), 'utf8');
 
-const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{1F9E1}', L1 = '\u{1F9E1}', RING = '\u2B55';       // ❤️ (four or more left) · 💚🤍🧡 · 🤍🧡 · 🧡 · ⭕ (none left)
+const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{1F9E1}', L1 = '\u{1F9E1}', RING = '\u2B55', EVER = H + '×\u267E\uFE0F';       // ❤️ (four or more left) · 💚🤍🧡 · 🤍🧡 · 🧡 · ⭕ (none left)
 
 (async () => {
   const h = load(PAGE, { setup: 'open' }), { w, d, ok, tick, $ } = h, G = h.game, P = w.TeluguProgress;
@@ -22,6 +22,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   const keys = () => [...d.querySelectorAll('.kb-btn')].filter(b => b.style.display !== 'none').length;
 
   /* ── it opens with the page ── */
+  ok(lives() === EVER && !$('s-lives').hidden && !/<span class="g-lives" id="s-lives" role="img" hidden>/.test(fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8')), 'the header shows the mistakes left from the start: ❤️×♾️ while there is no limit');
   ok(open() && $('setup').classList.contains('setup') && $('setup').querySelector('[role="dialog"]').getAttribute('aria-modal') === 'true' && $('setup-title').textContent === 'Phonemes', 'the popup is open as soon as the page is, titled "Phonemes"');
   const head = [...$('setup').querySelector('.setup-head').children].map(e => e.id);
   ok(head.join() === 'setup-cancel,setup-title,setup-start' && $('setup-cancel').textContent === 'Cancel' && $('setup-start').textContent === 'Start', 'Cancel is on the left, Start on the right, the title between');
@@ -88,7 +89,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   ok(open() && $('setup-rounds').value === '5' && $('setup-rounds-n').value === '5' && $('setup-misses-out').textContent === '3' && $('setup-dir').textContent === 'IPA → Telugu' && $('g-complete').classList.contains('show'), '"Practice Again" opens the popup with the last choices; nothing is dealt yet');
   $('rev-btn').click(); slide('setup-misses', w.GameSetup.MISS_STOPS + 1); typeRounds('3');
   press('Enter');
-  ok(!open() && G().total === 3 && G().limit === null && $('g-title').textContent === 'Telugu → IPA' && lives() === 'hidden' && !$('g-complete').classList.contains('show'), 'Enter starts: 3 rounds, forward, unlimited (no misses counter)');
+  ok(!open() && G().total === 3 && G().limit === null && $('g-title').textContent === 'Telugu → IPA' && lives() === EVER && $('s-lives').closest('.g-stats') && !$('g-complete').classList.contains('show'), 'Enter starts: 3 rounds, forward, unlimited (the header reads ❤️×♾️)');
   for (let i = 0; i < 3; i++) { if (i === 1) { wrong().click(); await tick(); } right().click(); await tick(); }
   ok($('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && !$('c-trophy').hidden && $('c-attempts').textContent === '4' && $('c-accuracy').textContent === '75%' && $('c-errors').textContent === '1', 'a short session finishes as usual: 4 attempts, 75%, 1 error');
   ok(JSON.stringify(P.runs('phonemes').slice(1).map(r => [r.n, r.ok, r.tries, r.end, r.dir])) === '[[3,3,4,"done",null]]', 'and it is recorded like any other session: 3 cards, 3 correct, 4 answers, forward');
@@ -233,7 +234,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     $('rev-btn').click(); slide('setup-rounds', 51); slide('setup-misses', w.GameSetup.MISS_STOPS + 1); $('include-extra').click(); $('shuffle-kb').click();
     ok($('setup-rounds').max === '57' && $('setup-rounds').value === '57' && !$('show-cat').checked && $('show-cat').disabled && !$('cat-note').hidden, 'Diacritics: extras on with the slider at its top keeps "all" (57); "Shuffle keyboard" holds categories off');
     $('setup-start').click();
-    ok(G().total === 57 && G().limit === null && lives() === 'hidden' && kb('c').length === 36 && kb('v').length === 19 && d.querySelectorAll('.kb-col[data-kind="c"] .kb-group').length === 1 && $('g-title').textContent === 'Diacritics → IPA',
+    ok(G().total === 57 && G().limit === null && lives() === EVER && kb('c').length === 36 && kb('v').length === 19 && d.querySelectorAll('.kb-col[data-kind="c"] .kb-group').length === 1 && $('g-title').textContent === 'Diacritics → IPA',
       'Diacritics: Start deals all 57, forward, unlimited, on a shuffled keyboard with the extras (36 + 19 keys)');
     w.GameSetup.current.open(); $('include-extra').click(); $('shuffle-kb').click(); $('show-cat').click(); $('setup-start').click();
     let n = 0; while (G().deck.length && n++ < 200) { right(); await tick(); await tick(); }
@@ -272,7 +273,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     ok($('setup-rounds').max === '92' && $('setup-rounds').value === '40' && $('setup-rounds-n').max === '92', 'Conjuncts: "Include uncommon clusters" takes the top to 92; the 40 stays');
     $('include-uncommon').click();
     $('setup-start').click();
-    ok($('setup').hidden && G().total === 40 && G().limit === null && lives() === 'hidden' && kb().length === 34, 'Conjuncts: Start with the defaults deals the usual 40');
+    ok($('setup').hidden && G().total === 40 && G().limit === null && lives() === EVER && kb().length === 34, 'Conjuncts: Start with the defaults deals the usual 40, with ❤️×♾️ in the header');
     let n = 0; while (G().deck.length && n++ < 200) { right(); await tick(); await tick(); }
     ok($('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && P.runs('conjuncts').length === 1 && P.runs('conjuncts')[0].n === 40 && P.runs('conjuncts')[0].end === 'done', 'Conjuncts: the usual 40 is recorded for the Profile page');
     $('retry-btn').click();

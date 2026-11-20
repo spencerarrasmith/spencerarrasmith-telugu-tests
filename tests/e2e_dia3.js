@@ -30,7 +30,8 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   ok([...d.querySelectorAll('.kb-col-title')].map(x => x.textContent).join('|') === 'Consonant|Vowel sign', 'panel titles');
   ok(!/[A-Za-z]/.test(cons.concat(vows).map(b => b.textContent).join('')), 'no IPA left on any key');
   ok(d.querySelectorAll('.kb-col[data-kind="c"] .kb-label').length === groups('c') && !labels('c').includes('Vowels'), 'consonant panel: labeled by place, no stray "Vowels" group');
-  ok(groups('c') === 8 && labels('v').join() === 'Short,Long,Diphthong,Vocalic,Nasal · aspirate,Pure consonant', 'groups: 8 consonant, vowels by type (' + labels('v').join('/') + ')');
+  ok(groups('c') === 8 && labels('v').join() === 'Short · long,Diphthong,Vocalic,Nasal · aspirate,Pure consonant', 'groups: 8 consonant, vowels by type (' + labels('v').join('/') + ')');
+  ok([...d.querySelectorAll('.kb-col[data-kind="v"] .kb-group')[0].querySelectorAll('.kb-btn')].map(b => b.textContent).join(' ') === '◌ ా ి ీ ు ూ ె ే ొ ో', 'reversed, the sign keys pair up the same way: ◌ ా · ి ీ · ు ూ · ె ే · ొ ో');
 
   /* ── the card ── */
   inject('k', AA);

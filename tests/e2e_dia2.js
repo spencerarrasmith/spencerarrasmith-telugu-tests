@@ -26,6 +26,8 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   ok(groups('c') === 1 && groups('v') === 1 && labels('c') === 0 && labels('v') === 0, 'unchecked: each panel is one unlabeled block');
   ok(kb('c').length === 35 && kb('v').length === 17, '…with every key still there (35 + 17)');
   ok(order('c') === alpha('c') && order('v') === alpha('v'), '…in alphabet order');
+  const rest = extra => w.TeluguData.pool(w.TeluguData.signs, extra).filter(s => s.grp !== 'Short' && s.grp !== 'Long').map(s => s.ipa).join('|');
+  ok(order('v') === 'a|aː|i|iː|u|uː|e|eː|o|oː|' + rest(false), '…which for the vowels is short, long, short, long (a aː i iː u uː e eː o oː), then the rest as before');
   ok(d.querySelectorAll('.kb-col-title').length === 2, 'the "Consonant" / "Vowel" panel titles stay');
   ok($('cat-badge').style.visibility === 'hidden', 'card category label hidden');
   front(x => true); ok($('cat-badge').style.visibility === 'hidden', 'and stays hidden on the next card');
@@ -76,7 +78,7 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   /* ── un-shuffle ── */
   clickBox('shuffle-kb');
   ok(!$('shuffle-kb').checked && !$('show-cat').disabled && $('cat-note').hidden && !$('show-cat').closest('.menu-opt').classList.contains('disabled'), 'unchecking Shuffle frees the categories box');
-  ok(!$('show-cat').checked && groups('c') === 1 && order('c') === alpha('c') && order('v') === alpha('v'), 'categories stay off; keys back in alphabet order');
+  ok(!$('show-cat').checked && groups('c') === 1 && order('c') === alpha('c') && order('v') === alpha('v') && order('v').startsWith('a|aː|i|iː|u|uː|e|eː|o|oː|'), 'categories stay off; keys back in alphabet order, long vowels beside their short ones');
   clickBox('show-cat');
   ok(groups('c') > 1 && labels('c') === groups('c') && groups('v') > 1, 'checking categories regroups');
   clickBox('shuffle-kb'); clickBox('shuffle-kb'); clickBox('show-cat'); clickBox('show-cat');

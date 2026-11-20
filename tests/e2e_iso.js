@@ -41,7 +41,7 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
     const put = (c, v) => G().put({ c: C(c), v: V(v), glyph: c + v, cat: V(v).grp, rare: false });
     ok($('g-title').textContent === 'Diacritics → ISO', 'Diacritics: title says ISO');
     ok(keys('c').map(b => b.textContent).join(' ') === D.pool([...D.consonants, ...D.conjunctLetters], false).map(l => l.isoStem).join(' ') && key('c', 'k').textContent === 'k' && key('c', 'kʂ').textContent === 'kṣ', 'Diacritics: consonant keys are the bare consonants (k … kṣ): the vowel is the other pick');
-    ok(keys('v').map(b => b.textContent).join(' ') === 'a i u e o ā ī ū ē ō ai au r̥ r̥̄ aṁ aḥ ∅', 'Diacritics: vowel keys are what each sign adds (a … ā … aṁ aḥ), ∅ for the pollu');
+    ok(keys('v').map(b => b.textContent).join(' ') === 'a ā i ī u ū e ē o ō ai au r̥ r̥̄ aṁ aḥ ∅', 'Diacritics: vowel keys are what each sign adds, each long vowel beside its short one (a ā i ī … aṁ aḥ), ∅ for the pollu');
     ok([...keys('c'), ...keys('v')].every(b => noSlash(b.textContent) && !IPA_ONLY.test(b.textContent)), 'Diacritics: no slashes or IPA letters on any key');
     put('క', 'ా'); key('c', 'k').click();
     ok($('slot-c').querySelector('.slot-val').textContent === 'k', 'Diacritics: the consonant slot shows k');

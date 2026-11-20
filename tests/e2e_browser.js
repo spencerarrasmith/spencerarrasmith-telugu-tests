@@ -121,16 +121,19 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
         && x('rev-btn').bottom < x('setup-rounds').top && x('setup-misses').bottom < x('show-cat').top && Math.abs((x('show-cat').left + x('show-cat').right) / 2 - (x('rev-btn').left + x('rev-btn').right) / 2) < 2
         && !document.querySelector('.menu-btn') && !document.querySelector('.g-header .rev-btn') && document.activeElement.id === 'setup-start'; }, [title, rounds, top]),
       title + ' opens with the session popup covering the page (' + rounds + ' rounds of ' + top + ', unlimited misses), with no ⋮ menu or 🔀 left in the header');
+    if (id === 'diacritics') ok(await fr0.evaluate(() => { const pairs = [...document.querySelectorAll('.kb-col[data-kind="v"] .kb-pair')].map(p => [...p.children].map(b => b.getBoundingClientRect())), row = document.querySelector('.kb-col[data-kind="v"] .kb-row');
+      return pairs.length === 6 && pairs.every(([a, b]) => Math.abs(a.top - b.top) < 1 && b.left > a.right && Math.abs(b.left - a.right - parseFloat(getComputedStyle(row).columnGap)) < 1); }),
+      'Diacritics: each vowel key has its long form right beside it on the same row, spaced like any two keys');
     await fr0.fill('#setup-rounds-n', '3'); await fr0.evaluate(() => { const m = document.getElementById('setup-misses'); m.value = 2; m.dispatchEvent(new Event('input', { bubbles: true })); });
     await fr0.press('#setup-rounds-n', 'Enter'); await pg.waitForTimeout(150);
     ok(await fr0.evaluate(() => { const st = document.getElementById('s-lives'), r = st.getBoundingClientRect(), c = document.getElementById('s-total').getBoundingClientRect();
       return document.getElementById('setup').hidden && GameCore.current.total === 3 && GameCore.current.limit === 2 && !st.hidden && r.width > 0 && r.left > c.right && Math.abs((r.top + r.bottom) / 2 - (c.top + c.bottom) / 2) < 4 && st.textContent === '\u{1F90D}\u{1F9E1}' && st.getAttribute('aria-label') === 'Mistakes left: 2' && document.documentElement.scrollWidth <= innerWidth; }),
       title + ': Enter starts 3 rounds with 2 mistakes allowed; the header shows two hearts (white, orange) after the counters, on their line');
-    ok(await fr0.evaluate(() => { const g = GameCore.current, st = document.getElementById('s-lives'), seen = [20, 4, 3, 2, 1, 0].map(n => { g.start({ misses: n });
+    ok(await fr0.evaluate(() => { const g = GameCore.current, st = document.getElementById('s-lives'), seen = [null, 20, 4, 3, 2, 1, 0].map(n => { g.start({ misses: n });
         const r = st.getBoundingClientRect(), range = document.createRange(); range.selectNodeContents(st); const t = range.getBoundingClientRect();
         return { w: Math.round(r.width * 10), total: Math.round(document.getElementById('s-total').getBoundingClientRect().left * 10), rem: Math.round(document.getElementById('s-rem').getBoundingClientRect().left * 10), fits: t.width <= r.width + 0.5, flush: Math.abs(t.right - r.right) < 2 }; });
       return seen.every(s => s.w === seen[0].w && s.total === seen[0].total && s.rem === seen[0].rem && s.fits && s.flush); }),
-      title + ': the hearts keep one width at 20, 4, 3, 2, 1, and 0 left, at the right of their box, so the counters beside them do not move');
+      title + ': the hearts keep one width with no limit (❤️×♾️) and at 20, 4, 3, 2, 1, and 0 left, at the right of their box, so the counters beside them do not move');
     await pg.evaluate(() => { location.hash = '#/'; }); await pg.waitForTimeout(150);
   }
   fr0 = await frameOf('lookalike-builder');

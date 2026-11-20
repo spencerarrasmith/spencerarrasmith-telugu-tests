@@ -127,12 +127,12 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
     const PAGE2 = PAGE.replace('<div id="prog-fill"></div>', '<div id="prog-fill"></div><span class="g-lives" id="s-lives" role="img" hidden></span>');
     const w = new JSDOM(PAGE2, { runScripts: 'dangerously', url: 'http://localhost/x.html' }).window, $ = id => w.document.getElementById(id);
     const realST = w.setTimeout.bind(w); w.setTimeout = fn => realST(fn, 0); const tick = () => new Promise(r => realST(r, 5));
-    const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{1F9E1}', L1 = '\u{1F9E1}', RING = '\u2B55';       // ❤️ · 💚🤍🧡 · 🤍🧡 · 🧡 · ⭕ (none left)
+    const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{1F9E1}', L1 = '\u{1F9E1}', RING = '\u2B55', EVER = H + '×\u267E\uFE0F';       // ❤️ · 💚🤍🧡 · 🤍🧡 · 🧡 · ⭕ (none left) · ❤️×♾️ (no limit)
     const lives = () => $('s-lives').hidden ? 'hidden' : $('s-lives').textContent;
     const cards = [1, 2, 3, 4, 5, 6].map(k => ({ k })); let retried = 0;
     const g = w.GameCore.create({ id: 'sized', pool: () => cards, render() {}, onRetry: () => { retried++; } }), P = w.TeluguProgress;
     g.start();
-    ok(g.total === 6 && g.limit === null && g.left === null && g.misses === 0 && !('short' in g) && !g.over && lives() === 'hidden' && !$('s-lives').hasAttribute('aria-label'), 'by default: every card, no limit on mistakes, and the hearts hidden');
+    ok(g.total === 6 && g.limit === null && g.left === null && g.misses === 0 && !('short' in g) && !g.over && lives() === EVER && $('s-lives').getAttribute('aria-label') === 'Mistakes left: unlimited' && $('s-lives').title === 'Mistakes left: unlimited' && !$('s-lives').classList.contains('out'), 'by default: every card, no limit on mistakes, and the hearts read ❤️×♾️ ("Mistakes left: unlimited")');
     g.start({ size: 4, misses: 3 });
     ok(g.total === 4 && g.deck.length === 4 && g.limit === 3 && g.left === 3 && lives() === L3 && $('s-lives').getAttribute('aria-label') === 'Mistakes left: 3', 'start({ size: 4, misses: 3 }): 4 cards, 3 mistakes allowed, shown as three hearts, green white orange (read out as "Mistakes left: 3")');
     g.start();
@@ -166,7 +166,8 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
     g.start({ misses: 20 }); g.judge(false); await tick();
     ok(lives() === H + '×19', 'a mistake takes one off the count: ❤️×19');
     g.start({ size: 2, misses: null });
-    ok(g.limit === null && lives() === 'hidden' && g.total === 2, 'misses: null lifts the limit');
+    ok(g.limit === null && lives() === EVER && !$('s-lives').hidden && !$('s-lives').classList.contains('out') && g.total === 2, 'misses: null lifts the limit: ❤️×♾️ again');
+    g.judge(false); ok(lives() === EVER && !g.over, 'and a mistake does not change it'); await tick(); g.start();
     g.judge(true); await tick(); g.judge(true); await tick();
     ok($('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && !$('c-trophy').hidden && JSON.stringify(P.runs('sized').slice(-1).map(r => [r.n, r.ok, r.tries, r.end])) === '[[2,2,2,"done"]]', 'a short session finishes normally and is recorded like any other (2 cards, 2 answers)');
     g.start({ size: null }); for (let i = 0; i < 6; i++) { g.judge(true); await tick(); }

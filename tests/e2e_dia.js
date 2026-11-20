@@ -11,6 +11,16 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   ok(n('c') === 35 && n('v') === 17, 'default keys: 35 consonants (ఱ out, క్ష in) / 17 vowels (ౢ ౣ out)');
   ok(!btn('c', 'ɽ') && !btn('v', 'l̩') && !btn('v', 'l̩ː') && !!btn('v', 'r̩') && !!btn('v', '∅'), 'ఱ, ౢ, ౣ hidden; ృ and ∅ stay');
   ok(!!btn('c', 'kʂ'), 'consonant keyboard has kʂ (క్ష)');
+  // the vowel keyboard: each long vowel right after its short one, in one block
+  const vkeys = () => [...d.querySelectorAll('.kb-btn[data-kind="v"]')], blocks = () => [...d.querySelectorAll('.kb-col[data-kind="v"] .kb-group')].map(g => g.querySelector('.kb-label').textContent + ': ' + [...g.querySelectorAll('.kb-btn')].map(b => b.textContent).join(' '));
+  ok(vkeys().slice(0, 10).map(b => b.textContent).join(' ') === 'a aː i iː u uː e eː o oː', 'the vowel keys pair each long vowel with its short one: a aː i iː u uː e eː o oː');
+  ok(blocks()[0] === 'Short · long: a aː i iː u uː e eː o oː' && blocks().map(b => b.split(':')[0]).join(' | ') === 'Short · long | Diphthong | Vocalic | Nasal · aspirate | Pure consonant' && blocks()[1] === 'Diphthong: ai au' && blocks()[2] === 'Vocalic: r̩ r̩ː',
+    'with categories shown they are one block, "Short · long", ahead of the others: ' + blocks().map(b => b.split(':')[0]).join(' | '));
+  ok(w.TeluguData.signs.slice(0, 10).map(s => s.grp).join() === 'Short,Short,Short,Short,Short,Long,Long,Long,Long,Long', 'the shared data still lists the five short signs, then the five long (the other pages group them that way)');
+  const pairs = [...d.querySelectorAll('.kb-col[data-kind="v"] .kb-pair')].map(p => [...p.children].map(b => b.dataset.ipa));
+  ok(pairs.length === 6 && pairs.every(p => p.length === 2 && p[1] === p[0] + 'ː') && pairs.map(p => p[0]).join(' ') === 'a i u e o r̩' && !d.querySelector('.kb-col[data-kind="c"] .kb-pair')
+    && /\.kb-pair \{ display: inline-flex; gap: inherit; \}/.test(require('fs').readFileSync(require('path').join(require('./config').SITE_DIR, 'alphabet/02_diacritics.html'), 'utf8')),
+    'a vowel and its long form are one unit in the row (six pairs: a i u e o r̩), so a row never breaks between them');
 
   // క్ష + sign
   inject('kʂ', 'ా');
