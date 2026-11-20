@@ -57,13 +57,26 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(await css(top, ':root', '--accent-glow') === 'rgba(201, 152, 26, 0.16)', 'home page takes its color tokens from base.css (accent glow 0.16)');
   // a section folds away to its heading line, and opens again
   const fold = () => top.evaluate(() => { const s = document.querySelectorAll('.section')[2], b = s.querySelector('.section-toggle');      // Alphabet, the third section
-    return { h: Math.round(s.getBoundingClientRect().height), tiles: getComputedStyle(s.querySelector('.tiles')).display, turned: getComputedStyle(b.querySelector('svg')).transform !== 'none', line: getComputedStyle(s.querySelector('.section-head')).borderBottomWidth }; });
+    return { h: Math.round(s.getBoundingClientRect().height), tiles: getComputedStyle(s.querySelector('.tiles')).display, turned: getComputedStyle(b.querySelector('svg')).transform, line: getComputedStyle(s.querySelector('.section-head')).borderBottomWidth }; });
   const open0 = await fold();
-  await pg.click('.section:nth-of-type(3) .section-toggle'); await pg.waitForTimeout(250);
+  // The whole heading line is the button, from the section's name across to the arrow. Click it in the middle, on neither.
+  const lineOf = () => top.evaluate(() => { const s = document.querySelectorAll('.section')[2]; s.querySelector('.section-head').scrollIntoView({ block: 'center' }); const x = e => e.getBoundingClientRect(), h = x(s.querySelector('.section-head')), b = x(s.querySelector('.section-toggle')), n = x(s.querySelector('.section-name')), a = x(s.querySelector('.section-toggle svg')), t = x(s.querySelector('.tiles'));
+    return { head: h, btn: b, name: n, arrow: a, tilesLeft: t.left, tilesRight: t.right, cursor: getComputedStyle(s.querySelector('.section-toggle')).cursor, mid: { x: (n.right + a.left) / 2, y: (h.top + h.bottom) / 2 },
+      hit: document.elementFromPoint((n.right + a.left) / 2, (h.top + h.bottom) / 2).closest('.section-toggle') === s.querySelector('.section-toggle'), font: getComputedStyle(s.querySelector('.section-name')).fontSize + ' ' + getComputedStyle(s.querySelector('.section-name')).textTransform + ' ' + getComputedStyle(s.querySelector('.section-name')).color }; });
+  let line = await lineOf();
+  ok(line.btn.left <= line.head.left && line.btn.right >= line.head.right && line.btn.top <= line.head.top && line.btn.bottom >= line.head.bottom - 1 && line.btn.height >= 30 && line.cursor === 'pointer' && line.hit,
+    'Home: a section\'s button covers its whole heading line, from the name across to the arrow (' + Math.round(line.btn.width) + ' × ' + Math.round(line.btn.height) + 'px)');
+  ok(Math.abs(line.name.left - line.tilesLeft) < 1 && Math.abs(line.arrow.right - line.tilesRight) < 1 && line.mid.x - line.name.right > 300 && line.font === '11px uppercase rgb(201, 152, 26)',
+    'Home: the name sits at the left edge of the tiles and the arrow at their right edge; the name keeps the heading\'s type (small gold capitals)');
+  await pg.mouse.click(line.mid.x, line.mid.y); await pg.mouse.move(5, 5); await pg.waitForTimeout(250);
   const shut0 = await fold();
-  ok(open0.h > 200 && open0.tiles === 'grid' && !open0.turned && shut0.h < 40 && shut0.tiles === 'none' && shut0.turned && shut0.line === '1px', 'the arrow folds a section down to its heading line (' + open0.h + 'px → ' + shut0.h + 'px) and turns to the side');
-  await pg.click('.section:nth-of-type(3) .section-toggle'); await pg.waitForTimeout(250);
-  ok((await fold()).h === open0.h, 'and opens it again');
+  ok(open0.h > 200 && open0.tiles === 'grid' && open0.turned === 'none' && shut0.h < 40 && shut0.tiles === 'none' && shut0.line === '1px', 'a click in the middle of the line folds the section down to its heading (' + open0.h + 'px → ' + shut0.h + 'px)');
+  ok(shut0.turned === 'matrix(0, 1, -1, 0, 0, 0)', 'the arrow of a folded section points left (‹): a quarter turn clockwise from pointing down');
+  line = await lineOf(); await pg.mouse.click(line.name.left + 4, line.mid.y); await pg.waitForTimeout(250);
+  ok((await fold()).h === open0.h && (await fold()).turned === 'none', 'a click on the name opens it again, the arrow pointing down');
+  await pg.click('.section:nth-of-type(3) .section-toggle svg'); await pg.waitForTimeout(250);
+  ok((await fold()).tiles === 'none', 'and the arrow itself still folds it');
+  await pg.click('.section:nth-of-type(3) .section-toggle svg'); await pg.mouse.move(5, 5); await pg.waitForTimeout(250);
   let fr0 = await frameOf('vocab-greetings');
   ok(await css(fr0, '.unit-icon', 'width') === '52px' && await css(fr0, '.facts', 'border-radius') === '16px' && await css(fr0, 'body', 'background-color') === 'rgb(11, 12, 24)', 'a placeholder is styled by shell.css');
   ok(await fr0.evaluate(() => document.querySelector('h1').textContent + '|' + document.querySelectorAll('.fact').length) === 'Greetings|3', 'a placeholder draws its title and three lines from units.js');
@@ -251,10 +264,10 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(await pg.evaluate(() => !document.querySelector('.tile-check') && !/✓/.test(document.getElementById('sections').textContent) && document.querySelector('a.tile[href="#/review"] .tile-badge').textContent === '1 to revisit'), 'back on Home there is no ✓ on any tile (the Review tile still counts the miss)');
   // An item waits in Review: its tile, first in Training, is outlined in the highlight color, and so is the Training arrow. Nothing else is.
   const reviewLook = () => pg.evaluate(() => { const x = e => e.getBoundingClientRect(), secs = [...document.querySelectorAll('.section')], tr = secs.find(s => s.dataset.section === 'Training'), rv = document.querySelector('a.tile[href="#/review"]');
-    const arrow = s => getComputedStyle(s.querySelector('.section-toggle')).color, badge = rv.querySelector('.tile-badge'), head = x(tr.querySelector('.section-head')), tog = x(tr.querySelector('.section-toggle')), title = x(tr.querySelector('.section-title'));
+    const arrow = s => getComputedStyle(s.querySelector('.section-toggle svg')).color, badge = rv.querySelector('.tile-badge'), head = x(tr.querySelector('.section-head')), tog = x(tr.querySelector('.section-toggle svg')), title = x(tr.querySelector('.section-name'));
     return { first: tr.querySelector('a.tile') === rv, order: secs.map(s => s.dataset.section).slice(0, 3).join(), border: getComputedStyle(rv).borderTopColor, ring: getComputedStyle(rv).boxShadow, others: [...document.querySelectorAll('a.tile:not(.soon)')].filter(t => t !== rv).map(t => getComputedStyle(t).borderTopColor),
       arrows: secs.map(arrow), badge: badge ? [badge.textContent, getComputedStyle(badge).backgroundColor, x(badge).right <= x(rv).right && x(badge).top >= x(rv).top && x(badge).bottom <= x(rv.querySelector('.tile-title')).top] : null,      // in the tile's top right corner, clear of the title
-      atEnd: Math.abs(tog.right - head.right) < 8 && tog.left > title.right, counts: document.querySelectorAll('#sections .section-count').length, ready: /\d+ of \d+ ready/.test(document.getElementById('home').innerText), size: [Math.round(x(rv).width), Math.round(x(tr.querySelectorAll('a.tile')[1]).width), Math.round(x(rv).top - x(tr.querySelectorAll('a.tile')[1]).top)] }; });
+      atEnd: Math.abs(tog.right - head.right) < 1 && tog.left > title.right, counts: document.querySelectorAll('#sections .section-count').length, ready: /\d+ of \d+ ready/.test(document.getElementById('home').innerText), size: [Math.round(x(rv).width), Math.round(x(tr.querySelectorAll('a.tile')[1]).width), Math.round(x(rv).top - x(tr.querySelectorAll('a.tile')[1]).top)] }; });
   await pg.mouse.move(5, 5);
   let rl = await reviewLook();
   const GOLD = 'rgb(201, 152, 26)', PLAIN = 'rgb(37, 38, 72)', MUTED = 'rgb(156, 156, 200)';
@@ -263,7 +276,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(rl.arrows[1] === GOLD && rl.arrows.filter((c, i) => i !== 1).every(c => c === MUTED) && rl.atEnd, 'Home: the Training arrow takes the highlight color too; the other arrows stay muted; each sits at the end of its heading line');
   ok(rl.counts === 0 && !rl.ready, 'Home: no section says "x of y ready"');
   await pg.click('.section:nth-of-type(2) .section-toggle'); await pg.mouse.move(5, 5); await pg.waitForTimeout(250);
-  ok(await pg.evaluate(GOLD => { const s = document.querySelectorAll('.section')[1], b = s.querySelector('.section-toggle'); return s.classList.contains('collapsed') && getComputedStyle(s.querySelector('.tiles')).display === 'none' && getComputedStyle(b).color === GOLD && b.getAttribute('aria-label') === 'Show Training (1 to revisit)'; }, GOLD),
+  ok(await pg.evaluate(GOLD => { const s = document.querySelectorAll('.section')[1], b = s.querySelector('.section-toggle'); return s.classList.contains('collapsed') && getComputedStyle(s.querySelector('.tiles')).display === 'none' && getComputedStyle(b.querySelector('svg')).color === GOLD && getComputedStyle(b.querySelector('svg')).transform === 'matrix(0, 1, -1, 0, 0, 0)' && b.getAttribute('aria-label') === 'Show Training (1 to revisit)'; }, GOLD),
     'Home: folded, Training still shows there is something to review: the arrow stays lit and says "Show Training (1 to revisit)"');
   await pg.click('.section:nth-of-type(2) .section-toggle'); await pg.waitForTimeout(250);
   await pg.click('#profile-btn'); await pg.waitForTimeout(400);

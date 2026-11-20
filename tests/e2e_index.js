@@ -20,8 +20,15 @@ const FOLDERS = ['reference', 'training', 'alphabet', 'grammar', 'vocabulary', '
 ok(S.every((s, i) => { const first = +s.tiles[0].src.split('/')[1].slice(0, 2); return first <= 1 && s.tiles.every((t, j) => t.src === FOLDERS[i] + '/' + String(j + first).padStart(2, '0') + '_' + t.src.split('_').slice(1).join('_') && /^[a-z0-9-]+\.html$/.test(t.src.split('_').slice(1).join('_'))); }), 'every tile lives in its section folder, numbered in tile order (NN_name.html)');
 ok(ALL.every(t => require('fs').existsSync(dir + t.src)), 'every tile src is an existing file');
 ok(ALL.every(t => !/^(reference|grammar|vocab|advanced)-/.test(t.src.split('/')[1].replace(/^\d+_/, ''))), 'redundant section prefixes (grammar-, vocab-, advanced-, reference-) are gone from file names');
-ok(d.querySelectorAll('.section-count').length === 0 && !/\d+ of \d+ ready/.test(d.getElementById('home').textContent) && !/readyCount|of \$\{[^}]*\} ready/.test(src) && [...d.querySelectorAll('.section-head')].every(h => h.children.length === 2 && h.firstElementChild.matches('h2.section-title') && h.lastElementChild.matches('button.section-toggle')),
+ok(d.querySelectorAll('.section-count').length === 0 && !/\d+ of \d+ ready/.test(d.getElementById('home').textContent) && !/readyCount|of \$\{[^}]*\} ready/.test(src) && [...d.querySelectorAll('.section-head')].every(h => h.children.length === 1 && h.firstElementChild.matches('h2.section-title')),
   'a section heading is its name and its arrow: no "x of y ready" count');
+// the whole heading line is one button, inside the heading: the name at one end, the arrow at the other
+{ const heads = [...d.querySelectorAll('.section-head')], b = h => h.querySelector('h2.section-title > button.section-toggle');
+  ok(heads.length === 6 && heads.every(h => b(h) && h.querySelectorAll('button').length === 1 && h.querySelector('h2').children.length === 1 && b(h).type === 'button'
+    && [...b(h).children].map(e => e.tagName.toLowerCase() + (e.className.baseVal === undefined ? '.' + e.className : '')).join() === 'span.section-name,svg' && b(h).querySelector('svg').getAttribute('aria-hidden') === 'true'),
+    'each heading holds one button that is the whole line: the section\'s name, then the arrow (the heading stays a heading for a screen reader)');
+  ok(heads.map(h => h.querySelector('.section-title').textContent).join(' · ') === 'Reference · Training · Alphabet · Grammar · Vocabulary · Advanced Grammar' && heads.every(h => b(h).querySelector('.section-name').textContent === h.closest('.section').dataset.section),
+    'the heading still reads as the section\'s name, and nothing else'); }
 ok(d.querySelectorAll('a.tile').length === 42 && d.querySelectorAll('a.tile.soon').length === 31 && d.querySelectorAll('.tile-badge').length === 31 && d.querySelectorAll('#sections a.tile').length === 42 && !d.getElementById('featured') && !d.querySelector('.featured, .tile.review'),
   '42 tiles, all inside the sections (no strip above them), 31 marked Soon');
 ok([...d.querySelectorAll('.section')[1].querySelectorAll('a.tile')].map(a => a.getAttribute('href')).join() === '#/review,#/lookalike-builder,#/lookalikes' && d.querySelector('.section').dataset.section === 'Reference',
@@ -53,9 +60,10 @@ ok([...d.querySelectorAll('.section')[1].querySelectorAll('a.tile')].map(a => a.
   ok(sect('Training').classList.contains('has-due') && arrow('Training').getAttribute('aria-label') === 'Hide Training (2 to revisit)' && arrow('Training').title === 'Hide Training (2 to revisit)' && arrow('Alphabet').getAttribute('aria-label') === 'Hide Alphabet',
     'the Training arrow is lit too, and its label says why (color is not the only sign); the other arrows are untouched');
   { const css = fs.readFileSync(dir + 'home.css', 'utf8');
-    ok(/\.section\.has-due \.section-toggle \{ color: var\(--accent\); \}/.test(css) && /\.tile\.due \{ border-color: var\(--accent\);/.test(css) && /\.tile\.due \.tile-badge \{ background: var\(--accent\);/.test(css) && !/\.featured|\.tile\.review/.test(css),
+    ok(/\.section\.has-due \.section-toggle svg \{ color: var\(--accent\); \}/.test(css) && /\.tile\.due \{ border-color: var\(--accent\);/.test(css) && /\.tile\.due \.tile-badge \{ background: var\(--accent\);/.test(css) && !/\.featured|\.tile\.review/.test(css),
       'the highlight is the accent color (the app\'s orange-gold): on the arrow, around the tile, and behind its count; the old strip\'s styles are gone');
-    ok(/\.section-toggle \{[^}]*margin: -6px -6px -6px auto;/.test(css), 'with no count before it, the arrow keeps itself at the end of the heading line'); }
+    ok(/\.section-head > \.section-title \{ flex: 1 1 auto;/.test(css) && /\.section-toggle \{[^}]*display: flex;[^}]*justify-content: space-between;[^}]*width: calc\(100% \+ 16px\);[^}]*font: inherit;[^}]*cursor: pointer;/.test(css),
+      'the button fills the heading line, name at one end and arrow at the other, in the heading\'s own type'); }
   P.run('phonemes', { total: 51, correct: 51, attempts: 51 });
   const tile = id => d.querySelector(`a.tile[href="#/${id}"]`);
   ok(d.querySelectorAll('.tile-check').length === 0 && !tile('phonemes').textContent.includes('✓') && !/✓/.test(d.getElementById('sections').textContent), 'a session played to its end, without a mistake, puts no ✓ on its tile');
@@ -126,6 +134,13 @@ ok([...d.querySelectorAll('.section')[1].querySelectorAll('a.tile')].map(a => a.
     btn('Grammar').click(); btn('Alphabet').click();
     ok(!tiles('Alphabet').hidden && !sec('Alphabet').classList.contains('collapsed') && btn('Alphabet').getAttribute('aria-expanded') === 'true' && btn('Alphabet').getAttribute('aria-label') === 'Hide Alphabet' && stored(w).join() === 'Grammar',
       'the arrow opens it again; only Grammar is now remembered as folded');
+    // the whole line is the button: a click on the section's name does the same as one on the arrow
+    sec('Vocabulary').querySelector('.section-name').click();
+    ok(tiles('Vocabulary').hidden && btn('Vocabulary').getAttribute('aria-expanded') === 'false' && btn('Vocabulary').getAttribute('aria-label') === 'Show Vocabulary' && stored(w).join() === 'Grammar,Vocabulary', 'a click on a section\'s name folds it, just as the arrow does');
+    sec('Vocabulary').querySelector('.section-toggle svg').dispatchEvent(new w.MouseEvent('click', { bubbles: true }));
+    ok(!tiles('Vocabulary').hidden && btn('Vocabulary').getAttribute('aria-expanded') === 'true' && stored(w).join() === 'Grammar', 'and a click on the arrow opens it again');
+    sec('Vocabulary').querySelector('.tiles a.tile').dispatchEvent(new w.MouseEvent('click', { bubbles: true, cancelable: true }));
+    ok(!tiles('Vocabulary').hidden && stored(w).join() === 'Grammar', 'a click on a tile is not a click on the heading: the section stays open');
     // Training folded while items wait in Review: its tile is out of sight, so the arrow carries the highlight and says how many
     btn('Training').click();
     ok(tiles('Training').hidden && sec('Training').classList.contains('has-due') && sec('Training').classList.contains('collapsed') && btn('Training').getAttribute('aria-label') === 'Show Training (4 to revisit)' && btn('Training').title === 'Show Training (4 to revisit)',
@@ -146,7 +161,7 @@ ok([...d.querySelectorAll('.section')[1].querySelectorAll('a.tile')].map(a => a.
     v = visit(); v.Storage.prototype.setItem = () => { throw new Error('blocked'); };
     v.document.querySelector('.section-toggle').click();
     ok(folded(v) === 'Reference', 'with storage blocked the arrow still works for this visit');
-    ok(/\.section-toggle\[aria-expanded="false"\] svg \{ transform: rotate\(-90deg\); \}/.test(fs.readFileSync(dir + 'home.css', 'utf8')) && /\.section\.collapsed/.test(fs.readFileSync(dir + 'home.css', 'utf8')), 'home.css turns the arrow to the side and tightens a folded section');
+    ok(/\.section-toggle\[aria-expanded="false"\] svg \{ transform: rotate\(90deg\); \}/.test(fs.readFileSync(dir + 'home.css', 'utf8')) && !/rotate\(-90deg\)/.test(fs.readFileSync(dir + 'home.css', 'utf8')) && /\.section\.collapsed/.test(fs.readFileSync(dir + 'home.css', 'utf8')), 'home.css turns the arrow of a folded section to point left (‹) and tightens the section');
   }
   /* ── the title turns over: "Telugu Telusu" ⇄ తెలుగు తెలుసు, a card to a syllable, every 5 seconds ── */
   {
