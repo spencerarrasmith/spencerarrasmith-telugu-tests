@@ -12,7 +12,7 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   ok($('g-title').textContent === 'Telugu → IPA', 'forward title: Telugu → IPA');
   ok($('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false' && $('rev-btn').closest('#setup') && !$('g-title').closest('.g-header').querySelector('.rev-btn'), 'the 🔀 button is in the session popup, not pressed; the header no longer has one');
   ok($('highlight-correct').checked && $('highlight-correct').parentElement.textContent.includes('Highlight correct answer'), '"Highlight correct answer" checkbox exists, on by default');
-  ok(!$('opts-menu') && !$('menu-btn') && d.querySelectorAll('#setup input[type=checkbox]').length === 4, 'no ⋮ menu on this page: the four checkboxes (categories, shuffle, extra letters, highlight) are in the session popup');
+  ok(!$('opts-menu') && !$('menu-btn') && d.querySelectorAll('#setup input[type=checkbox]').length === 5, 'no ⋮ menu on this page: the five checkboxes (categories, shuffle, extra letters, highlight, missed guesses reappear) are in the session popup');
   ok(vis().every(b => !b.classList.contains('te')) && vis()[0].textContent === 'a', 'forward keys show IPA (first key: a)');
 
   /* ── highlight checkbox, forward mode ── */

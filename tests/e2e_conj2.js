@@ -15,7 +15,7 @@ const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}'
   /* ── the options: in the session popup (the keyboard follows the two keyboard boxes at once) ── */
   ok(!d.querySelector('.g-controls') && !d.querySelector('.g-controls-sep') && !d.querySelector('.cat-toggle'), 'the old controls bar is gone');
   ok(!$('menu-btn') && !$('opts-menu') && !$('menu-wrap'), 'no ⋮ menu on this page');
-  ok([...d.querySelectorAll('#setup .menu-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include uncommon clusters', 'the checkboxes are in the session popup, in order');
+  ok([...d.querySelectorAll('#setup .menu-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include uncommon clusters|Missed guesses reappear', 'the checkboxes are in the session popup, in order');
   ok($('show-cat').checked && !$('shuffle-kb').checked && !$('include-uncommon').checked, 'defaults: categories on, shuffle + uncommon off');
   ok($('setup').hidden && G().total === 40, 'the suite starts in a session with the defaults (the harness pressed Start)');
 

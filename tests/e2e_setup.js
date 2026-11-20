@@ -1,6 +1,6 @@
 // The session popup (game-setup.js), on the Phonemes page: it opens with the page and asks how to play.
 // Cancel on the left, Start on the right; then every option the game has: direction, the number of rounds,
-// the mistakes allowed, and its four checkboxes. The page has no ⋮ menu.
+// the mistakes allowed, and its five checkboxes. The page has no ⋮ menu.
 // Then the same popup on Diacritics and Conjuncts, with what is their own (their checkboxes, their number of rounds).
 const load = require('./harness');
 const fs = require('fs'), path = require('path'), { SITE_DIR } = require('./config');
@@ -26,7 +26,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   const head = [...$('setup').querySelector('.setup-head').children].map(e => e.id);
   ok(head.join() === 'setup-cancel,setup-title,setup-start' && $('setup-cancel').textContent === 'Cancel' && $('setup-start').textContent === 'Start', 'Cancel is on the left, Start on the right, the title between');
   const rows = [...$('setup').querySelectorAll('.setup-label, .menu-opt')].map(e => e.textContent.replace('Off while keyboard is shuffled', '').trim());
-  ok(rows.join(' | ') === 'Direction | Number of rounds | Allowed mistakes | Show categories | Shuffle keyboard | Include extra letters | Highlight correct answer', 'the options, in order (direction, the sliders, then the checkboxes): ' + rows.join(' | '));
+  ok(rows.join(' | ') === 'Direction | Number of rounds | Allowed mistakes | Show categories | Shuffle keyboard | Include extra letters | Highlight correct answer | Missed guesses reappear', 'the options, in order (direction, the sliders, then the checkboxes): ' + rows.join(' | '));
   ok([...$('setup').querySelectorAll('.setup-opt')].every(l => l.lastElementChild.type === 'checkbox' && l.firstElementChild.classList.contains('menu-txt')) && /\.setup-opt \{[^}]*justify-content: space-between/.test(css) && $('rev-btn').parentElement.lastElementChild === $('rev-btn'),
     'each checkbox sits at the right of its row, as the 🔀 button does');
   ok(!$('menu-btn') && !$('opts-menu') && !$('menu-wrap') && !/class="menu"|menu-btn/.test(raw), 'the page has no ⋮ menu');
@@ -40,7 +40,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   ok($('setup-rounds').type === 'range' && $('setup-rounds').min === '1' && $('setup-rounds').max === '51' && $('setup-rounds').value === '51' && $('setup-rounds-n').value === '51' && $('setup-rounds-n').nextElementSibling === null && $('setup-rounds').nextElementSibling === $('setup-rounds-n'),
     'number of rounds: a slider from 1 to 51 with a text box on its right, both at 51 (all characters)');
   ok($('setup-misses').type === 'range' && $('setup-misses').min === '0' && $('setup-misses').value === $('setup-misses').max && $('setup-misses-out').textContent === 'Unlimited' && $('setup-misses-note').textContent === 'Never ends early' && /^Unlimited/.test($('setup-misses').getAttribute('aria-valuetext')) && $('setup-misses-note').previousElementSibling === $('setup-misses').parentElement, 'allowed mistakes: a slider from 0, at Unlimited, with the note "Never ends early" under it');
-  ok(['show-cat', 'shuffle-kb', 'include-extra', 'highlight-correct'].every(id => $(id).closest('#setup-opts')) && $('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked && $('highlight-correct').checked, 'the four checkboxes are here: categories and highlight on, shuffle and extra letters off');
+  ok(['show-cat', 'shuffle-kb', 'include-extra', 'highlight-correct', 'missed-again'].every(id => $(id).closest('#setup-opts')) && $('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked && $('highlight-correct').checked && $('missed-again').checked, 'the five checkboxes are here: categories, highlight, and "Missed guesses reappear" on; shuffle and extra letters off');
   ok($('setup-dir').textContent === 'Telugu → IPA' && $('rev-btn').closest('#setup') && $('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false' && !d.querySelector('.g-header .rev-btn'), 'direction: Telugu → IPA, with the 🔀 button here and no longer in the header');
 
   /* ── the slider and the text box are one value ── */
@@ -168,9 +168,36 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   reopen();
   $('setup-cancel').click();
 
+  /* ── "Missed guesses reappear": on, the game is as it always was; off, a wrong guess is not shown again ── */
+  reopen(); slide('setup-rounds', 4); slide('setup-misses', w.GameSetup.MISS_STOPS + 1); $('setup-start').click();
+  ok(G().again === true && $('missed-again').checked, 'left checked, missed cards come back');
+  let missed = G().current.ch; wrong().click(); await tick();
+  ok(G().deck.length === 4 && G().deck.some(c => c.ch === missed) && G().dropped === 0 && $('s-rem').textContent === '4', 'a wrong guess goes back into the deck: still 4 to clear');
+  reopen(); $('missed-again').click();
+  ok(!$('missed-again').checked && G().again === true && G().deck.length === 4, 'unchecking it changes nothing until Start');
+  $('setup-start').click();
+  ok(G().again === false && G().total === 4 && G().limit === null, 'Start deals a session in which missed cards do not come back');
+  missed = G().current.ch; const miss0 = P.misses().length; wrong().click();
+  ok(G().dropped === 1 && G().deck.length === 3 && !G().deck.some(c => c.ch === missed) && $('s-rem').textContent === '3' && $('s-done').textContent === '0' && $('s-total').textContent === '4' && $('char-card').classList.contains('wrong'),
+    'a wrong guess is marked wrong and the character leaves the session: 3 remaining, 0 of 4 correct');
+  ok(P.misses().some(m => m.key === missed), 'it still goes to Review');
+  await tick();
+  ok(G().current.ch !== missed && !$('g-complete').classList.contains('show'), 'the next card is another character');
+  const shown = [missed]; for (let i = 0; i < 3; i++) { shown.push(G().current.ch); right().click(); await tick(); }
+  ok(new Set(shown).size === 4 && G().attempts === 4 && $('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && $('c-sub').textContent === '3 of 4 correct. The 1 missed was not shown again.',
+    'four answers end the session, each character shown once: ' + $('c-sub').textContent);
+  ok($('c-attempts').textContent === '4' && $('c-accuracy').textContent === '75%' && $('c-errors').textContent === '1' && JSON.stringify([P.runs('phonemes').at(-1)].map(r => [r.n, r.ok, r.tries, r.end])) === '[[4,3,4,"done"]]', 'its numbers: 4 attempts, 75%, 1 error; recorded as 3 correct of 4');
+  $('retry-btn').click();
+  ok(!$('missed-again').checked, '"Practice Again" opens the popup with the box still unchecked');
+  $('missed-again').click(); $('setup-cancel').click();
+  ok(!$('missed-again').checked, 'Cancel puts the box back as it was');
+  reopen(); $('missed-again').click(); $('setup-start').click();
+  ok(G().again === true && $('missed-again').checked, 'checked again, the next session brings missed cards back');
+  reopen(); $('setup-cancel').click();
+
   /* ── the popup is shared code ── */
   const src = fs.readFileSync(path.join(SITE_DIR, 'game-setup.js'), 'utf8');
-  ok(/root\.GameSetup = api/.test(src) && w.GameSetup.current && !/phonemes|diacritics|conjuncts|Telugu →|show-cat|include-extra|include-uncommon|Shuffle/i.test(src.split('═════════════════════════════════════════════════════════ */')[1]), 'game-setup.js knows nothing about any one game: the page passes its title, directions, and checkboxes');
+  ok(/root\.GameSetup = api/.test(src) && w.GameSetup.current && !/phonemes|diacritics|conjuncts|Telugu →|show-cat|include-extra|include-uncommon|missed-again|Shuffle/i.test(src.split('═════════════════════════════════════════════════════════ */')[1]), 'game-setup.js knows nothing about any one game: the page passes its title, directions, and checkboxes');
   const uses = f => /<script src="\.\.\/game-setup\.js"><\/script>/.test(fs.readFileSync(path.join(SITE_DIR, f), 'utf8'));
   ok(uses('alphabet/02_diacritics.html') && uses('alphabet/03_conjuncts.html') && !uses('alphabet/05_lookalikes.html') && !uses('alphabet/04_lookalike-builder.html'), 'Diacritics and Conjuncts open with it too; Lookalikes and the Lookalike Builder do not');
 
@@ -185,7 +212,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     const lives = () => $('s-lives').hidden ? 'hidden' : $('s-lives').textContent;          // the mistakes left, as the header shows them
     const rows = () => [...$('setup').querySelectorAll('.setup-label, .menu-opt')].map(e => e.textContent.replace('Off while keyboard is shuffled', '').trim()).join(' | ');
     ok(!$('setup').hidden && $('setup-title').textContent === 'Diacritics' && d.activeElement === $('setup-start') && raw.indexOf('GameSetup.create(') < raw.indexOf('GameMenu.init('), 'Diacritics: the popup is open as soon as the page is, titled "Diacritics", Start focused');
-    ok(rows() === 'Direction | Number of rounds | Allowed mistakes | Show categories | Shuffle keyboard | Include extra letters', 'Diacritics: its options, in order: ' + rows());
+    ok(rows() === 'Direction | Number of rounds | Allowed mistakes | Show categories | Shuffle keyboard | Include extra letters | Missed guesses reappear', 'Diacritics: its options, in order: ' + rows());
     ok(!$('menu-btn') && !$('opts-menu') && !$('menu-wrap') && !/class="menu"|menu-btn/.test(raw) && !d.querySelector('.g-header .rev-btn') && $('rev-btn').closest('#setup'), 'Diacritics: no ⋮ menu and no 🔀 in the header; the 🔀 button is in the popup');
     ok($('setup-dir').textContent === 'Diacritics → IPA' && $('setup-rounds').max === '51' && $('setup-rounds').value === '51' && $('setup-rounds-n').value === '51' && $('setup-misses-out').textContent === 'Unlimited' && $('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked,
       'Diacritics: forward, 51 rounds (all: 17 signs × 3), unlimited misses, categories on');
@@ -213,6 +240,14 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     ok(G().total === 51 && $('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && P.runs('diacritics').at(-1).end === 'done' && P.runs('diacritics').at(-1).n === 51 && !P.runs('diacritics').at(-1).dir, 'Diacritics: a full session of 51 is recorded for the Profile page');
     w.GameSetup.current.open(); $('include-extra').click(); $('shuffle-kb').click(); $('setup-cancel').click();
     ok($('setup').hidden && !$('include-extra').checked && !$('shuffle-kb').checked && $('show-cat').checked && !$('show-cat').disabled, 'Diacritics: Cancel puts the checkboxes back');
+    w.GameSetup.current.open();
+    ok($('missed-again').checked && $('missed-again').closest('#setup-opts') && G().again === true, 'Diacritics: "Missed guesses reappear" is on to begin with');
+    $('missed-again').click(); slide('setup-rounds', 3); $('setup-start').click();
+    const lost = G().current.glyph; wrong(); await tick(); await tick();
+    ok(G().again === false && G().dropped === 1 && G().deck.length === 2 && !G().deck.some(c => c.glyph === lost) && $('s-rem').textContent === '2', 'Diacritics: unchecked, a missed syllable is not shown again (2 of 3 left)');
+    right(); await tick(); await tick(); right(); await tick(); await tick();
+    ok($('g-complete').classList.contains('show') && $('c-sub').textContent === '2 of 3 correct. The 1 missed was not shown again.' && P.runs('diacritics').at(-1).ok === 2 && P.runs('diacritics').at(-1).tries === 3, 'Diacritics: three answers end it: ' + $('c-sub').textContent);
+    $('retry-btn').click(); $('missed-again').click(); $('setup-cancel').click();
     let went = null; const f = load(PAGE, { setup: 'open', before: win => { Object.defineProperty(win, 'parent', { configurable: true, value: { location: { set hash(v) { went = v; } } } }); } });
     f.$('setup-cancel').click();
     ok(went === '#/', 'Diacritics: Cancel before anything is played goes back to Home');
@@ -229,7 +264,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     const lives = () => $('s-lives').hidden ? 'hidden' : $('s-lives').textContent;          // the mistakes left, as the header shows them
     const rows = () => [...$('setup').querySelectorAll('.setup-label, .menu-opt')].map(e => e.textContent.replace('Off while keyboard is shuffled', '').trim()).join(' | ');
     ok(!$('setup').hidden && $('setup-title').textContent === 'Conjuncts' && d.activeElement === $('setup-start') && raw.indexOf('GameSetup.create(') < raw.indexOf('GameMenu.init('), 'Conjuncts: the popup is open as soon as the page is, titled "Conjuncts", Start focused');
-    ok(rows() === 'Direction | Number of rounds | Allowed mistakes | Show categories | Shuffle keyboard | Include uncommon clusters', 'Conjuncts: its options, in order: ' + rows());
+    ok(rows() === 'Direction | Number of rounds | Allowed mistakes | Show categories | Shuffle keyboard | Include uncommon clusters | Missed guesses reappear', 'Conjuncts: its options, in order: ' + rows());
     ok(!$('menu-btn') && !$('opts-menu') && !$('menu-wrap') && !/class="menu"|menu-btn/.test(raw) && !d.querySelector('.g-header .rev-btn') && $('rev-btn').closest('#setup'), 'Conjuncts: no ⋮ menu and no 🔀 in the header; the 🔀 button is in the popup');
     ok($('setup-dir').textContent === 'Conjuncts → IPA' && $('setup-rounds').max === '83' && $('setup-rounds').value === '40' && $('setup-rounds-n').value === '40' && $('setup-misses-out').textContent === 'Unlimited' && G().total === 40,
       'Conjuncts: the rounds slider starts at the usual 40 and runs to 83 (every common cluster)');
@@ -258,6 +293,13 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     ok(lives() === RING && !G().over, 'Conjuncts: three mistakes, an empty ring (⭕), still playing');
     wrong(); await tick(); await tick();
     ok(G().over && $('c-title').textContent === 'Out of mistakes' && $('c-sub').textContent === '0 of 5 cleared. 3 mistakes were allowed.' && $('c-errors').textContent === '4', 'Conjuncts: the fourth mistake ends the session: ' + $('c-sub').textContent);
+    w.GameSetup.current.open();
+    ok($('missed-again').checked && $('missed-again').closest('#setup-opts') && G().again === true, 'Conjuncts: "Missed guesses reappear" is on to begin with');
+    $('missed-again').click(); slide('setup-rounds', 3); slide('setup-misses', w.GameSetup.MISS_STOPS + 1); $('setup-start').click();
+    const lost = G().current.glyph; wrong(); await tick(); await tick();
+    ok(G().again === false && G().dropped === 1 && G().deck.length === 2 && !G().deck.some(c => c.glyph === lost) && $('s-rem').textContent === '2', 'Conjuncts: unchecked, a missed conjunct is not shown again (2 of 3 left)');
+    right(); await tick(); await tick(); right(); await tick(); await tick();
+    ok($('g-complete').classList.contains('show') && $('c-sub').textContent === '2 of 3 correct. The 1 missed was not shown again.' && P.runs('conjuncts').at(-1).ok === 2 && P.runs('conjuncts').at(-1).tries === 3, 'Conjuncts: three answers end it: ' + $('c-sub').textContent);
     let went = null; const f = load(PAGE, { setup: 'open', before: win => { Object.defineProperty(win, 'parent', { configurable: true, value: { location: { set hash(v) { went = v; } } } }); } });
     f.$('setup-cancel').click();
     ok(went === '#/', 'Conjuncts: Cancel before anything is played goes back to Home');

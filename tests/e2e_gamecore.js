@@ -183,6 +183,34 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
     gv.start(); gv.judge(true); await tick(); way = ''; gv.start(); gv.judge(false); await tick(); gv.judge(true); await tick();
     ok(P.runs('turned').length === 2 && P.runs('turned')[0].dir === 'reverse' && !('dir' in P.runs('turned')[1]) && P.runs('turned')[1].tries === 2, 'variant() is stored with the run ("reverse"); the usual way stores nothing');
     ok(P.runs('sampled').length === 0, 'a session that is not finished is not recorded');
+
+    /* ── missed cards that do not come back (again: false) ── */
+    const seen = [], once = w.GameCore.create({ id: 'once', pool: () => cards, render: c => seen.push(c.k) });
+    once.start();
+    ok(once.again === true && once.dropped === 0, 'by default a missed card comes back (again is true, nothing dropped)');
+    const back = once.current; once.judge(false); await tick();
+    ok(once.deck.length === 6 && once.deck.includes(back) && once.deck[0] !== back && once.dropped === 0 && $('s-rem').textContent === '6', 'so a wrong answer sends the card back into the deck: 6 still to clear');
+    seen.length = 0; once.start({ again: false });
+    ok(once.again === false && once.total === 6 && once.dropped === 0 && seen.length === 1, 'start({ again: false }) deals the same six cards');
+    const gone = once.current; once.judge(false);
+    ok(once.deck.length === 5 && !once.deck.includes(gone) && once.dropped === 1 && once.completed === 0 && once.misses === 1 && $('s-rem').textContent === '5' && $('s-done').textContent === '0' && $('s-total').textContent === '6' && $('prog-fill').style.width === '16.7%',
+      'a wrong answer now drops the card: it is out of the deck, Remaining goes to 5, Correct stays at 0 of 6, and the bar moves on');
+    await tick();
+    ok(once.current !== gone && !$('g-complete').classList.contains('show'), 'the next card is a different one');
+    for (const right of [true, false, true, true, true]) { once.judge(right); await tick(); }
+    ok(once.attempts === 6 && seen.length === 6 && new Set(seen).size === 6 && once.dropped === 2 && once.completed === 4 && !once.over, 'six answers end the session: every card was shown exactly once');
+    ok($('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && !$('c-trophy').hidden && $('c-sub').textContent === '4 of 6 correct. The 2 missed were not shown again.', 'the complete screen says how it went: ' + $('c-sub').textContent);
+    ok($('c-attempts').textContent === '6' && $('c-accuracy').textContent === '67%' && $('c-errors').textContent === '2' && parseFloat($('prog-fill').style.width) === 100, 'its numbers: 6 attempts, 67%, 2 errors; the bar is full');
+    ok(JSON.stringify(P.runs('once').map(r => [r.n, r.ok, r.tries, r.end])) === '[[6,4,6,"done"]]', 'and it is recorded as a finished session: 6 cards, 4 correct, 6 answers');
+    once.start(); ok(once.again === false && once.dropped === 0, 'it stays in force for a plain start()');
+    once.judge(false); await tick(); for (let i = 0; i < 5; i++) { once.judge(true); await tick(); }
+    ok($('c-sub').textContent === '5 of 6 correct. The 1 missed was not shown again.', 'one missed reads: ' + $('c-sub').textContent);
+    once.start(); for (let i = 0; i < 6; i++) { once.judge(true); await tick(); }
+    ok($('c-sub').textContent === 'All 6 cards cleared.' && $('c-accuracy').textContent === '100%' && $('c-errors').textContent === '0', 'with nothing missed the complete screen reads as it always did');
+    once.start({ misses: 1 }); once.judge(false); await tick(); once.judge(false); await tick();
+    ok(once.over && once.dropped === 2 && $('c-title').textContent === 'Out of mistakes' && $('c-sub').textContent === '0 of 6 cleared. 1 mistake was allowed.' && P.runs('once').at(-1).end === 'out', 'the limit on mistakes still ends a session early');
+    once.start({ again: true, misses: null }); const again = once.current; once.judge(false); await tick();
+    ok(once.again === true && once.deck.length === 6 && once.deck.includes(again) && once.dropped === 0, 'again: true brings missed cards back as before');
   }
 
   /* every game is built on it and keeps no copy of the round */

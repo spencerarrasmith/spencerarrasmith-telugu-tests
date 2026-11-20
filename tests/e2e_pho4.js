@@ -14,7 +14,7 @@ const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles:
   /* ── no ⋮ menu: every option is in the session popup ── */
   ok(!d.querySelector('.g-controls') && !d.querySelector('.g-controls-sep'), 'the old controls bar is gone');
   ok(!$('menu-btn') && !$('menu-wrap') && !$('opts-menu') && !d.querySelector('.g-header .menu-btn') && $('g-title').closest('.g-header-top') && $('g-title').closest('.g-header-top').lastElementChild.querySelector('.g-stats'), 'the header has no ⋮ button: the title, then the counters');
-  ok([...d.querySelectorAll('#setup .setup-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include extra letters|Highlight correct answer', 'the popup holds the four checkboxes, in order');
+  ok([...d.querySelectorAll('#setup .setup-opt')].map(l => l.textContent.replace(/Off while keyboard is shuffled/, '').trim()).join('|') === 'Show categories|Shuffle keyboard|Include extra letters|Highlight correct answer|Missed guesses reappear', 'the popup holds the five checkboxes, in order');
   ok([...d.querySelectorAll('#setup .setup-opt')].every(l => l.lastElementChild.type === 'checkbox' && l.firstElementChild.classList.contains('menu-txt')), 'each is a label with its checkbox after it (at the right of the row)');
   ok($('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked && $('highlight-correct').checked, 'defaults: categories on, highlight on, shuffle + extras off');
   d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
