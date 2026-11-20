@@ -55,6 +55,31 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   tn = await titleNow();
   ok(!tn.te && tn.cards.every(latin), 'and turned again, it is back to "Telugu Telusu"');
   ok(await css(top, ':root', '--accent-glow') === 'rgba(201, 152, 26, 0.16)', 'home page takes its color tokens from base.css (accent glow 0.16)');
+  // A tile: the icon and the title on one line, the description under the two. Measured on every tile, with a count on Review.
+  const tileLook = p => p.evaluate(() => { const x = e => e.getBoundingClientRect(), bad = [], wide = innerWidth > 520;
+    document.querySelectorAll('#sections a.tile').forEach(t => { const ic = x(t.querySelector('.tile-icon')), tl = t.querySelector('.tile-title'), de = x(t.querySelector('.tile-desc')), bd = t.querySelector('.tile-badge'), box = x(t);
+      const r = document.createRange(); r.selectNodeContents(tl); const tr = r.getBoundingClientRect(), lines = [...r.getClientRects()];
+      const beside = tr.left >= ic.right + 8 && (wide ? tr.top >= ic.top - 1 && tr.bottom <= ic.bottom + 1 && Math.abs((tr.top + tr.bottom) / 2 - (ic.top + ic.bottom) / 2) < 1.5      // wide: the title sits within the icon's height, centered on it
+                                                    : tr.top < ic.bottom && de.bottom > ic.top && tr.top >= box.top + 8);                                                             // phone: the title and description, stacked, sit beside the icon
+      const under  = wide ? de.top >= ic.bottom + 8 && Math.abs(de.left - ic.left) < 1 && de.right <= box.right - 10      // wide: the description starts under the icon, across the tile
+                          : de.left >= ic.right + 8 && de.top >= tr.bottom - 1;                                              // phone: beside the icon, under the title
+      const clear  = !bd || lines.every(q => q.right < x(bd).left - 2 || q.top >= x(bd).bottom || q.bottom <= x(bd).top);
+      if (!beside || !under || !clear || tr.right > box.right - 10 || de.bottom > box.bottom - 6) bad.push(tl.textContent + (!beside ? ' [title]' : '') + (!under ? ' [description]' : '') + (!clear ? ' [badge]' : '')); });
+    const first = document.querySelector('#sections a.tile'), fx = x(first);
+    return { bad, n: document.querySelectorAll('#sections a.tile').length, heights: [...new Set([...document.querySelectorAll('#sections a.tile')].map(t => Math.round(x(t).height)))].sort((a, b) => a - b), icon: Math.round(x(first.querySelector('.tile-icon')).width), sideways: document.documentElement.scrollWidth > innerWidth, row: Math.round(fx.width) }; });
+  await pg.evaluate(() => { for (let i = 0; i < 12; i++) TeluguProgress.miss({ game: 'phonemes', key: 'k' + i, prompt: 'p', answer: 'a' }); }); await pg.waitForTimeout(200);
+  let tk = await tileLook(pg);
+  ok(tk.n === 42 && tk.bad.length === 0 && tk.icon === 44 && !tk.sideways, 'Home: on every tile the title is on the icon\'s line, centered on it, and the description runs under the two; no title reaches its badge ("Soon", or Review\'s "12 to revisit") ' + tk.bad.join(' | '));
+  ok(tk.heights[0] >= 110 && tk.heights.at(-1) <= 140, 'Home: the tiles are shorter for it (' + tk.heights.join(', ') + 'px), all between 110 and 140px');
+  {
+    const ph = await b.newPage({ viewport: { width: 390, height: 780 } }); ph.on('pageerror', e => errs.push('home (phone): ' + e.message));
+    await ph.goto('http://localhost:8779/index.html'); await ph.waitForTimeout(500);
+    await ph.evaluate(() => { for (let i = 0; i < 12; i++) TeluguProgress.miss({ game: 'phonemes', key: 'k' + i, prompt: 'p', answer: 'a' }); }); await ph.waitForTimeout(200);
+    const pk = await tileLook(ph);
+    ok(pk.n === 42 && pk.bad.length === 0 && pk.icon === 40 && !pk.sideways && pk.row === 358 && pk.heights.at(-1) <= 90, 'Home on a phone (390px): each tile is one compact row, the icon at the left with the title and description beside it, clear of the badge (' + pk.heights.join(', ') + 'px) ' + pk.bad.join(' | '));
+    await ph.evaluate(() => TeluguProgress.clearMisses()); await ph.close();
+  }
+  await pg.evaluate(() => TeluguProgress.clearMisses()); await pg.waitForTimeout(200);
   // a section folds away to its heading line, and opens again
   const fold = () => top.evaluate(() => { const s = document.querySelectorAll('.section')[2], b = s.querySelector('.section-toggle');      // Alphabet, the third section
     return { h: Math.round(s.getBoundingClientRect().height), tiles: getComputedStyle(s.querySelector('.tiles')).display, turned: getComputedStyle(b.querySelector('svg')).transform, line: getComputedStyle(s.querySelector('.section-head')).borderBottomWidth }; });
@@ -211,7 +236,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   // its bar (the switch, the character, its lookalikes) stays under the header while the keyboard scrolls
   await fr0.click('#kb .key[data-ch="క"]');
   ok(await fr0.evaluate(() => { const g = s => getComputedStyle(document.querySelector(s)); return document.querySelector('.mode-opt[aria-checked="true"]').dataset.mode === 'looks' && g('.kb').borderTopColor === g('.mode-opt[aria-checked="true"]').borderTopColor && g('.keys.c').gridTemplateColumns.split(' ').length === 10; }),
-    'the Lookalike Builder: choosing a character switches to "Looks like" (keyboard outlined in gold); consonants run ten to a row on a wide screen');
+    'the Lookalike Builder: choosing a character switches to "Looks Like" (keyboard outlined in gold); consonants run ten to a row on a wide screen');
   // (the header's height depends on the font in use, so the bar must follow the header and not a fixed number)
   const pinned = () => fr0.evaluate(async () => { const frames = n => new Promise(r => { const step = () => (n-- > 0 ? requestAnimationFrame(step) : r()); step(); });
     await frames(3); window.scrollTo(0, 400); await frames(2);
@@ -266,7 +291,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   const reviewLook = () => pg.evaluate(() => { const x = e => e.getBoundingClientRect(), secs = [...document.querySelectorAll('.section')], tr = secs.find(s => s.dataset.section === 'Training'), rv = document.querySelector('a.tile[href="#/review"]');
     const arrow = s => getComputedStyle(s.querySelector('.section-toggle svg')).color, badge = rv.querySelector('.tile-badge'), head = x(tr.querySelector('.section-head')), tog = x(tr.querySelector('.section-toggle svg')), title = x(tr.querySelector('.section-name'));
     return { first: tr.querySelector('a.tile') === rv, order: secs.map(s => s.dataset.section).slice(0, 3).join(), border: getComputedStyle(rv).borderTopColor, ring: getComputedStyle(rv).boxShadow, others: [...document.querySelectorAll('a.tile:not(.soon)')].filter(t => t !== rv).map(t => getComputedStyle(t).borderTopColor),
-      arrows: secs.map(arrow), badge: badge ? [badge.textContent, getComputedStyle(badge).backgroundColor, x(badge).right <= x(rv).right && x(badge).top >= x(rv).top && x(badge).bottom <= x(rv.querySelector('.tile-title')).top] : null,      // in the tile's top right corner, clear of the title
+      arrows: secs.map(arrow), badge: badge ? [badge.textContent, getComputedStyle(badge).backgroundColor, x(badge).right <= x(rv).right && x(badge).top >= x(rv).top && (() => { const r = document.createRange(); r.selectNodeContents(rv.querySelector('.tile-title')); return x(badge).left > r.getBoundingClientRect().right; })()] : null,      // in the tile's top right corner, clear of the title
       atEnd: Math.abs(tog.right - head.right) < 1 && tog.left > title.right, counts: document.querySelectorAll('#sections .section-count').length, ready: /\d+ of \d+ ready/.test(document.getElementById('home').innerText), size: [Math.round(x(rv).width), Math.round(x(tr.querySelectorAll('a.tile')[1]).width), Math.round(x(rv).top - x(tr.querySelectorAll('a.tile')[1]).top)] }; });
   await pg.mouse.move(5, 5);
   let rl = await reviewLook();

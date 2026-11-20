@@ -31,6 +31,18 @@ ok(d.querySelectorAll('.section-count').length === 0 && !/\d+ of \d+ ready/.test
     'the heading still reads as the section\'s name, and nothing else'); }
 ok(d.querySelectorAll('a.tile').length === 42 && d.querySelectorAll('a.tile.soon').length === 31 && d.querySelectorAll('.tile-badge').length === 31 && d.querySelectorAll('#sections a.tile').length === 42 && !d.getElementById('featured') && !d.querySelector('.featured, .tile.review'),
   '42 tiles, all inside the sections (no strip above them), 31 marked Soon');
+// a tile: its icon and its title together on one line (.tile-head), its description under them
+{ const all = [...d.querySelectorAll('#sections a.tile')], kids = t => [...t.children].map(e => e.className).join();
+  const bad = all.filter(t => !/^tile-head,tile-desc(,tile-badge)?$/.test(kids(t)) || [...t.querySelector('.tile-head').children].map(e => e.className).join() !== 'tile-icon,tile-title' || t.querySelector('.tile-icon').getAttribute('aria-hidden') !== 'true');
+  ok(all.length === 42 && bad.length === 0, 'every tile is a head (icon, then title) followed by its description, then a badge if it has one ' + bad.map(t => t.getAttribute('href')).join(' '));
+  const t = d.querySelector('a.tile[href="#/signs-conjuncts"]');
+  ok(t.querySelector('.tile-head .tile-title').textContent === 'Signs & Conjuncts' && t.querySelector('.tile-head + .tile-desc').textContent === ALL.find(x => x.id === 'signs-conjuncts').desc && t.querySelector('.tile-icon').textContent === ALL.find(x => x.id === 'signs-conjuncts').icon,
+    'a tile shows its icon, title, and description from units.js: ' + t.querySelector('.tile-title').textContent);
+  const css = require('fs').readFileSync(dir + 'home.css', 'utf8'), phone = css.slice(css.indexOf('@media (max-width: 520px)'));
+  ok(/\.tile-head \{ display: flex; align-items: center; gap: 12px;/.test(css) && /\.tile\.soon \.tile-head \{ padding-right: 40px; \}/.test(css) && /\.tile\.due\s+\.tile-head \{ padding-right: 84px; \}/.test(css),
+    'home.css puts the icon and the title side by side, centered on each other, and keeps the title clear of a badge in the corner');
+  ok(/\.tile:not\(\.link\) \{ display: grid; grid-template-columns: 40px minmax\(0, 1fr\);/.test(phone) && /\.tile-head \{ display: contents; \}/.test(phone) && /\.tile-icon \{ grid-row: 1 \/ span 2;/.test(phone),
+    'on a phone the tile stays one compact row: the icon at the left, the title and description stacked beside it'); }
 ok([...d.querySelectorAll('.section')[1].querySelectorAll('a.tile')].map(a => a.getAttribute('href')).join() === '#/review,#/lookalike-builder,#/lookalikes' && d.querySelector('.section').dataset.section === 'Reference',
   'Review is the first tile of Training, the second section: Review, Lookalike Builder, Lookalikes');
 (async () => {

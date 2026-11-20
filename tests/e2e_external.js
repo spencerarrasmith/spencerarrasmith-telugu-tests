@@ -33,7 +33,7 @@ const ANSWER = { query: {
   ok(d.title === 'External Links' && /<link rel="stylesheet" href="\.\.\/home\.css">/.test(raw) && !/<style/.test(raw), 'uses the home page stylesheet, with no styles of its own');
   ok(!/<script src=/.test(raw), 'loads no shared script: it needs no letters, progress, or settings');
   ok(d.querySelector('main.tile-page > .home-inner > #sections') && /#home, \.tile-page \{/.test(home), 'the page scrolls and is centered as the home page is');
-  ok(all('.section').length === 2 && all('.section-title').map(e => e.textContent).join() === 'Wikipedia,Other sites' && all('.section-count').map(e => e.textContent).join() === '3 links,4 links', 'sections with a heading and a count: ' + all('.section-title').map(e => e.textContent).join(', '));
+  ok(all('.section').length === 2 && all('.section-title').map(e => e.textContent).join() === 'Wikipedia,Other Sites' && all('.section-count').map(e => e.textContent).join() === '3 links,4 links', 'sections with a heading and a count: ' + all('.section-title').map(e => e.textContent).join(', '));
   ok(all('.section > .tiles').length === 2 && all('.tiles > a.tile.link').length === 7 && tiles.length === 7, 'seven tiles in the home page grid');
   ok(tiles.every(t => t.querySelector('.tile-thumb') && t.querySelector('.tile-body .tile-title').textContent.length > 3 && t.querySelector('.tile-body .tile-host')), 'each tile has a thumbnail, a title, and the site it leads to');
   ok(['.tile.link', '.tile-thumb', '.tile-thumb img', '.tile-thumb img.ok', '.tile-host', '.page-note'].every(sel => home.includes(sel + ' {') || home.includes(sel + '  {')), 'home.css styles the link tile, its thumbnail, and the note');

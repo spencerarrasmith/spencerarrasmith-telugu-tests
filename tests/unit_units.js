@@ -54,7 +54,34 @@ ok(/\{sound\} → Telugu/.test(U.get('phonemes').review['phonemes-reverse']) && 
   ok(a === 'Phonemes (IPA → Telugu)' && w.TeluguUnits.label('phonemes-reverse') === 'Phonemes (ISO → Telugu)' && w.TeluguUnits.label('conjuncts-reverse') === 'Conjuncts (ISO → Conjuncts)' && w.TeluguUnits.label('lookalikes') === 'Lookalikes (ISO → Telugu)' && w.TeluguUnits.label('phonemes') === 'Phonemes', 'label: {sound} becomes IPA or ISO, whichever is chosen (re-read each time)');
   ok(U.tiles.every(t => !/\bIPA\b/.test(t.desc) || t.id === 'rosetta') && U.all.every(t => Object.values(t.review || {}).every(n => !/IPA|ISO/.test(n))), 'no tile text is tied to one notation (Rosetta Stone, which shows both, aside)');
 })();
-ok(U.label('grammar-nouns') === 'Nouns: gender & number' && U.label('made_up-game') === 'Made up game', 'label: lessons use their tile title; an unlisted id is cleaned up');
+/* ── titles and headings are written in title case ── */
+{
+  // Title case: every word starts with a capital, except a short joining word (and, or, of, to, in …) that is not the first.
+  // A word after a hyphen follows the word it is joined to (Non-sibilant), and anything that is not a Latin word is left alone.
+  const SMALL = new Set(['a', 'an', 'the', 'and', 'or', 'nor', 'but', 'of', 'to', 'in', 'on', 'at', 'by', 'for', 'as', 'vs']);
+  const titled = t => t.split(/[\s·:&/()]+/).filter(w => /^[A-Za-z]/.test(w)).every((w, i) => /^[A-Z]/.test(w) || (i > 0 && SMALL.has(w)));
+  ok(titled('Signs & Conjuncts') && titled('Tap or Flap') && titled('Non-sibilant Fricative') && !titled('Signs & conjuncts') && !titled('Sound charts') && !titled('of Mice'), 'the title-case check itself: "Signs & Conjuncts" passes, "Sound charts" does not');
+  const names = [...U.sections.map(s => s.title), ...U.all.map(t => t.title), ...U.pages.map(p => p.title)];
+  const low = names.filter(t => !titled(t));
+  ok(names.length === 6 + 42 + 1 && low.length === 0, 'every section, tile, and page name in units.js is in title case ' + low.join(' | '));
+  ok(['Signs & Conjuncts', 'Sound Charts', 'Idioms & Proverbs', 'Nouns: Gender & Number', 'Post Office · Phone · Bank', 'Voice & Causatives', 'At Home'].every(t => U.all.some(x => x.title === t)), 'among them: Signs & Conjuncts, Sound Charts, Post Office · Phone · Bank …');
+  // each tile's page is titled as its tile is (a lesson or placeholder adds "· Telugu Suite")
+  const unesc = t => t.replace(/&amp;/g, '&');
+  const page = t => fs.readFileSync(path.join(SITE_DIR, t.src), 'utf8');
+  const mis = U.all.filter(t => { const m = page(t).match(/<title>([^<]*)<\/title>/); return !m || ![t.title, t.title + ' · Telugu Suite'].includes(unesc(m[1])); }).map(t => t.id);
+  ok(mis.length === 0, 'the <title> of every tile\'s page is the tile\'s title, capitals and all ' + mis.join(' '));
+  // the headings written into the pages themselves (h1 to h3), the template included
+  const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]);
+  const heads = walk(SITE_DIR).filter(f => f.endsWith('.html')).flatMap(f => [...fs.readFileSync(f, 'utf8').matchAll(/<(h[1-3]|title)\b[^>]*>([^<$]+)<\/\1>|\{ h: '([^']+)' \}|^\s*title:\s{2,}'([^']+)',$|<a href="#sec-[a-z]+">([^<]+)<\/a>/gm)].map(m => [path.relative(SITE_DIR, f), unesc(m[2] || m[3] || m[4] || m[5]).trim()]));
+  const lowHeads = heads.filter(([, t]) => !titled(t)).map(([f, t]) => f + ': ' + t);
+  ok(heads.length > 60 && heads.some(([f, t]) => f === 'training/01_review.html' && t === 'Nothing to Review') && heads.some(([, t]) => t === 'Conjunct Forms') && heads.some(([, t]) => t === 'Looks Like') && heads.some(([, t]) => t === 'What This Part Is For') && lowHeads.length === 0,
+    'every heading written into a page (' + heads.length + ' of them: titles, h1 to h3, and the links that jump to them) is in title case ' + lowHeads.join(' | '));
+  const src = f => fs.readFileSync(path.join(SITE_DIR, f), 'utf8');
+  ok(/\['signs', 'Vowel Signs'\]/.test(src('reference/01_rosetta.html')) && /title: 'Correct Answers'/.test(src('profile.html')) && /title: 'Error Rate'/.test(src('profile.html')) && /<th>Error Rate<\/th>/.test(src('profile.html')) && /\{ title: 'Other Sites',/.test(src('reference/00_external.html'))
+    && /'Sibilant Fricative', 'Non-sibilant Fricative',/.test(src('reference/sound-charts-data.js')) && /'Tap or Flap'/.test(src('reference/sound-charts-data.js')),
+    'and so are the headings a page builds as it loads: Rosetta\'s "Vowel Signs", Profile\'s panels and table, the External Links sections, the rows of the consonant chart');
+}
+ok(U.label('grammar-nouns') === 'Nouns: Gender & Number' && U.label('made_up-game') === 'Made up game', 'label: lessons use their tile title; an unlisted id is cleaned up');
 const reviewIds = U.all.flatMap(t => Object.keys(t.review || {}));
 ok(U.all.every(t => Object.keys(t.review || {}).every(g => g === t.id || g.startsWith(t.id + '-'))), 'every `review` id belongs to the tile it sits on: ' + reviewIds.join(' '));
 

@@ -64,7 +64,7 @@ const MISS = { 'phonemes|క': { game: 'phonemes', key: 'క', ask: 'telugu', no
     ok(s.getAttribute('role') === 'img' && s.getAttribute('tabindex') === '0' && /^Correct answers and error rate over 14 runs\. The last run: 51 correct, 4% errors\./.test(s.getAttribute('aria-label')), 'the chart is one focusable picture, described for a screen reader: ' + s.getAttribute('aria-label').slice(0, 70));
     ok(lines.length === 2 && lines.every(l => l.getAttribute('d').split('L').length === 14 && /^M[\d.]+ [\d.]+ L/.test(l.getAttribute('d'))) && lines[0].getAttribute('stroke') === 'var(--correct)' && lines[1].getAttribute('stroke') === 'var(--errors)',
       'two lines of 14 points: correct answers in one color, error rate in the other');
-    ok(texts('phonemes', 'ttl').join() === 'Correct answers,Error rate' && [...s.querySelectorAll('line[stroke-linecap]')].map(l => l.getAttribute('stroke')).join() === 'var(--correct),var(--errors)', 'each has its own panel, named beside a stroke of its color (the words are never colored)');
+    ok(texts('phonemes', 'ttl').join() === 'Correct Answers,Error Rate' && [...s.querySelectorAll('line[stroke-linecap]')].map(l => l.getAttribute('stroke')).join() === 'var(--correct),var(--errors)', 'each has its own panel, named beside a stroke of its color (the words are never colored)');
     const tickTexts = texts('phonemes');
     ok(tickTexts.join(' ').startsWith('0 20 40 60 0% 10% 20% 30% 40%'), 'each panel has its own scale from 0, ending on a round number: 0–60 answers, 0%–40% errors');
     ok(texts('phonemes', 'end').join() === '51,4%', 'the last value is written at the end of each line: ' + texts('phonemes', 'end').join(' and '));
@@ -114,7 +114,7 @@ const MISS = { 'phonemes|క': { game: 'phonemes', key: 'క', ask: 'telugu', no
 
     /* the same numbers as a table */
     const table = card('phonemes').querySelector('details.pf-table'), rows = [...table.querySelectorAll('tbody tr')].map(r => [...r.children].map(c => c.textContent));
-    ok(!table.open && table.querySelector('summary').textContent === 'Show as a table' && [...table.querySelectorAll('thead th')].map(t => t.textContent).join('|') === 'Run|When|Correct|Cards|Errors|Error rate|Ended', 'every chart comes with "Show as a table", closed to begin with');
+    ok(!table.open && table.querySelector('summary').textContent === 'Show as a table' && [...table.querySelectorAll('thead th')].map(t => t.textContent).join('|') === 'Run|When|Correct|Cards|Errors|Error Rate|Ended', 'every chart comes with "Show as a table", closed to begin with');
     ok(rows.length === 14 && rows[0][0] === '14' && rows[13][0] === '1' && rows[0].slice(2).join('|') === '51|51|2|4%|Finished' && rows[11].slice(2).join('|') === '9|51|5|36%|Game over' && / · reversed$/.test(rows[9][1]) && !/reversed/.test(rows[0][1]),
       'the table lists all 14 runs, newest first, with what the chart shows and how each ended');
 

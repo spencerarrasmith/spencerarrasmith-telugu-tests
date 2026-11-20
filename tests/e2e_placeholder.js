@@ -44,7 +44,7 @@ ok(d.querySelector('.shell > .shell-head .eyebrow').textContent === 'Vocabulary'
 ok(!d.querySelector('.stepper') && !d.querySelector('.shell-foot') && !d.querySelector('#ls-done'), 'no Learn/Practice steps, footer, or "Completed" pill on a placeholder');
 ok(d.querySelector('.unit-icon').getAttribute('aria-hidden') === 'true', 'the icon is decorative');
 ok(load('reference/04_idioms.html').d.querySelector('.eyebrow').textContent === 'Reference', 'Reference placeholders carry the section\'s own name, read from units.js');
-ok(load('grammar/02_nouns.html').d.querySelector('h1').innerHTML === 'Nouns: gender &amp; number', 'text is escaped, not injected as HTML');
+ok(load('grammar/02_nouns.html').d.querySelector('h1').innerHTML === 'Nouns: Gender &amp; Number', 'text is escaped, not injected as HTML');
 
 // the API
 const L = w.LessonShell;
@@ -59,7 +59,7 @@ ok(threw, 'without units.js, placeholder() says what is missing');
 
 // a lesson takes its section and title from units.js when it gives none
 const m = L.mount({ id: 'grammar-nouns', learn: ['x'] }, host);
-ok(host.querySelector('.eyebrow').textContent === 'Grammar' && host.querySelector('h1').textContent === 'Nouns: gender & number' && d.title === 'Nouns: gender & number · Telugu Suite' && m.stages.join() === 'learn', 'mount({id}) fills section and title from the tile');
+ok(host.querySelector('.eyebrow').textContent === 'Grammar' && host.querySelector('h1').textContent === 'Nouns: Gender & Number' && d.title === 'Nouns: Gender & Number · Telugu Suite' && m.stages.join() === 'learn', 'mount({id}) fills section and title from the tile');
 L.mount({ id: 'grammar-nouns', section: 'Mine', title: 'Own title', learn: ['x'] }, host);
 ok(host.querySelector('.eyebrow').textContent === 'Mine' && host.querySelector('h1').textContent === 'Own title', 'a section or title the lesson gives itself still wins');
 shellOnly.LessonShell.mount({ id: 'x', section: 'S', title: 'T', learn: ['x'] });

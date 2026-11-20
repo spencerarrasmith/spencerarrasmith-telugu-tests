@@ -23,7 +23,7 @@ ok(SD.teluguVowels.length + SD.teluguDiphthongs.length + offChart.length === vow
   'every Telugu vowel letter is in exactly one place: on the chart (' + SD.teluguVowels.length + '), a diphthong (' + SD.teluguDiphthongs.length + ') or listed as off the chart (' + offChart.length + ')');
 ok(SD.teluguVowels.every(l => SD.SPOTS[SD.quality(l.ipa)]) && SD.ENGLISH_VOWELS.every(([ipa]) => SD.SPOTS[ipa]) && SD.ENGLISH_CONSONANTS.every(([ipa]) => SD.WHERE[ipa]), 'every charted vowel has a spot and every English consonant a box');
 ok(SD.PLACES.map(p => p[0]).join() === 'Bilabial,Labiodental,Linguolabial,Dental,Alveolar,Postalveolar,Retroflex,Palatal,Velar,Uvular,Pharyngeal,Glottal', 'places run lips → throat, as on the IPA chart');
-ok(SD.MANNERS.join() === 'Nasal,Plosive,Affricate,Sibilant fricative,Non-sibilant fricative,Approximant,Tap or flap,Trill,Lateral fricative,Lateral approximant,Lateral tap or flap', 'manners follow the IPA chart, with a row for affricates');
+ok(SD.MANNERS.join() === 'Nasal,Plosive,Affricate,Sibilant Fricative,Non-sibilant Fricative,Approximant,Tap or Flap,Trill,Lateral Fricative,Lateral Approximant,Lateral Tap or Flap', 'manners follow the IPA chart, with a row for affricates');
 ok(Object.values(SD.WHERE).every(([p, m, v]) => SD.PLACES.some(x => x[0] === p) && SD.MANNERS.includes(m) && typeof v === 'boolean'), 'every box names a real column and row');
 ok([...SD.ENGLISH_CONSONANTS, ...SD.ENGLISH_VOWELS, ...SD.DIPHTHONGS.en].every(([, wd]) => wd.split('|').length === 3 && wd.split('|')[1].length > 0), 'every English sound has a key word with the letters that spell it marked');
 const phonemes = SD.ENGLISH_CONSONANTS.filter(e => !e[2]).map(e => e[0]), variants = SD.ENGLISH_CONSONANTS.filter(e => e[2]);
@@ -63,11 +63,11 @@ ok(SD.teluguConsonants.every(l => { const c = all('#cons .tel').filter(e => e.da
 ok(SD.ENGLISH_CONSONANTS.every(([ipa]) => { const c = all('#cons .eng').filter(e => e.dataset.ipa === ipa); return c.length === 1 && boxOf(c[0]) === SD.WHERE[ipa][0] + ' / ' + SD.WHERE[ipa][1]; }), 'each of the ' + SD.ENGLISH_CONSONANTS.length + ' English consonants is drawn once, in its own box');
 const tel = ch => all('#cons .tel').find(e => e.dataset.ch === ch), eng = ipa => all('#cons .eng').find(e => e.dataset.ipa === ipa);
 ok(boxOf(tel('త')) === 'Dental / Plosive' && boxOf(tel('ట')) === 'Retroflex / Plosive' && boxOf(eng('t')) === 'Alveolar / Plosive', 'English t sits between Telugu త (dental) and ట (retroflex)');
-ok(boxOf(eng('w')) === 'Velar / Approximant' && boxOf(eng('ɾ')) === 'Alveolar / Tap or flap' && boxOf(eng('ʔ')) === 'Glottal / Plosive' && boxOf(eng('ɫ')) === boxOf(tel('ల')) && boxOf(eng('tʰ')) === boxOf(eng('t')), 'w is in the Velar column; the tap, the glottal stop, dark l, and aspirated t each have their box');
-ok(boxOf(tel('చ')) === 'Postalveolar / Affricate' && boxOf(tel('వ')) === 'Labiodental / Approximant' && boxOf(eng('v')) === 'Labiodental / Non-sibilant fricative' && boxOf(tel('హ')) === 'Glottal / Non-sibilant fricative' && boxOf(tel('ళ')) === 'Retroflex / Lateral approximant', 'చ, వ, v, హ, and ళ are where the IPA chart puts them');
+ok(boxOf(eng('w')) === 'Velar / Approximant' && boxOf(eng('ɾ')) === 'Alveolar / Tap or Flap' && boxOf(eng('ʔ')) === 'Glottal / Plosive' && boxOf(eng('ɫ')) === boxOf(tel('ల')) && boxOf(eng('tʰ')) === boxOf(eng('t')), 'w is in the Velar column; the tap, the glottal stop, dark l, and aspirated t each have their box');
+ok(boxOf(tel('చ')) === 'Postalveolar / Affricate' && boxOf(tel('వ')) === 'Labiodental / Approximant' && boxOf(eng('v')) === 'Labiodental / Non-sibilant Fricative' && boxOf(tel('హ')) === 'Glottal / Non-sibilant Fricative' && boxOf(tel('ళ')) === 'Retroflex / Lateral Approximant', 'చ, వ, v, హ, and ళ are where the IPA chart puts them');
 ok(all('#cons .ph.both').map(p => p.dataset.ipa).sort().join(' ') === ['k', 'kʰ', 'ɡ', 'ŋ', 'tʃ', 'dʒ', 'n', 'p', 'pʰ', 'b', 'm', 'j', 'l', 'ʃ', 's', 'ɾ'].sort().join(' '), '16 consonants are shared: k kʰ ɡ ŋ tʃ dʒ n p pʰ b m j l ʃ s, and the tap ɾ (ర, butter)');
 ok(all('#cons .ph.en').map(p => p.dataset.ipa).sort().join(' ') === ['t', 'tʰ', 'd', 'z', 'ʒ', 'f', 'v', 'θ', 'ð', 'h', 'ɹ', 'w', 'ʔ', 'ɫ'].sort().join(' ') && all('#cons .ph.te').length === 21, '14 are English only (t tʰ d z ʒ f v θ ð h ɹ w ʔ ɫ) and 21 Telugu only');
-ok(boxOf(tel('ర')) === 'Alveolar / Tap or flap' && ph('ɾ')[0].contains(tel('ర')) && ph('ɾ')[0].contains(eng('ɾ')) && boxOf(tel('ౘ')) === 'Alveolar / Affricate' && boxOf(tel('ౙ')) === 'Alveolar / Affricate', 'ర shares its card with the tap of butter; ౘ ౙ sit in Alveolar / Affricate');
+ok(boxOf(tel('ర')) === 'Alveolar / Tap or Flap' && ph('ɾ')[0].contains(tel('ర')) && ph('ɾ')[0].contains(eng('ɾ')) && boxOf(tel('ౘ')) === 'Alveolar / Affricate' && boxOf(tel('ౙ')) === 'Alveolar / Affricate', 'ర shares its card with the tap of butter; ౘ ౙ sit in Alveolar / Affricate');
 ok(all('#cons .ph.both').every(p => p.querySelector('.tel') && p.querySelector('.eng')) && all('#cons .ph.te').every(p => !p.querySelector('.eng')) && all('#cons .ph.en').every(p => !p.querySelector('.tel')), 'a shared sound shows the Telugu letter and the English word in one card');
 const cellOf = e => e.closest('td').querySelector('.cell');
 ok(all('#cons td .cell').every(c => { const k = all(':scope > .vg', c).map(v => v.className.replace('vg ', '')); return k.join() === 'voiceless' || k.join() === 'voiced' || k.join() === 'voiceless,voiced'; }), 'in every box the voiceless sounds are on the left and the voiced on the right');
@@ -98,13 +98,13 @@ ok(tel('ఙ') && kind(ph('ŋ')[0]) === 'both' && $('count').textContent === '18 
 const before = all('#cons .ph').map(p => p.dataset.ipa + boxOf(p)).join('|');
 ok(!$('compact').checked, 'the full grid is the default');
 click('compact');
-ok(places().join() === 'Bilabial,Labiodental,Dental,Alveolar,Postalveolar,Retroflex,Palatal,Velar,Glottal' && manners().join() === 'Nasal,Plosive,Affricate,Sibilant fricative,Non-sibilant fricative,Approximant,Tap or flap,Lateral approximant',
+ok(places().join() === 'Bilabial,Labiodental,Dental,Alveolar,Postalveolar,Retroflex,Palatal,Velar,Glottal' && manners().join() === 'Nasal,Plosive,Affricate,Sibilant Fricative,Non-sibilant Fricative,Approximant,Tap or Flap,Lateral Approximant',
   '"Only rows and columns in use" drops Linguolabial, Uvular, Pharyngeal, Trill (ర is a tap), and the two unused lateral rows');
 ok(all('#cons tbody tr').every(r => r.querySelector('.ph')) && places().every(p => all('#cons td').some(c => c.dataset.place === p && c.querySelector('.ph'))), 'no row or column is empty then');
 ok(all('#cons .ph').map(p => p.dataset.ipa + boxOf(p)).join('|') === before, 'and every sound is still there, in the same box');
 ok(all('#cons thead tr.groups th[colspan]').map(t => t.textContent + t.colSpan).join() === 'Labial2,Coronal4,Dorsal2,Laryngeal1', 'the group headings shrink to match');
 click('show-rare');
-ok(manners().includes('Tap or flap') && !tel('ఱ') && places().includes('Palatal'), 'with rare letters off as well, the Tap or flap row stays for ర and English ɾ though ఱ is gone');
+ok(manners().includes('Tap or Flap') && !tel('ఱ') && places().includes('Palatal'), 'with rare letters off as well, the Tap or Flap row stays for ర and English ɾ though ఱ is gone');
 click('show-rare'); click('compact');
 ok(places().length === 12 && manners().length === 11 && all('#cons .ph').map(p => p.dataset.ipa + boxOf(p)).join('|') === before, 'unchecking both restores the full grid');
 

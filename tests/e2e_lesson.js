@@ -11,7 +11,7 @@ const $ = s => d.querySelector(s), vis = id => !$('#panel-' + id).hidden;
 const P = w.TeluguProgress;
 (async () => {
   ok(errs.length === 0, 'template loads with no script errors ' + errs.join('|'));
-  ok(d.title === 'Lesson template · Telugu Suite', 'document title set');
+  ok(d.title === 'Lesson Template · Telugu Suite', 'document title set');
   ok([...d.querySelectorAll('.step')].map(b => b.textContent).join() === 'Learn,Remarks,Practice', 'three steps: Learn, Remarks, Practice');
   ok(vis('learn') && !vis('remarks') && !vis('practice') && $('#ls-back').disabled, 'starts on Learn; Back disabled');
   ok($('#tab-learn').getAttribute('aria-selected') === 'true' && $('#tab-practice').getAttribute('aria-selected') === 'false', 'aria-selected follows the active tab');

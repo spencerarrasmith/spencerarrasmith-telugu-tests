@@ -1,4 +1,4 @@
-// Lookalike Builder (training/02_lookalike-builder.html): one keyboard with a Character / Looks like switch.
+// Lookalike Builder (training/02_lookalike-builder.html): one keyboard with a Character / Looks Like switch.
 // Choose a character, tap what looks like it, export the groups as a CSV for the Lookalikes game.
 const { SITE_DIR } = require('./config');
 const { JSDOM } = require('jsdom'); const fs = require('fs'), path = require('path');
@@ -34,18 +34,18 @@ ok(d.title === 'Lookalike Builder' && /game\.css/.test(raw) && !!d.querySelector
 ok(!$('prev') && !$('next') && !$('tiles') && !d.querySelector('[data-set]') && !d.querySelector('.g-prog-track') && !/reviewed|Show me|this run/i.test(d.querySelector('.wrap').textContent), 'no guided run: no Previous / Next, run grid, "Show me" sets, progress bar, or "reviewed" state');
 const hints = (raw.split('<script src')[0].match(/<p class="hint">[^<]*/g) || []).map(h => h.replace(/<[^>]*>/, ''));
 ok(hints.length === 2 && hints.join('').length < 200, 'two short lines of explanation (' + hints.join('').length + ' characters)');
-ok(all('.mode-opt').map(b => b.textContent).join(' | ') === 'Character | Looks like' && $('mode').getAttribute('role') === 'radiogroup' && $('pick').contains($('mode')) && $('pick').contains($('glyph')) && $('pick').contains($('chips')),
-  'one bar holds the Character / Looks like switch, the character, and its lookalikes');
+ok(all('.mode-opt').map(b => b.textContent).join(' | ') === 'Character | Looks Like' && $('mode').getAttribute('role') === 'radiogroup' && $('pick').contains($('mode')) && $('pick').contains($('glyph')) && $('pick').contains($('chips')),
+  'one bar holds the Character / Looks Like switch, the character, and its lookalikes');
 ok(/\.pick \{[^}]*position: sticky/.test(raw) && /\nhtml \{ height: auto; overflow: auto; \}\nbody \{ height: auto; overflow: visible; \}/.test(raw), 'the bar is sticky, and the window (not <body>) scrolls so it can stay in view');
 ok(all('#kb .keys').length === 4 && all('#kVowels, #kCons, #kDigits, #signs').length === 4, 'one keyboard: vowel signs, vowels, consonants, digits');
 
 /* ── start: nothing chosen ── */
-ok(mode() === 'character' && d.querySelector('[data-mode="looks"]').disabled && $('glyph').classList.contains('empty') && $('kbTitle').textContent === 'Character' && chips() === '', 'starts in Character mode; "Looks like" waits for a character');
+ok(mode() === 'character' && d.querySelector('[data-mode="looks"]').disabled && $('glyph').classList.contains('empty') && $('kbTitle').textContent === 'Character' && chips() === '', 'starts in Character mode; "Looks Like" waits for a character');
 ok($('stat').textContent === '0 groups' && csv() === '' && w.localStorage.getItem(KEY) === null, 'no groups, an empty CSV, nothing stored');
 
 /* ── choose a character, then its lookalikes ── */
 tap('అ');
-ok(mode() === 'looks' && glyph() === 'అ' && name() === '/ɐ/vowel' && $('kbTitle').textContent === 'Looks like అ' && $('kb').classList.contains('looks'), 'choosing అ turns the keyboard over to its lookalikes: ' + $('kbTitle').textContent);
+ok(mode() === 'looks' && glyph() === 'అ' && name() === '/ɐ/vowel' && $('kbTitle').textContent === 'Looks Like అ' && $('kb').classList.contains('looks'), 'choosing అ turns the keyboard over to its lookalikes: ' + $('kbTitle').textContent);
 ok(key('అ').disabled && key('అ').classList.contains('self') && key('అ').title === '/ɐ/ (the character shown)', 'the character itself is shown on its key but cannot be picked');
 tap('ఇ'); tap('ఈ');
 ok(chips() === 'ఇ ఈ' && key('ఇ').getAttribute('aria-pressed') === 'true' && key('ఉ').getAttribute('aria-pressed') === 'false', 'picks become chips, and their keys are pressed: ' + chips());
