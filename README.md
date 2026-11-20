@@ -30,13 +30,13 @@ This needs no secrets or tokens. The tests repo has to be public, because a publ
 
 ## Run it on your machine
 
-Needs Node 20+, and Python 3 for the one font check.
+Needs Node 20+, and Python 3 for the two font checks.
 
 ```
 git clone https://github.com/spencerarrasmith/spencerarrasmith.com site
 npm ci
 npx playwright install chromium
-pip install fonttools uharfbuzz        # optional: only for the font check
+pip install fonttools uharfbuzz brotli # optional: only for the two font checks
 npm test
 ```
 
@@ -47,7 +47,7 @@ To run some suites only: `npm test -- e2e_index e2e_signs`.
 
 | Suites | What they cover |
 |---|---|
-| `e2e_links`, `static_css` | Every stylesheet, script, and `@import` resolves; no old file names left; pages are numbered `NN_name.html` (from `00` or `01`); one stylesheet per kind of page (`home.css`, `game.css`, `shell.css`, `reference.css`); color tokens, reset, and fonts only in `base.css` |
+| `e2e_links`, `static_css` | Every stylesheet, script, and `@import` resolves; no old file names left; pages are numbered `NN_name.html` (from `00` or `01`); one stylesheet per kind of page (`home.css`, `game.css`, `shell.css`, `reference.css`); color tokens, reset, and fonts only in `base.css`; the fonts are files in the app's own `fonts/` folder, each with its license, and no page or stylesheet asks another site for one |
 | `unit_*` | `settings.js`, `units.js`, `telugu-data.js` (letters, both notations, `read()`), `lookalikes-data.js`, `progress.js` (misses, and the runs the Profile page charts; the stored format, the upgrade of an old store, and that `reset()` erases everything) |
 | `e2e_index`, `e2e_review`, `e2e_lesson`, `e2e_placeholder` | Home page (the title that flips between Latin and Telugu; the Profile button and the Settings menu, ☰, at the top right; sections that fold away, tiles, routes, and counts; and that nothing is ever marked "complete"), Review, the lesson template (which has no "Completed" pill), the 34 "Coming soon" pages drawn from `units.js` |
 | `e2e_profile` | The Profile page: a card for each practice game, its two-panel chart (correct answers and error rate against the same runs), the readout for the pointer and the arrow keys, the table of the same numbers, and the Danger Zone whose "Reset statistics" takes two clicks and erases every session and the Review list |
@@ -60,6 +60,7 @@ To run some suites only: `npm test -- e2e_index e2e_signs`.
 | `e2e_iso` | Every page again for a reader who chose ISO on the home page: spellings like `ka`, `kā`, `kṣa` and no slashes anywhere. The other suites run in IPA, the default |
 | `e2e_browser` | Real Chromium: all 44 routes open in the iframe, scripts load, no errors or 404s, and each kind of page really gets its stylesheet (jsdom ignores CSS, so this is the only place that is checked). Also the layout that only a browser can show: the session popup, the Settings menu, the Profile page's charts and its red Danger Zone |
 | `verify_notes` | The Signs & Conjuncts notes against Noto Sans Telugu's own shaping data |
+| `verify_fonts` | The app's own font files (`fonts/`): each holds the weights `base.css` declares for it, and every Telugu character and every sound character (IPA and ISO) that the app's pages and data contain is in the font meant to draw it |
 
 Some assertions deliberately pin current content (43 tiles, which pages are live, 7 + 8 + 8 + 12 + 8 per section, 34 placeholders, the number of notes). When you add a page or turn a tile from "Soon" to live, expect `unit_units`, `e2e_index`, `e2e_links`, `e2e_placeholder`, `static_css`, and `e2e_browser` to need their numbers updated; that failure is the reminder.
 

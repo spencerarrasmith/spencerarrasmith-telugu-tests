@@ -60,7 +60,7 @@ jobs:
           python-version: '3.12'
 
       - run: npm ci
-      - run: pip install fonttools uharfbuzz
+      - run: pip install fonttools uharfbuzz brotli
       - run: npx playwright install --with-deps chromium
 
       - name: Run the tests

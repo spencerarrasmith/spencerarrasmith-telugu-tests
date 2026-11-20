@@ -2,14 +2,15 @@ const { SITE_DIR } = require('./config');
 // Real browser, real folders: every tile opens its page inside the home page's iframe with no script errors.
 const { chromium } = require('playwright'); const http = require('http'), fs = require('fs'), path = require('path');
 const root = SITE_DIR; let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
-const mime = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html; charset=utf-8' };
+const mime = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.woff2': 'font/woff2' };
 const srv = http.createServer((q, r) => { const f = path.join(root, decodeURIComponent(q.url.split('?')[0])); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); } else { r.writeHead(200, { 'content-type': mime[path.extname(f)] || 'text/plain' }); r.end(d); } }); }).listen(8779);
 (async () => {
   const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 1200, height: 800 } });
-  const errs = []; const missing = [];
+  const errs = []; const missing = []; const outside = [];
   pg.on('pageerror', e => errs.push(e.message)); pg.on('response', r => { if (r.status() >= 400 && r.url().includes('localhost')) missing.push(r.status() + ' ' + r.url()); });
-  // Nothing outside this folder is fetched: not the web fonts, and not the thumbnails the External Links page takes from other sites.
-  await pg.route(u => u.hostname !== 'localhost', rt => rt.abort());
+  // Nothing outside this folder is fetched: the thumbnails the External Links page takes from other sites are refused here.
+  // (The fonts are in this folder.) Every other site a page asks for is noted, for the font check at the end.
+  await pg.route(u => u.hostname !== 'localhost', rt => { outside.push(new URL(rt.request().url()).hostname); rt.abort(); });
   // The home page turns its title over every 5 seconds. Here that timer is held, and the checks turn the title themselves,
   // so that no check depends on where in those 5 seconds it happens to run.
   await pg.addInitScript(() => { if (window !== window.top) return; const real = window.setInterval;
@@ -213,6 +214,13 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
     'Profile: the second click erases every session and the Review list; the four cards are empty and the button has nothing left to erase');
   await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(250);
   ok(await pg.evaluate(() => document.querySelector('.tile.review .tile-badge').textContent === 'All clear'), 'and Home shows Review all clear');
+  // Fonts. A font file that is missing or broken raises no error: the page is simply drawn in a font of the device. So ask the browser.
+  { const fr = await frameOf('phonemes'); await fr.evaluate(() => document.fonts.ready); await pg.waitForTimeout(200);
+    const f = await fr.evaluate(() => ({ faces: [...document.fonts].filter(x => x.status === 'loaded').map(x => x.family.replace(/"/g, '')),
+      files: [...new Set(performance.getEntriesByType('resource').map(r => new URL(r.name).pathname).filter(n => /\.woff2$/.test(n)))].sort() }));
+    ok(['Inter', 'Noto Sans', 'Noto Sans Telugu'].every(n => f.faces.includes(n)), 'Phonemes is drawn in Inter, Noto Sans, and Noto Sans Telugu, all loaded: ' + [...new Set(f.faces)].join(', '));
+    ok(f.files.length === 3 && f.files.every(n => /^\/fonts\/(inter|noto-sans|noto-sans-telugu)-v\d+\.woff2$/.test(n)), 'from three files in the app\'s own fonts/ folder, each fetched once: ' + f.files.join(' ')); }
+  ok(!outside.some(h => /(^|\.)(googleapis|gstatic)\.com$/.test(h)), 'no page asked another site for a font' + (outside.length ? ' (sites asked: ' + [...new Set(outside)].join(', ') + ')' : ''));
   ok(errs.length === 0, 'no script errors on any page' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
   ok(missing.length === 0, 'no 404s' + (missing.length ? ': ' + missing.slice(0, 5).join(' | ') : ''));
   await b.close(); srv.close(); console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);

@@ -26,6 +26,9 @@ if (!only.length) {
   const py = spawnSync('python3', ['-c', 'import fontTools, uharfbuzz'], { encoding: 'utf8' });
   if (py.status === 0) run('verify_notes (font)', 'python3', ['-I', path.join(T, 'verify_notes.py')]);
   else console.log('  skip verify_notes (font)   pip install fonttools uharfbuzz to enable');
+  const py2 = spawnSync('python3', ['-c', 'import fontTools, brotli'], { encoding: 'utf8' });
+  if (py2.status === 0) run('verify_fonts (font)', 'python3', ['-I', path.join(T, 'verify_fonts.py')]);
+  else console.log('  skip verify_fonts (font)   pip install fonttools brotli to enable');
 }
 const bad = results.filter(r => !r.ok), total = results.reduce((a, r) => a + r.checks, 0);
 console.log('\n' + (bad.length ? bad.length + ' of ' + results.length + ' suites FAILED' : 'All ' + results.length + ' suites passed') + ' (' + total + ' checks)');

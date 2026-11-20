@@ -42,13 +42,27 @@ ok([game, shell, home, ref].every(c => !/:root\s*\{/.test(c)) && /:root\s*\{/.te
   ok(tok.length === 0, 'no file but base.css sets a color token (' + files.length + ' pages and stylesheets checked)' + (tok.length ? ' → ' + tok.join(', ') : ''));
   const reset = files.filter(f => /\*\s*,\s*\*::before/.test(read(f)));
   ok(reset.length === 0, 'no file but base.css repeats the reset' + (reset.length ? ' → ' + reset.join(', ') : ''));
-  const fonts = files.filter(f => /fonts\.googleapis/.test(read(f)));
-  ok(fonts.join() === 'alphabet/04_lookalike-builder.html', 'only the Lookalike Builder links fonts of its own (its extra Telugu faces): ' + fonts.join(', '));
+  const fonts = files.filter(f => /fonts\.(googleapis|gstatic)|@font-face/.test(read(f)));
+  ok(fonts.length === 0, 'no file but base.css declares a font, and none asks another site for one' + (fonts.length ? ' → ' + fonts.join(', ') : ''));
   const styled = walk(dir).filter(f => /\.html$/.test(f)).map(f => path.relative(dir, f)).filter(f => /<style/.test(read(f))).sort();
   ok(styled.join() === 'alphabet/02_diacritics.html,alphabet/03_conjuncts.html,alphabet/04_lookalike-builder.html,alphabet/05_lookalikes.html,profile.html,reference/01_rosetta.html,reference/02_signs-conjuncts.html,reference/03_sound-charts.html,review.html', 'inline <style> only where a page has layout of its own (9 pages): ' + styled.length);
 })();
 ok(!/cat-toggle|g-controls/.test(game), 'game.css has no dead controls-bar rules');
-ok(/fonts\.googleapis/.test(base) && [shell, game, home, ref].every(c => !/fonts\.googleapis/.test(c)), 'the font import lives only in base.css');
+// The fonts are files in this folder (fonts/), declared once in base.css; no other site is asked for them.
+(() => {
+  const faces = [...base.matchAll(/@font-face\s*\{([^}]*)\}/g)].map(m => ({
+    family: (/font-family:\s*'([^']+)'/.exec(m[1]) || [])[1], weight: (/font-weight:\s*(\d+(?: \d+)?)\s*;/.exec(m[1]) || [])[1],
+    file: (/src:\s*url\('([^']+)'\)\s*format\('woff2'\)/.exec(m[1]) || [])[1] || '', swap: /font-display:\s*swap/.test(m[1]) }));
+  ok(!/@import/.test(base) && !/https?:\/\//.test(base), 'base.css imports nothing and names no other site');
+  ok(faces.map(f => f.family + ' ' + f.weight).join(' | ') === 'Inter 400 700 | Noto Sans 400 500 | Noto Sans Telugu 400 | Noto Sans Telugu 700 | Noto Serif Telugu 400 | Noto Serif Telugu 600 | Tiro Telugu 400',
+    'base.css declares the five families at the weights the app uses: ' + faces.map(f => f.family + ' ' + f.weight).join(' | '));
+  ok(faces.every(f => f.swap && /^fonts\/[a-z-]+-v\d+\.woff2$/.test(f.file) && fs.existsSync(dir + f.file)), 'every face is a .woff2 in fonts/ that exists, has a version in its name (browsers keep it for a year), and swaps in once loaded');
+  const used = new Set(faces.map(f => f.file.slice('fonts/'.length))), have = fs.readdirSync(dir + 'fonts').sort();
+  const stray = have.filter(n => /\.woff2$/.test(n) ? !used.has(n) : !/^OFL-[a-z-]+\.txt$/.test(n));
+  ok(stray.length === 0, 'fonts/ holds only the font files base.css loads and their licenses' + (stray.length ? ' → ' + stray.join(', ') : ''));
+  const unlicensed = [...used].filter(n => !have.includes('OFL-' + n.replace(/-v\d+\.woff2$/, '') + '.txt'));
+  ok(unlicensed.length === 0, 'every font file has its license beside it (' + used.size + ' fonts)' + (unlicensed.length ? ' → ' + unlicensed.join(', ') : ''));
+})();
 
 // The Lookalike Builder is a scrolling tool page, not a game: it links the same shared sheet and keeps its own layout inline.
 (() => { const f = 'alphabet/04_lookalike-builder.html', s = read(f), inline = (s.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1];
