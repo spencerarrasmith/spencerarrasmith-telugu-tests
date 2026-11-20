@@ -17,7 +17,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
     window.setInterval = (fn, ms, ...rest) => { if (ms === 5000) { window.__titleFlip = fn; return 0; } return real(fn, ms, ...rest); }; });
   await pg.goto('http://localhost:8779/index.html'); await pg.waitForTimeout(300);
   const tiles = await pg.evaluate(() => TeluguUnits.all.map(t => ({ id: t.id, src: t.src, title: t.title, soon: !!t.soon })));
-  ok(tiles.length === 42, tiles.length + ' tiles (41 + Review)');
+  ok(tiles.length === 42, tiles.length + ' tiles');
   let opened = 0, titled = 0;
   for (const t of tiles) {
     await pg.evaluate(id => { location.hash = '#/' + id; }, t.id); let fr; for (let i = 0; i < 40 && !fr; i++) { await pg.waitForTimeout(50); fr = pg.frames().find(f => f.url().endsWith('/' + t.src)); }
@@ -27,7 +27,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(opened === 42, 'every tile loads its page in the iframe at the right path: ' + opened + '/42');
   ok(titled === 42, 'every loaded page has a title');
   // the live pages actually initialize (their shared scripts were found)
-  const live = { 'alphabet/01_phonemes.html': 'TeluguData', 'alphabet/02_diacritics.html': 'TeluguData', 'alphabet/03_conjuncts.html': 'TeluguData', 'alphabet/04_words.html': 'TeluguWords', 'training/01_lookalike-builder.html': 'LookalikeData', 'training/02_lookalikes.html': 'LookalikeData', 'reference/01_rosetta.html': 'RosettaData', 'reference/02_signs-conjuncts.html': 'SignsConjunctsData', 'reference/03_sound-charts.html': 'SoundChartsData' };
+  const live = { 'alphabet/01_phonemes.html': 'TeluguData', 'alphabet/02_diacritics.html': 'TeluguData', 'alphabet/03_conjuncts.html': 'TeluguData', 'alphabet/04_words.html': 'TeluguWords', 'training/02_lookalike-builder.html': 'LookalikeData', 'training/03_lookalikes.html': 'LookalikeData', 'reference/01_rosetta.html': 'RosettaData', 'reference/02_signs-conjuncts.html': 'SignsConjunctsData', 'reference/03_sound-charts.html': 'SoundChartsData' };
   for (const [src, g] of Object.entries(live)) {
     const id = tiles.find(t => t.src === src).id; await pg.evaluate(i => { location.hash = '#/' + i; }, id); await pg.waitForTimeout(250);
     const fr = pg.frames().find(f => f.url().endsWith('/' + src)); const has = fr && await fr.evaluate(n => !!window[n] && !!window.TeluguData, g);
@@ -248,7 +248,24 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
     [[51, 51, 80, 'done'], [51, 51, 66, 'done'], [51, 9, 14, 'out'], [20, 20, 22, 'done', 'reverse'], [51, 51, 53, 'done']].forEach(([total, correct, attempts, ended, variant]) => TeluguProgress.run('phonemes', { total, correct, attempts, ended, variant }));
     TeluguProgress.miss({ game: 'phonemes', key: 'క', ask: 'telugu' }); });
   await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(250);
-  ok(await pg.evaluate(() => !document.querySelector('.tile-check') && !/✓/.test(document.getElementById('sections').textContent) && document.querySelector('.tile.review .tile-badge').textContent === '1 to revisit'), 'back on Home there is no ✓ on any tile (the Review strip still counts the miss)');
+  ok(await pg.evaluate(() => !document.querySelector('.tile-check') && !/✓/.test(document.getElementById('sections').textContent) && document.querySelector('a.tile[href="#/review"] .tile-badge').textContent === '1 to revisit'), 'back on Home there is no ✓ on any tile (the Review tile still counts the miss)');
+  // An item waits in Review: its tile, first in Training, is outlined in the highlight color, and so is the Training arrow. Nothing else is.
+  const reviewLook = () => pg.evaluate(() => { const x = e => e.getBoundingClientRect(), secs = [...document.querySelectorAll('.section')], tr = secs.find(s => s.dataset.section === 'Training'), rv = document.querySelector('a.tile[href="#/review"]');
+    const arrow = s => getComputedStyle(s.querySelector('.section-toggle')).color, badge = rv.querySelector('.tile-badge'), head = x(tr.querySelector('.section-head')), tog = x(tr.querySelector('.section-toggle')), title = x(tr.querySelector('.section-title'));
+    return { first: tr.querySelector('a.tile') === rv, order: secs.map(s => s.dataset.section).slice(0, 3).join(), border: getComputedStyle(rv).borderTopColor, ring: getComputedStyle(rv).boxShadow, others: [...document.querySelectorAll('a.tile:not(.soon)')].filter(t => t !== rv).map(t => getComputedStyle(t).borderTopColor),
+      arrows: secs.map(arrow), badge: badge ? [badge.textContent, getComputedStyle(badge).backgroundColor, x(badge).right <= x(rv).right && x(badge).top >= x(rv).top && x(badge).bottom <= x(rv.querySelector('.tile-title')).top] : null,      // in the tile's top right corner, clear of the title
+      atEnd: Math.abs(tog.right - head.right) < 8 && tog.left > title.right, counts: document.querySelectorAll('#sections .section-count').length, ready: /\d+ of \d+ ready/.test(document.getElementById('home').innerText), size: [Math.round(x(rv).width), Math.round(x(tr.querySelectorAll('a.tile')[1]).width), Math.round(x(rv).top - x(tr.querySelectorAll('a.tile')[1]).top)] }; });
+  await pg.mouse.move(5, 5);
+  let rl = await reviewLook();
+  const GOLD = 'rgb(201, 152, 26)', PLAIN = 'rgb(37, 38, 72)', MUTED = 'rgb(156, 156, 200)';
+  ok(rl.first && rl.order === 'Reference,Training,Alphabet' && rl.size[0] === rl.size[1] && rl.size[2] === 0, 'Home: Review is the first tile of Training, a tile like its neighbors (same size, same row)');
+  ok(rl.border === GOLD && rl.ring.includes(GOLD) && rl.others.every(c => c === PLAIN) && rl.badge[0] === '1 to revisit' && rl.badge[1] === GOLD && rl.badge[2], 'Home: with an item waiting, the Review tile alone is outlined in the highlight color, its count in a badge of the same');
+  ok(rl.arrows[1] === GOLD && rl.arrows.filter((c, i) => i !== 1).every(c => c === MUTED) && rl.atEnd, 'Home: the Training arrow takes the highlight color too; the other arrows stay muted; each sits at the end of its heading line');
+  ok(rl.counts === 0 && !rl.ready, 'Home: no section says "x of y ready"');
+  await pg.click('.section:nth-of-type(2) .section-toggle'); await pg.mouse.move(5, 5); await pg.waitForTimeout(250);
+  ok(await pg.evaluate(GOLD => { const s = document.querySelectorAll('.section')[1], b = s.querySelector('.section-toggle'); return s.classList.contains('collapsed') && getComputedStyle(s.querySelector('.tiles')).display === 'none' && getComputedStyle(b).color === GOLD && b.getAttribute('aria-label') === 'Show Training (1 to revisit)'; }, GOLD),
+    'Home: folded, Training still shows there is something to review: the arrow stays lit and says "Show Training (1 to revisit)"');
+  await pg.click('.section:nth-of-type(2) .section-toggle'); await pg.waitForTimeout(250);
   await pg.click('#profile-btn'); await pg.waitForTimeout(400);
   const pf = pg.frames().find(f => f.url().endsWith('/profile.html'));
   ok(await pg.evaluate(() => location.hash === '#/profile' && !document.getElementById('app').hidden && document.getElementById('app-title').textContent === 'Profile') && !!pf, 'the Profile button opens the Profile page in the app view');
@@ -273,7 +290,9 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(await pf.evaluate(() => TeluguProgress.runCount() === 0 && TeluguProgress.missCount() === 0 && document.querySelectorAll('.pf-empty').length === 4 && !document.querySelector('[data-chart]') && document.getElementById('stat').textContent === '0 sessions' && document.getElementById('reset').disabled),
     'Profile: the second click erases every session and the Review list; the four cards are empty and the button has nothing left to erase');
   await pg.evaluate(() => { location.hash = ''; }); await pg.waitForTimeout(250);
-  ok(await pg.evaluate(() => document.querySelector('.tile.review .tile-badge').textContent === 'All clear'), 'and Home shows Review all clear');
+  await pg.mouse.move(5, 5);
+  rl = await reviewLook();
+  ok(rl.badge === null && rl.border === PLAIN && rl.ring === 'none' && rl.arrows.every(c => c === MUTED), 'and Home shows nothing waiting: the Review tile and the Training arrow are plain again, with no count');
   // Fonts. A font file that is missing or broken raises no error: the page is simply drawn in a font of the device. So ask the browser.
   { const fr = await frameOf('phonemes'); await fr.evaluate(() => document.fonts.ready); await pg.waitForTimeout(200);
     const f = await fr.evaluate(() => ({ faces: [...document.fonts].filter(x => x.status === 'loaded').map(x => x.family.replace(/"/g, '')),

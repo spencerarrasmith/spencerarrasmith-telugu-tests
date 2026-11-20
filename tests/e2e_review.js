@@ -1,8 +1,9 @@
 const { SITE_DIR } = require('./config');
 const { JSDOM } = require('jsdom'); const fs = require('fs');
 const dir = (SITE_DIR + '/');
-const html = fs.readFileSync(dir + 'review.html', 'utf8').replace(/<link[^>]*>/g, '').replace(/<script src="([^"]+)"><\/script>/g, (m, src) => '<script>' + fs.readFileSync(require('path').resolve(dir, require('path').dirname('review.html'), src), 'utf8') + '</script>');
-const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost/review.html' });
+const PAGE = 'training/01_review.html';      // Review is the first tile of the Training section
+const html = fs.readFileSync(dir + PAGE, 'utf8').replace(/<link[^>]*>/g, '').replace(/<script src="([^"]+)"><\/script>/g, (m, src) => '<script>' + fs.readFileSync(require('path').resolve(dir, require('path').dirname(PAGE), src), 'utf8') + '</script>');
+const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost/' + PAGE });
 const w = dom.window, d = w.document; let fails = 0;
 const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
 const P = w.TeluguProgress, $ = s => d.querySelector(s), click = s => $(s).click();
@@ -63,7 +64,7 @@ const P = w.TeluguProgress, $ = s => d.querySelector(s), click = s => $(s).click
   ok($('.rv-game .name').textContent === 'Nouns: gender & number', 'a unit with a tile is listed under its tile title');
   P.clearMisses(); P.miss({ game: 'made_up-game', key: 'a', prompt: 'a', answer: 'b' });
   ok($('.rv-game .name').textContent === 'Made up game', 'a game id with no tile still gets a readable label');
-  ok(!/const LABELS/.test(fs.readFileSync(dir + 'review.html', 'utf8')) && !!w.TeluguUnits, 'Review keeps no name list of its own (it reads units.js)');
+  ok(!/const LABELS/.test(fs.readFileSync(dir + PAGE, 'utf8')) && !!w.TeluguUnits, 'Review keeps no name list of its own (it reads units.js)');
   P.clearMisses();
   // long (3+ glyph) prompts shrink
   P.miss({ game: 'conjuncts', key: 'క్ష', prompt: 'క్ష', answer: '/kʂa/' });
@@ -76,7 +77,7 @@ const P = w.TeluguProgress, $ = s => d.querySelector(s), click = s => $(s).click
 
   /* ── a miss about a character is stored as the character and drawn here, in the current notation ── */
   const mk = (notation, progress) => { const pre = (notation ? `localStorage.setItem('telugu.settings.v1', '{"notation":"${notation}"}');` : '') + (progress ? `localStorage.setItem('telugu.progress.v1', ${JSON.stringify(JSON.stringify(progress))});` : '');
-    const win = new JSDOM(html.replace('<head>', '<head><script>' + pre + '</script>'), { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost/review.html' }).window;
+    const win = new JSDOM(html.replace('<head>', '<head><script>' + pre + '</script>'), { runScripts: 'dangerously', pretendToBeVisual: true, url: 'http://localhost/' + PAGE }).window;
     const q = s => win.document.querySelector(s);
     const play = game => { q(`[data-game="${game}"]`).click(); const note = q('.fc .cat') ? q('.fc .cat').textContent : ''; const prompt = q('.fc .prompt').textContent; q('#rv-show').click(); const answer = q('#rv-answer').textContent; q('#rv-again').click(); while (q('#rv-show')) { q('#rv-show').click(); q('#rv-got').click(); } q('#rv-back').click(); return prompt + ' → ' + answer + (note ? ' [' + note + ']' : ''); };
     return { win, q, play, P: win.TeluguProgress, names: () => [...win.document.querySelectorAll('.rv-game .name')].map(n => n.textContent).sort().join(' | ') }; };

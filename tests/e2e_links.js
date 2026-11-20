@@ -5,7 +5,7 @@ let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); 
 const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
 const files = walk(dir), rel = f => path.relative(dir, f);
 const top = fs.readdirSync(dir).sort();
-ok(top.filter(n => fs.statSync(path.join(dir, n)).isFile()).join() === 'README.md,base.css,game-core.js,game-menu.js,game-setup.js,game.css,home.css,index.html,lesson-shell.js,lesson-template.html,lookalikes-data.js,profile.html,progress.js,reference.css,review.html,settings.js,shell.css,telugu-data.js,units.js', 'top level holds the home page, Review, Profile, the shared css/js, the template, and the README: ' + top.join(' '));
+ok(top.filter(n => fs.statSync(path.join(dir, n)).isFile()).join() === 'README.md,base.css,game-core.js,game-menu.js,game-setup.js,game.css,home.css,index.html,lesson-shell.js,lesson-template.html,lookalikes-data.js,profile.html,progress.js,reference.css,settings.js,shell.css,telugu-data.js,units.js', 'top level holds the home page, Profile, the shared css/js, the template, and the README (Review is in training/): ' + top.join(' '));
 ok(!top.includes('shared') && ['advanced-grammar', 'alphabet', 'fonts', 'grammar', 'reference', 'training', 'vocabulary'].every(n => top.includes(n)) && top.filter(n => fs.statSync(path.join(dir, n)).isDirectory()).length === 7, 'folders: ' + top.filter(n => fs.statSync(path.join(dir, n)).isDirectory()).join(' '));
 const pages = files.filter(f => /\.html$/.test(f) && path.dirname(f) !== dir);
 ok(pages.every(f => /^\d\d_[a-z-]+\.html$/.test(path.basename(f))), pages.length + ' section pages are named NN_name.html');
@@ -18,7 +18,7 @@ files.filter(f => /\.(html|css|js)$/.test(f)).forEach(f => {
 });
 ok(bad.length === 0, 'every stylesheet, script, @import, and font file resolves' + (bad.length ? ': ' + bad.join(' | ') : ''));
 const srcs = require(path.join(dir, 'units.js')).all.map(t => t.src);
-ok(srcs.length === 42 && srcs.every(s => fs.existsSync(path.join(dir, s))), 'all ' + srcs.length + ' tile sources in units.js (41 + Review) exist');
+ok(srcs.length === 42 && srcs.every(s => fs.existsSync(path.join(dir, s))), 'all ' + srcs.length + ' tile sources in units.js exist');
 const stale = JSON.parse(fs.readFileSync(path.join(__dirname, 'old-names.json'), 'utf8'));
 const hits = []; files.filter(f => /\.(html|css|js)$/.test(f)).forEach(f => { const s = fs.readFileSync(f, 'utf8'); stale.forEach(o => { if (new RegExp('(^|[^\\w/_-])' + o.replace('.', '\\.') + '\\b').test(s)) hits.push(rel(f) + ': ' + o); }); });
 ok(hits.length === 0, 'no old flat file names remain anywhere' + (hits.length ? ': ' + hits.slice(0, 8).join(' | ') : ''));
