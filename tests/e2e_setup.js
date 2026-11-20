@@ -201,7 +201,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   const src = fs.readFileSync(path.join(SITE_DIR, 'game-setup.js'), 'utf8');
   ok(/root\.GameSetup = api/.test(src) && w.GameSetup.current && !/phonemes|diacritics|conjuncts|Telugu →|show-cat|include-extra|include-uncommon|missed-again|Shuffle/i.test(src.split('═════════════════════════════════════════════════════════ */')[1]), 'game-setup.js knows nothing about any one game: the page passes its title, directions, and checkboxes');
   const uses = f => /<script src="\.\.\/game-setup\.js"><\/script>/.test(fs.readFileSync(path.join(SITE_DIR, f), 'utf8'));
-  ok(uses('alphabet/02_diacritics.html') && uses('alphabet/03_conjuncts.html') && !uses('alphabet/05_lookalikes.html') && !uses('alphabet/04_lookalike-builder.html'), 'Diacritics and Conjuncts open with it too; Lookalikes and the Lookalike Builder do not');
+  ok(uses('alphabet/02_diacritics.html') && uses('alphabet/03_conjuncts.html') && !uses('alphabet/06_lookalikes.html') && !uses('alphabet/05_lookalike-builder.html'), 'Diacritics and Conjuncts open with it too; Lookalikes and the Lookalike Builder do not');
 
   /* ══ Diacritics ══ */
   {

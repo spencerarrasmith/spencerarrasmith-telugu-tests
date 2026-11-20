@@ -1,5 +1,5 @@
 const { SITE_DIR } = require('./config');
-// The 34 "Coming soon" pages: each is a few lines that hand its tile id to LessonShell.placeholder(),
+// The 32 "Coming soon" pages: each is a few lines that hand its tile id to LessonShell.placeholder(),
 // which draws the page from units.js. So a tile and its placeholder can't say different things.
 const { JSDOM } = require('jsdom'); const fs = require('fs'), path = require('path');
 const dir = SITE_DIR + '/';
@@ -24,7 +24,7 @@ soon.forEach(t => { const s = fs.readFileSync(dir + t.src, 'utf8');
   if (!new RegExp("LessonShell\\.placeholder\\('" + t.id + "'\\)").test(s) || !/<script src="\.\.\/units\.js"><\/script>\s*<script src="\.\.\/lesson-shell\.js"><\/script>/.test(s)) bad.call.push(t.id);
   if (/<style|:root|fonts\.googleapis|What you'll learn/.test(s)) bad.own.push(t.id);
 });
-ok(soon.length === 34 && bad.small.length === 0, '34 placeholder pages, each under 20 lines ' + bad.small);
+ok(soon.length === 32 && bad.small.length === 0, '32 placeholder pages, each under 20 lines ' + bad.small);
 ok(bad.head.length === 0, 'each has viewport-fit, its own <title> and links shell.css ' + bad.head);
 ok(bad.call.length === 0, 'each loads units.js + lesson-shell.js and calls LessonShell.placeholder with its own tile id ' + bad.call);
 ok(bad.own.length === 0, 'none carries styles, color tokens, fonts, or text of its own ' + bad.own);
@@ -36,7 +36,7 @@ soon.forEach(t => { const { d, errs } = load(t.src); const txt = s => (d.querySe
   const want = `What you'll learn=${t.soon.learn}|How you'll practice=${t.soon.practice}|Where it fits=${t.soon.fits}`;
   if (errs.length || txt('h1') !== t.title || txt('.eyebrow') !== U.sectionOf(t.id).title || txt('.unit-icon') !== t.icon || txt('.lead') !== t.desc || txt('.pill.soon') !== 'Coming soon' || facts !== want || d.title !== t.title + ' · Telugu Suite') wrong.push(t.id + (errs[0] ? ' (' + errs[0] + ')' : ''));
 });
-ok(wrong.length === 0, 'all 34 render section, icon, title, "Coming soon", description, and the three lines from units.js ' + wrong.join(', '));
+ok(wrong.length === 0, 'all 32 render section, icon, title, "Coming soon", description, and the three lines from units.js ' + wrong.join(', '));
 
 // one in detail
 const { w, d } = load('vocabulary/01_greetings.html');

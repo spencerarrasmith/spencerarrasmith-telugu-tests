@@ -215,7 +215,7 @@ const page = () => { const w = new JSDOM(PAGE, { runScripts: 'dangerously', url:
   }
 
   /* every game is built on it and keeps no copy of the round */
-  const GAMES = { Phonemes: 'alphabet/01_phonemes.html', Diacritics: 'alphabet/02_diacritics.html', Conjuncts: 'alphabet/03_conjuncts.html', Lookalikes: 'alphabet/05_lookalikes.html' };
+  const GAMES = { Phonemes: 'alphabet/01_phonemes.html', Diacritics: 'alphabet/02_diacritics.html', Conjuncts: 'alphabet/03_conjuncts.html', Lookalikes: 'alphabet/06_lookalikes.html' };
   for (const [name, file] of Object.entries(GAMES)) {
     const src = fs.readFileSync(dir + file, 'utf8');
     ok(/<script src="\.\.\/game-core\.js"><\/script>/.test(src) && /GameCore\.create\(\{/.test(src) && /game\.judge\(/.test(src), name + ' loads game-core.js, creates its round with it, and judges answers through it');

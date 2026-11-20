@@ -5,17 +5,26 @@ const U = require(path.join(SITE_DIR, 'units.js'));
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
 
 ok(U.sections.map(s => s.title).join(' · ') === 'Reference · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'five sections, Reference first');
-ok(U.sections.map(s => s.tiles.length).join() === '7,8,8,12,8' && U.tiles.length === 43, 'tile counts 7/8/8/12/8 = 43');
-ok(U.featured.map(t => t.id).join() === 'review' && U.all.length === 44 && U.all[0].id === 'review', 'Review is featured; all = Review + the 43 tiles');
+ok(U.sections.map(s => s.tiles.length).join() === '7,6,8,12,8' && U.tiles.length === 41, 'tile counts 7/6/8/12/8 = 41');
+ok(U.featured.map(t => t.id).join() === 'review' && U.all.length === 42 && U.all[0].id === 'review', 'Review is featured; all = Review + the 41 tiles');
 // pages that are not tiles (reached from the top right of the home page), and the games whose sessions the Profile page charts
 ok(JSON.stringify(U.pages) === '[{"id":"profile","title":"Profile","src":"profile.html"}]' && fs.existsSync(path.join(SITE_DIR, 'profile.html')) && !U.all.some(t => U.pages.some(p => p.id === t.id || p.src === t.src)), 'pages: Profile, with its own id and file, and not among the tiles');
 const charted = U.all.filter(t => t.stats).map(t => t.id), onCore = U.all.filter(t => !t.soon && /<script src="[^"]*game-core\.js">/.test(fs.readFileSync(path.join(SITE_DIR, t.src), 'utf8'))).map(t => t.id);
 ok(charted.join() === 'phonemes,diacritics,conjuncts,lookalikes' && onCore.join() === charted.join() && U.all.every(t => t.stats === undefined || t.stats === true), 'stats: true marks the four practice games, which are exactly the pages built on game-core.js (it records their sessions)');
-ok(new Set(U.all.map(t => t.id)).size === 44 && new Set(U.all.map(t => t.src)).size === 44, 'ids and page paths are unique');
+ok(new Set(U.all.map(t => t.id)).size === 42 && new Set(U.all.map(t => t.src)).size === 42, 'ids and page paths are unique');
 ok(U.all.every(t => t.id && t.icon && t.title && t.desc && t.src && /^[a-z0-9-]+$/.test(t.id)), 'every tile has id, icon, title, desc, and src');
 ok(U.all.every(t => fs.existsSync(path.join(SITE_DIR, t.src))), 'every src is a file');
 const soon = U.tiles.filter(t => t.soon);
-ok(soon.length === 34 && soon.every(t => ['learn', 'practice', 'fits'].every(k => typeof t.soon[k] === 'string' && t.soon[k].length > 10)), '34 placeholders, each with its three lines (learn, practice, fits)');
+// the Alphabet section: Spelling pitfalls, Writing, and Alphabet Chart are gone; Words (a placeholder for now) follows Conjuncts
+ok(U.sections[1].tiles.map(t => t.id).join() === 'phonemes,diacritics,conjuncts,words,lookalike-builder,lookalikes' && ['spelling', 'writing', 'alphabet-chart'].every(id => !U.get(id))
+  && ['06_spelling.html', '07_writing.html', '08_alphabet-chart.html'].every(f => !fs.existsSync(path.join(SITE_DIR, 'alphabet', f))),
+  'Alphabet: Phonemes, Diacritics, Conjuncts, Words, Lookalike Builder, Lookalikes; the three removed tiles and their pages are gone');
+ok(!!U.get('words').soon && !U.get('words').stats && U.get('words').src === 'alphabet/04_words.html' && !/[.!?]$/.test(U.get('words').desc), 'Words is a "Coming soon" tile, fourth in its section: ' + U.get('words').desc);
+// pages are named NN_name.html, numbered in the order their tiles appear (README, "Conventions")
+const fileNo = t => +path.basename(t.src).slice(0, 2);
+ok(U.sections.every(sec => sec.tiles.every((t, i) => /^\d\d_/.test(path.basename(t.src)) && (i === 0 || fileNo(t) === fileNo(sec.tiles[i - 1]) + 1))),
+  'in every section the file numbers follow the tile order, with none skipped (a removed page renumbers the ones after it)');
+ok(soon.length === 32 && soon.every(t => ['learn', 'practice', 'fits'].every(k => typeof t.soon[k] === 'string' && t.soon[k].length > 10)), '32 placeholders, each with its three lines (learn, practice, fits)');
 ok(U.tiles.filter(t => !t.soon).map(t => t.id).join() === 'links,rosetta,signs-conjuncts,sound-charts,phonemes,diacritics,conjuncts,lookalike-builder,lookalikes', 'the 9 built pages carry no `soon` block');
 ok(!soon.some(t => /once progress tracking exists/.test(JSON.stringify(t.soon))), 'no placeholder still talks about progress tracking as future work');
 
@@ -38,14 +47,14 @@ const reviewIds = U.all.flatMap(t => Object.keys(t.review || {}));
 ok(U.all.every(t => Object.keys(t.review || {}).every(g => g === t.id || g.startsWith(t.id + '-'))), 'every `review` id belongs to the tile it sits on: ' + reviewIds.join(' '));
 
 // the ids the built games actually record misses under all have a name here
-const games = { 'alphabet/01_phonemes.html': ['phonemes', 'phonemes-reverse'], 'alphabet/02_diacritics.html': ['diacritics', 'diacritics-reverse'], 'alphabet/03_conjuncts.html': ['conjuncts', 'conjuncts-reverse'], 'alphabet/05_lookalikes.html': ['lookalikes'] };
+const games = { 'alphabet/01_phonemes.html': ['phonemes', 'phonemes-reverse'], 'alphabet/02_diacritics.html': ['diacritics', 'diacritics-reverse'], 'alphabet/03_conjuncts.html': ['conjuncts', 'conjuncts-reverse'], 'alphabet/06_lookalikes.html': ['lookalikes'] };
 ok(Object.entries(games).every(([f, ids]) => { const s = fs.readFileSync(path.join(SITE_DIR, f), 'utf8'); const g = (s.match(/const GAME\s*=\s*'([^']+)'/) || [])[1];
   return ids[0] === g && ids.every(id => U.get(id) || reviewIds.includes(id)) && (ids.length === 1 || /GAME \+ '-reverse'/.test(s)); }), 'each game\'s miss ids (GAME, GAME-reverse) are tiles or `review` names');
 
 // icons: Telugu characters where the page is about the script, otherwise plain object / symbol emojis
 const icon = id => U.get(id).icon, isTe = s => /^[\u0C00-\u0C7Fa-z]+$/.test(s);
 ok(icon('phonemes') === 'క' && icon('diacritics') === 'కా' && icon('conjuncts') === 'క్ష', 'Phonemes, Diacritics, and Conjuncts tiles: క, కా, క్ష');
-ok(['rosetta', 'signs-conjuncts', 'phonemes', 'diacritics', 'conjuncts', 'lookalikes', 'alphabet-chart', 'vocab-numbers'].every(id => isTe(icon(id))), 'the script pages (and Numbers) use Telugu characters: ' + ['rosetta', 'signs-conjuncts', 'lookalikes', 'alphabet-chart', 'vocab-numbers'].map(icon).join(' '));
+ok(['rosetta', 'signs-conjuncts', 'phonemes', 'diacritics', 'conjuncts', 'words', 'lookalikes', 'vocab-numbers'].every(id => isTe(icon(id))), 'the script pages (and Numbers) use Telugu characters: ' + ['rosetta', 'signs-conjuncts', 'words', 'lookalikes', 'vocab-numbers'].map(icon).join(' '));
 ok(U.all.filter(t => isTe(t.icon)).every(t => [...t.icon.replace(/[\u0C3E-\u0C4D\u0C55\u0C56\u0C62\u0C63]/g, '')].length <= 2), 'a Telugu icon is at most two letters wide (it has to fit the icon box)');
 const PLAYFUL = /[\u{1F440}\u{1F44B}\u{1F64B}\u{1F9E9}\u{1F3AF}\u{1F600}-\u{1F64E}\u{1F910}-\u{1F92F}\u{1F970}-\u{1F97A}]/u;
 ok(U.all.every(t => !PLAYFUL.test(t.icon)), 'no faces or playful emojis (👀 👋 🙋 🧩 🎯 …) on any tile' + U.all.filter(t => PLAYFUL.test(t.icon)).map(t => ' ' + t.id).join());

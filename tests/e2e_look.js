@@ -1,4 +1,4 @@
-const h = require('./harness')('alphabet/05_lookalikes.html');
+const h = require('./harness')('alphabet/06_lookalikes.html');
 const { w, d, tick, ok, $ } = h;
 const G = h.game;                                          // the round: G().deck, .current, .total, .completed
 const fs = require('fs');

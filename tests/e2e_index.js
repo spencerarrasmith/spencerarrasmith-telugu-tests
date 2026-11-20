@@ -10,7 +10,7 @@ const src = fs.readFileSync(dir + 'index.html', 'utf8');
 ok(/<script src="units\.js"><\/script>/.test(src) && !/\bsrc: ['"]/.test(src) && !/soon: true/.test(src), 'index.html holds no tile list of its own (it loads units.js)');
 ok(/<link rel="stylesheet" href="home\.css">/.test(src) && !/<style/.test(src) && !/fonts\.googleapis/.test(src), 'index.html links home.css: no inline <style>, no font link of its own');
 ok(S.map(s => s.title).join(' · ') === 'Reference · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'section order (Reference first, above Phonemes)');
-ok(S.map(s => s.tiles.length).join(',') === '7,8,8,12,8' && ALL.length === 43, 'tile counts 7/8/8/12/8 = 43');
+ok(S.map(s => s.tiles.length).join(',') === '7,6,8,12,8' && ALL.length === 41, 'tile counts 7/6/8/12/8 = 41');
 ok(new Set(ALL.map(t => t.id)).size === ALL.length, 'tile ids unique');
 ok(ALL.every(t => fs.existsSync(dir + t.src)), 'every src file exists');
 ok(new Set(ALL.map(t => t.src)).size === ALL.length, 'every src is distinct');
@@ -20,8 +20,8 @@ const FOLDERS = ['reference', 'alphabet', 'grammar', 'vocabulary', 'advanced-gra
 ok(S.every((s, i) => { const first = +s.tiles[0].src.split('/')[1].slice(0, 2); return first <= 1 && s.tiles.every((t, j) => t.src === FOLDERS[i] + '/' + String(j + first).padStart(2, '0') + '_' + t.src.split('_').slice(1).join('_') && /^[a-z0-9-]+\.html$/.test(t.src.split('_').slice(1).join('_'))); }), 'every tile lives in its section folder, numbered in tile order (NN_name.html)');
 ok(ALL.filter(t => t.id !== 'review').every(t => require('fs').existsSync(dir + t.src)), 'every tile src is an existing file');
 ok(ALL.filter(t => t.id !== 'review').every(t => !/^(reference|grammar|vocab|advanced)-/.test(t.src.split('/')[1].replace(/^\d+_/, ''))), 'redundant section prefixes (grammar-, vocab-, advanced-, reference-) are gone from file names');
-ok([...d.querySelectorAll('.section-count')].map(e => e.textContent).join('|') === '4 of 7 ready|5 of 8 ready|0 of 8 ready|0 of 12 ready|0 of 8 ready', 'ready counts');
-ok(d.querySelectorAll('a.tile').length === 44 && d.querySelectorAll('a.tile.soon').length === 34 && d.querySelectorAll('.tile-badge').length === 35, '43 learning tiles + Review, 34 marked Soon (+ the Review count badge)');
+ok([...d.querySelectorAll('.section-count')].map(e => e.textContent).join('|') === '4 of 7 ready|5 of 6 ready|0 of 8 ready|0 of 12 ready|0 of 8 ready', 'ready counts');
+ok(d.querySelectorAll('a.tile').length === 42 && d.querySelectorAll('a.tile.soon').length === 32 && d.querySelectorAll('.tile-badge').length === 33, '41 learning tiles + Review, 32 marked Soon (+ the Review count badge)');
 (async () => {
   const wait = () => new Promise(r => setTimeout(r, 5));
   const frame = d.getElementById('app-frame');
@@ -29,7 +29,7 @@ ok(d.querySelectorAll('a.tile').length === 44 && d.querySelectorAll('a.tile.soon
     w.location.hash = '#/' + t.id; await wait();
     if (d.getElementById('app').hidden || frame.getAttribute('src') !== t.src || d.getElementById('app-title').textContent !== t.title) { ok(false, 'route ' + t.id); }
   }
-  ok(true, 'all 43 routes open the right page and title');
+  ok(true, 'all 41 routes open the right page and title');
   w.location.hash = '#/review'; await wait();
   ok(!d.getElementById('app').hidden && frame.getAttribute('src') === 'review.html' && d.getElementById('app-title').textContent === 'Review', 'Review route opens review.html');
   w.location.hash = '#/'; await wait();
@@ -44,8 +44,8 @@ ok(d.querySelectorAll('a.tile').length === 44 && d.querySelectorAll('a.tile.soon
   P.run('phonemes', { total: 51, correct: 51, attempts: 51 });
   const tile = id => d.querySelector(`a.tile[href="#/${id}"]`);
   ok(d.querySelectorAll('.tile-check').length === 0 && !tile('phonemes').textContent.includes('✓') && !/✓/.test(d.getElementById('sections').textContent), 'a session played to its end, without a mistake, puts no ✓ on its tile');
-  ok(d.querySelectorAll('.section-count')[1].textContent === '5 of 8 ready' && [...d.querySelectorAll('.section-count')].every(c => /^\d+ of \d+ ready$/.test(c.textContent)), 'a section counts its ready pages and nothing else: ' + d.querySelectorAll('.section-count')[1].textContent);
-  ok(!tile('phonemes').classList.contains('soon') && tile('spelling').querySelector('.tile-badge').textContent === 'Soon' && !/tile-check|doneIds|Completed/.test(src) && !/tile-check/.test(fs.readFileSync(dir + 'home.css', 'utf8')), 'a tile carries a badge only when it is "Soon"; the ✓ is gone from the page and its stylesheet');
+  ok(d.querySelectorAll('.section-count')[1].textContent === '5 of 6 ready' && [...d.querySelectorAll('.section-count')].every(c => /^\d+ of \d+ ready$/.test(c.textContent)), 'a section counts its ready pages and nothing else: ' + d.querySelectorAll('.section-count')[1].textContent);
+  ok(!tile('phonemes').classList.contains('soon') && tile('words').querySelector('.tile-badge').textContent === 'Soon' && !/tile-check|doneIds|Completed/.test(src) && !/tile-check/.test(fs.readFileSync(dir + 'home.css', 'utf8')), 'a tile carries a badge only when it is "Soon"; the ✓ is gone from the page and its stylesheet');
   // coming back home from a game refreshes
   w.location.hash = '#/phonemes'; await wait(); P.miss({ game: 'diacritics', key: 'కా', prompt: 'కా', answer: '/kaː/' });
   w.location.hash = '#/'; await wait();
@@ -81,7 +81,7 @@ ok(d.querySelectorAll('a.tile').length === 44 && d.querySelectorAll('a.tile.soon
   seg()[1].click();
   ok(on() === 'iso' && seg()[1].getAttribute('aria-checked') === 'true' && d.getElementById('pref-eg').textContent === 'క is written ka', 'choosing ISO selects it; the example becomes "క is written ka"');
   ok(JSON.parse(w.localStorage.getItem('telugu.settings.v1')).notation === 'iso' && w.TeluguSettings.get('notation') === 'iso', 'the choice is saved for every other page');
-  ok(d.querySelectorAll('a.tile').length === 44 && d.querySelector('.tile.review .tile-badge').textContent === '3 to revisit', 'the tiles are untouched by the change');
+  ok(d.querySelectorAll('a.tile').length === 42 && d.querySelector('.tile.review .tile-badge').textContent === '3 to revisit', 'the tiles are untouched by the change');
   seg()[1].click(); ok(on() === 'iso', 'choosing the selected option again changes nothing');
   w.TeluguSettings.set('notation', 'ipa'); ok(on() === 'ipa' && d.getElementById('pref-eg').textContent === 'క is written /k/', 'a change made elsewhere (another tab) shows here at once');
   ok(!/telugu-data\.js/.test(src) && /Settings\.set\('notation'/.test(src), 'the home page only stores the choice; it loads no letter data');
@@ -97,14 +97,14 @@ ok(d.querySelectorAll('a.tile').length === 44 && d.querySelectorAll('a.tile.soon
     btn('Alphabet').click();
     ok(tiles('Alphabet').hidden && sec('Alphabet').classList.contains('collapsed') && btn('Alphabet').getAttribute('aria-expanded') === 'false' && btn('Alphabet').getAttribute('aria-label') === 'Show Alphabet' && btn('Alphabet').title === 'Show Alphabet',
       'the arrow folds its section: tiles hidden, button now reads "Show Alphabet"');
-    ok(sec('Alphabet').querySelector('.section-title').textContent === 'Alphabet' && sec('Alphabet').querySelector('.section-count').textContent === '5 of 8 ready', 'the heading line stays, with its name and count');
+    ok(sec('Alphabet').querySelector('.section-title').textContent === 'Alphabet' && sec('Alphabet').querySelector('.section-count').textContent === '5 of 6 ready', 'the heading line stays, with its name and count');
     ok(S.filter(s => s.title !== 'Alphabet').every(s => !tiles(s.title).hidden && btn(s.title).getAttribute('aria-expanded') === 'true'), 'the other sections are not touched');
     ok(stored(w).join() === 'Alphabet', 'the folded section is remembered in this browser');
-    ok(d.querySelectorAll('a.tile').length === 44 && tiles('Alphabet').querySelectorAll('a.tile').length === 8, 'its tiles are still there, only hidden');
+    ok(d.querySelectorAll('a.tile').length === 42 && tiles('Alphabet').querySelectorAll('a.tile').length === 6, 'its tiles are still there, only hidden');
     w.location.hash = '#/rosetta'; await wait(); w.location.hash = '#/'; await wait();
     ok(tiles('Alphabet').hidden && btn('Alphabet').getAttribute('aria-expanded') === 'false' && !tiles('Reference').hidden, 'it is still folded after opening a page and coming back');
     P.miss({ game: 'diacritics', key: 'కీ', ask: 'telugu', syllable: true });
-    ok(tiles('Alphabet').hidden && sec('Alphabet').querySelector('.section-count').textContent === '5 of 8 ready', 'a folded section stays folded when the page is redrawn (a new miss): ' + sec('Alphabet').querySelector('.section-count').textContent);
+    ok(tiles('Alphabet').hidden && sec('Alphabet').querySelector('.section-count').textContent === '5 of 6 ready', 'a folded section stays folded when the page is redrawn (a new miss): ' + sec('Alphabet').querySelector('.section-count').textContent);
     w.location.hash = '#/phonemes'; await wait();
     ok(!d.getElementById('app').hidden && frame.getAttribute('src') === 'alphabet/01_phonemes.html', 'a page in a folded section still opens by its address');
     w.location.hash = '#/'; await wait();
