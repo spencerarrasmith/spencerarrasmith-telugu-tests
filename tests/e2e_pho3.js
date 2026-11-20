@@ -13,7 +13,7 @@ const alpha = D.letters.filter(l => l.core).map(l => l.ch).join('|');
   /* forward (IPA) keyboard, with categories shown */
   ok(groups() === 9 && labels().length === 9, 'forward: 9 labeled groups');
   showCat(false);
-  ok(groups() === 1 && labels().length === 0 && vis().length === 51 && vis()[0].textContent === 'a' && vis().every(b => !b.classList.contains('te')), 'forward: unchecking "Show categories" flattens the IPA keyboard too');
+  ok(groups() === 1 && labels().length === 0 && vis().length === 51 && vis()[0].textContent === 'ɐ' && vis().every(b => !b.classList.contains('te')), 'forward: unchecking "Show categories" flattens the IPA keyboard too');
   ok($('cat-badge').style.visibility === 'hidden', 'forward: card category label hidden when unchecked');
   showCat(true);
   ok(groups() === 9 && labels().length === 9, 'forward: checking regroups the IPA keyboard');
@@ -42,10 +42,10 @@ const alpha = D.letters.filter(l => l.core).map(l => l.ch).join('|');
 
   /* the choice sticks across rebuilds */
   h.setup(() => { $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change')); });
-  ok(groups() === 1 && labels().length === 0 && vis().length === 54, 'extras on: still flat, 54 keys');
+  ok(groups() === 1 && labels().length === 0 && vis().length === 56, 'extras on: still flat, 56 keys');
   h.setup(() => { $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change')); });
   ok(groups() === 1 && vis().length === 51, 'extras off: still flat');
-  h.flip(); ok(groups() === 1 && labels().length === 0 && vis()[0].textContent === 'a', 'back to forward: IPA keyboard also flat (setting is shared)');
+  h.flip(); ok(groups() === 1 && labels().length === 0 && vis()[0].textContent === 'ɐ', 'back to forward: IPA keyboard also flat (setting is shared)');
   h.flip(); ok(groups() === 1 && labels().length === 0, 'reverse again: remembers unchecked → flat');
   showCat(true);
   ok(groups() === 9 && labels().length === 9 && $('cat-badge').style.visibility === '', 'checking again regroups and restores the card label');
@@ -53,9 +53,9 @@ const alpha = D.letters.filter(l => l.core).map(l => l.ch).join('|');
   /* builder on its own */
   const host = d.createElement('div'); d.body.appendChild(host);
   const flat = D.buildKeyboard(host, { face: 'telugu', grouped: false });
-  ok(flat.length === 54 && host.querySelectorAll('.kb-group').length === 1 && host.querySelectorAll('.kb-label').length === 0, 'buildKeyboard({grouped:false}): one group, no labels, 54 keys');
+  ok(flat.length === 56 && host.querySelectorAll('.kb-group').length === 1 && host.querySelectorAll('.kb-label').length === 0, 'buildKeyboard({grouped:false}): one group, no labels, 56 keys');
   ok(flat.map(b => b.dataset.ch).join('') === D.letters.map(l => l.ch).join(''), '…in alphabet order');
   const grp = D.buildKeyboard(host, {});
-  ok(grp.length === 54 && host.querySelectorAll('.kb-group').length === 9, 'default stays grouped');
+  ok(grp.length === 56 && host.querySelectorAll('.kb-group').length === 9, 'default stays grouped');
   h.done();
 })();

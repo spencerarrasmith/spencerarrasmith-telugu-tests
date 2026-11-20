@@ -66,7 +66,7 @@ const inject = g => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.glyph==='${g}'
   ok(kb().length === 34 && G().total === 40, 'checking "Include uncommon clusters" changes nothing by itself: it is settled by Start');
   clickBox('include-uncommon');
   h.setup(() => clickBox('include-uncommon'));
-  ok(kb().length === 35 && groups() === 1 && !!btn('ɽ'), 'uncommon checked: ఱ joins the shuffled keyboard (35)');
+  ok(kb().length === 37 && groups() === 1 && !!btn('ɽ'), 'uncommon checked: ఱ joins the shuffled keyboard (37)');
   h.setup(() => clickBox('include-uncommon'));
   ok(kb().length === 34, '…and leaves again');
 

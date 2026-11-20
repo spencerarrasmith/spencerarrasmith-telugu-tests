@@ -11,12 +11,12 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   ok(!$('include-extra').checked && $('include-extra').parentElement.textContent.includes('Include extra letters'), 'extras unchecked by default, labeled "Include extra letters"');
   ok(G().total === 51, 'default: 51 cards (17 vowel signs × 3)');
   ok(n('c') === 35 && n('v') === 17, 'default keys: 35 consonants (ఱ out, క్ష in) / 17 vowels (ౢ ౣ out)');
-  ok(!btn('c', 'ɽ') && !btn('v', 'l̩') && !btn('v', 'l̩ː') && !!btn('v', 'r̩') && !!btn('v', '∅'), 'ఱ, ౢ, ౣ hidden; ృ and ∅ stay');
+  ok(!btn('c', 'ɽ') && !btn('c', 'ts') && !btn('c', 'dz') && !btn('v', 'lu') && !btn('v', 'luː') && !!btn('v', 'ru') && !!btn('v', '∅'), 'ఱ, ౘ, ౙ, ౢ, ౣ hidden; ృ and ∅ stay');
   ok(!!btn('c', 'kʂ'), 'consonant keyboard has kʂ (క్ష)');
   // the vowel keyboard: each long vowel right after its short one, in one block
   const vkeys = () => [...d.querySelectorAll('.kb-btn[data-kind="v"]')], blocks = () => [...d.querySelectorAll('.kb-col[data-kind="v"] .kb-group')].map(g => g.querySelector('.kb-label').textContent + ': ' + [...g.querySelectorAll('.kb-btn')].map(b => b.textContent).join(' '));
-  ok(vkeys().slice(0, 10).map(b => b.textContent).join(' ') === 'a aː i iː u uː e eː o oː', 'the vowel keys pair each long vowel with its short one: a aː i iː u uː e eː o oː');
-  ok(blocks()[0] === 'Short · long: a aː i iː u uː e eː o oː' && blocks().map(b => b.split(':')[0]).join(' | ') === 'Short · long | Diphthong | Vocalic | Nasal · aspirate | Pure consonant' && blocks()[1] === 'Diphthong: ai au' && blocks()[2] === 'Vocalic: r̩ r̩ː',
+  ok(vkeys().slice(0, 10).map(b => b.textContent).join(' ') === 'ɐ aː i iː u uː e eː o oː', 'the vowel keys pair each long vowel with its short one: ɐ aː i iː u uː e eː o oː');
+  ok(blocks()[0] === 'Short · long: ɐ aː i iː u uː e eː o oː' && blocks().map(b => b.split(':')[0]).join(' | ') === 'Short · long | Diphthong | Vocalic | Nasal · aspirate | Pure consonant' && blocks()[1] === 'Diphthong: ai au' && blocks()[2] === 'Vocalic: ru ruː',
     'with categories shown they are one block, "Short · long", ahead of the others: ' + blocks().map(b => b.split(':')[0]).join(' | '));
   ok(w.TeluguData.signs.slice(0, 10).map(s => s.grp).join() === 'Short,Short,Short,Short,Short,Long,Long,Long,Long,Long', 'the shared data still lists the five short signs, then the five long (the other pages group them that way)');
   // the card's label names the consonant's category and the vowel's
@@ -24,9 +24,9 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   for (const grp of ['Short', 'Long', 'Diphthong', 'Vocalic', 'Nasal · aspirate', 'Pure consonant']) { front(x => x.v.grp === grp); kinds.push(badge() === cur().c.cat + ' + ' + grp && $('cat-badge').style.visibility === '' ? grp : 'WRONG: ' + badge()); }
   ok(kinds.join(' | ') === 'Short | Long | Diphthong | Vocalic | Nasal · aspirate | Pure consonant', 'the card label is "<consonant category> + <vowel category>", for every kind of sign: ' + badge());
   const pairs = [...d.querySelectorAll('.kb-col[data-kind="v"] .kb-pair')].map(p => [...p.children].map(b => b.dataset.ipa));
-  ok(pairs.length === 6 && pairs.every(p => p.length === 2 && p[1] === p[0] + 'ː') && pairs.map(p => p[0]).join(' ') === 'a i u e o r̩' && !d.querySelector('.kb-col[data-kind="c"] .kb-pair')
+  ok(pairs.length === 6 && pairs.every(p => p.length === 2 && p[1] === w.TeluguData.longOf(p[0])) && pairs.map(p => p[0]).join(' ') === 'ɐ i u e o ru' && !d.querySelector('.kb-col[data-kind="c"] .kb-pair')
     && /\.kb-pair \{ display: inline-flex; gap: inherit; \}/.test(require('fs').readFileSync(require('path').join(require('./config').SITE_DIR, 'game.css'), 'utf8')),      // game.css: Words lays its vowels out the same way
-    'a vowel and its long form are one unit in the row (six pairs: a i u e o r̩), so a row never breaks between them');
+    'a vowel and its long form are one unit in the row (six pairs: ɐ i u e o ru, ɐ paired with aː by longOf), so a row never breaks between them');
 
   // క్ష + sign
   inject('kʂ', 'ా');
@@ -35,10 +35,13 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   ok($('feedback').textContent.trim() === '✓  /kʂaː/', 'క్షా correct → ' + $('feedback').textContent.trim());
   await tick(); await tick();
 
-  // rare badge for ృ (in default set but rare)
-  front(x => x.v.sign === 'ృ');
-  ok($('rare-badge').style.display !== 'none', 'ృ cards keep the "rare" badge');
-  btn('c', cur().c.ipa).click(); btn('v', 'r̩').click(); await tick(); await tick();
+  // rare badge for ౄ (in default set but rare); ృ is common enough to go without
+  front(x => x.v.sign === 'ౄ');
+  ok($('rare-badge').style.display !== 'none', 'ౄ cards keep the "rare" badge');
+  btn('c', cur().c.ipa).click(); btn('v', 'ruː').click(); await tick(); await tick();
+  front(x => x.v.sign === 'ృ' && !x.c.rare);
+  ok($('rare-badge').style.display === 'none', 'ృ cards have no badge');
+  btn('c', cur().c.ipa).click(); btn('v', 'ru').click(); await tick(); await tick();
 
   const P = w.TeluguProgress;
   ok(P.missCount() === 0, 'no misses yet');
@@ -63,7 +66,7 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
   $('retry-btn').click();
   ok(!$('setup').hidden && $('g-complete').classList.contains('show'), '"Practice Again" opens the session popup');
   $('include-extra').click(); $('setup-start').click();
-  ok(G().total === 57 && n('c') === 36 && n('v') === 19, 'extras on: 57 cards, 36 consonant + 19 vowel keys');
-  ok(!!btn('c', 'ɽ') && !!btn('v', 'l̩') && !!btn('v', 'l̩ː'), 'ఱ ౢ ౣ keys return');
+  ok(G().total === 57 && n('c') === 38 && n('v') === 19, 'extras on: 57 cards, 38 consonant + 19 vowel keys');
+  ok(!!btn('c', 'ɽ') && !!btn('c', 'ts') && !!btn('c', 'dz') && !!btn('v', 'lu') && !!btn('v', 'luː'), 'ఱ ౘ ౙ ౢ ౣ keys return');
   h.done();
 })();

@@ -27,7 +27,7 @@ const type = t => { $('other').value = t; $('otherForm').dispatchEvent(new w.Eve
 const clearAll = () => { $('clear').click(); $('clear').click(); };
 const importFile = (text, fname) => new Promise(res => { const f = new w.File([text], fname, { type: 'text/csv' }); Object.defineProperty($('importFile'), 'files', { value: [f], configurable: true }); $('importFile').dispatchEvent(new w.Event('change')); setTimeout(res, 40); });
 const D = w.TeluguData, L = w.LookalikeData, script = raw.split('<script>')[1];
-const VARNAMALA = 'కఖగఘఙచఛజఝఞటఠడఢణతథదధనపఫబభమయరలవశషసహళఱ';
+const VARNAMALA = 'కఖగఘఙచఛజఝఞటఠడఢణతథదధనపఫబభమయరలవశషసహళఱౘౙ';
 
 /* ── the page ── */
 ok(d.title === 'Lookalike Builder' && /game\.css/.test(raw) && !!d.querySelector('header.g-header .g-title'), 'titled, uses the app stylesheet and header');
@@ -45,8 +45,8 @@ ok($('stat').textContent === '0 groups' && csv() === '' && w.localStorage.getIte
 
 /* ── choose a character, then its lookalikes ── */
 tap('అ');
-ok(mode() === 'looks' && glyph() === 'అ' && name() === '/a/vowel' && $('kbTitle').textContent === 'Looks like అ' && $('kb').classList.contains('looks'), 'choosing అ turns the keyboard over to its lookalikes: ' + $('kbTitle').textContent);
-ok(key('అ').disabled && key('అ').classList.contains('self') && key('అ').title === '/a/ (the character shown)', 'the character itself is shown on its key but cannot be picked');
+ok(mode() === 'looks' && glyph() === 'అ' && name() === '/ɐ/vowel' && $('kbTitle').textContent === 'Looks like అ' && $('kb').classList.contains('looks'), 'choosing అ turns the keyboard over to its lookalikes: ' + $('kbTitle').textContent);
+ok(key('అ').disabled && key('అ').classList.contains('self') && key('అ').title === '/ɐ/ (the character shown)', 'the character itself is shown on its key but cannot be picked');
 tap('ఇ'); tap('ఈ');
 ok(chips() === 'ఇ ఈ' && key('ఇ').getAttribute('aria-pressed') === 'true' && key('ఉ').getAttribute('aria-pressed') === 'false', 'picks become chips, and their keys are pressed: ' + chips());
 ok(csv() === 'అ,ఇ,ఈ\nఇ,అ\nఈ,అ', 'one group per character, each = the character + its direct picks: ' + JSON.stringify(csv()));
@@ -110,9 +110,9 @@ type(' "క్షా", ');
 ok(chips() === 'క్రా క్రి క్షా' && $('otherNote').textContent === '' && $('other').value === '', 'typing a listed one adds it as a lookalike (quotes, comma, spaces dropped)');
 setMode('character');
 const typedName = t => { setMode('character'); type(t); return name(); };
-ok(typedName('అం').normalize('NFC') === '/ã/other'.normalize('NFC') && glyph() === 'అం' && mode() === 'looks', 'in Character mode typed text becomes the character');
-ok(typedName('ఘ') === '/ɡʱ/consonant' && typedName('ఋ') === '/r̩/vowel' && typedName('ఱ') === '/ɽ/consonant' && typedName('వు') === '/ʋu/consonant with vowel sign' && typedName('క్') === '/k/consonant, no vowel', 'characters are named from the shared data: ' + name());
-ok(typedName('స్త్రా').startsWith('/st̪raː/') && typedName('౫') === '5digit', 'a three-consonant conjunct with a sign, and a digit as its number');
+ok(typedName('అం') === '/ɐm/other' && glyph() === 'అం' && mode() === 'looks', 'in Character mode typed text becomes the character');
+ok(typedName('ఘ') === '/ɡʱ/consonant' && typedName('ఋ') === '/ru/vowel' && typedName('ఱ') === '/ɽ/consonant' && typedName('వు') === '/ʋu/consonant with vowel sign' && typedName('క్') === '/k/consonant, no vowel', 'characters are named from the shared data: ' + name());
+ok(typedName('స్త్రా').startsWith('/st̪ɾaː/') && typedName('౫') === '5digit', 'a three-consonant conjunct with a sign, and a digit as its number');
 
 /* ── what is stored, and the next visit ── */
 const stored = JSON.parse(w.localStorage.getItem(KEY));
@@ -156,14 +156,14 @@ clearAll(); $('kbReset').click(); setMode('character');
 ok($('uncommon').parentElement.textContent.trim() === 'Include extra letters' && !$('uncommon').checked && all('.menu-opt input[type=checkbox]').length === 1, 'one option, "Include extra letters", in the app checkbox style; off by default');
 const vow = all('#kVowels .key'), con = all('#kCons .key');
 ok(vow.map(k => k.dataset.ch).join('') === D.vowels.filter(l => [...l.ch].length === 1).map(l => l.ch).join('') && vow.length === 16, 'vowel keys: the 16 single vowel letters of telugu-data.js, in its order');
-ok(con.map(k => k.dataset.ch).join('') === VARNAMALA && con.length === D.consonants.length && new Set(con.map(k => k.dataset.ch)).size === 35, 'consonant keys: every consonant of telugu-data.js once, in varnamala order');
+ok(con.map(k => k.dataset.ch).join('') === VARNAMALA && con.length === D.consonants.length && new Set(con.map(k => k.dataset.ch)).size === 37, 'consonant keys: every consonant of telugu-data.js once, in varnamala order');
 ok(vow.concat(con).every(k => k.title.replace(' (the character shown)', '') === '/' + D.letters.find(l => l.ch === k.dataset.ch).ipa + '/'), 'every letter key carries the sound from telugu-data.js');
-ok(vow.concat(con).every(k => k.classList.contains('rare') === D.letters.find(l => l.ch === k.dataset.ch).rare) && key('ఱ').classList.contains('rare') && !key('ళ').classList.contains('rare'), 'the dashed "rare" edge follows the shared rare flag (ఋ ౠ ఌ ౡ ఙ ఞ ఱ)');
+ok(vow.concat(con).every(k => k.classList.contains('rare') === D.letters.find(l => l.ch === k.dataset.ch).rare) && key('ఱ').classList.contains('rare') && !key('ళ').classList.contains('rare'), 'the dashed "rare" edge follows the shared rare flag (ౠ ఌ ౡ ఙ ఱ ౘ ౙ)');
 const extraLetters = D.letters.filter(l => !l.core).map(l => l.ch);
-ok(extraLetters.join('') === 'ఌౡఱ' && extraLetters.every(ch => key(ch).disabled) && ['ఋ', 'ౠ', 'ఙ', 'ఞ'].every(ch => !key(ch).disabled) && enabled('#kVowels .key, #kCons .key').split(' ').length === 48, 'by default the book\'s 48 letters can be chosen; rare ones (ఋ ౠ ఙ ఞ) are in, extras (ఌ ౡ ఱ) are not');
+ok(extraLetters.join('') === 'ఌౡౘౙఱ' && extraLetters.every(ch => key(ch).disabled) && ['ఋ', 'ౠ', 'ఙ', 'ఞ'].every(ch => !key(ch).disabled) && enabled('#kVowels .key, #kCons .key').split(' ').length === 48, 'by default the book\'s 48 letters can be chosen; ఋ ౠ ఙ ఞ are in, extras (ఌ ౡ ౘ ౙ ఱ) are not');
 const signKeys = () => all('#signs .key').map(k => k.dataset.sign);
 ok(signKeys().join('') === 'ాిీుూృౄెేైొోౌంః్' && !signKeys().includes('ౢ'), 'sign keys in the order of the vowels they stand for, pollu last; extra signs ౢ ౣ held back');
-ok(all('#signs .key').filter(k => k.classList.contains('rare')).map(k => k.dataset.sign).join('') === 'ృౄ', 'rare signs (ృ ౄ) are dashed');
+ok(all('#signs .key').filter(k => k.classList.contains('rare')).map(k => k.dataset.sign).join('') === 'ౄః', 'rare signs (ౄ ః) are dashed');
 const signLabels = all('#signs .key').map(k => k.querySelector('small').textContent);
 ok(signLabels.includes('aː') && signLabels.includes('iː') && signLabels.includes('none') && !signLabels.includes('ā'), 'sign keys are labeled in IPA: ' + signLabels.join(' '));
 ok(all('#kDigits .key').map(k => k.dataset.ch + k.title).join(' ') === D.digits.map(g => g.ch + g.value).join(' '), 'digits come from TeluguData.digits (౦–౯ → 0–9)');
@@ -172,7 +172,7 @@ set('uncommon', true);
 ok(signKeys().join('') === 'ాిీుూృౄౢౣెేైొోౌంః్', '"Include extra letters" adds ౢ ౣ to the signs');
 ok(without === 'న్న న్య న్వ' && enabled('#kCons .key') === 'న్త న్ద న్న న్య న్వ', 'and the uncommon conjuncts: under న, న్త and న్ద join న్న న్య న్వ');
 $('kbReset').click();
-ok(extraLetters.every(ch => !key(ch).disabled) && enabled('#kVowels .key, #kCons .key').split(' ').length === 51, 'and the three extra letters (51 letters in all)');
+ok(extraLetters.every(ch => !key(ch).disabled) && enabled('#kVowels .key, #kCons .key').split(' ').length === 53, 'and the five extra letters (53 letters in all)');
 setMode('character'); tap('ఱ'); ok(name() === '/ɽ/consonant', 'ఱ can then be chosen');
 set('uncommon', false);
 ok(key('ఱ').disabled && signKeys().length === 16 && JSON.parse(w.localStorage.getItem(KEY)).uncommon === false, 'turning the option off withdraws them again, and the choice is stored');

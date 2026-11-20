@@ -11,14 +11,16 @@ const keys = () => vis().length;
   ok(!$('include-extra').checked, '"Include extra letters" is unchecked by default');
   ok($('include-extra').parentElement.textContent.includes('Include extra letters') && $('include-extra').closest('#setup'), 'label reads "Include extra letters"; the box is in the session popup');
   ok(G().total === 51 && keys() === 51, 'book set by default: 51 cards / 51 keys');
-  ok(!btn('ɽ') && !btn('l̩') && !btn('l̩ː'), 'ఱ ఌ ౡ keys hidden by default');
+  ok(!btn('ɽ') && !btn('ts') && !btn('dz') && !btn('lu') && !btn('luː'), 'ఱ ఌ ౡ ౘ ౙ keys hidden by default');
   ok(!!btn('kʂ') && [...d.querySelectorAll('.kb-label')].some(l => l.textContent === 'Conjunct'), 'క్ష has its own "Conjunct" key (kʂ)');
-  ok(!!btn('r̩') && !!btn('r̩ː') && !!btn('ŋ') && !!btn('ɲ'), 'ఋ ౠ ఙ ఞ stay in the default set');
+  ok(!!btn('ru') && !!btn('ruː') && !!btn('ŋ') && !!btn('ɲ'), 'ఋ ౠ ఙ ఞ stay in the default set');
 
   // rare badge on in-book rare letters, none on common
-  front(x => x.ipa === 'r̩');
-  ok($('rare-badge').style.display !== 'none', 'ఋ shows the "rare" badge');
-  front(x => x.ipa === 'a');
+  front(x => x.ipa === 'ruː');
+  ok($('rare-badge').style.display !== 'none', 'ౠ shows the "rare" badge');
+  front(x => x.ipa === 'ru');
+  ok($('rare-badge').style.display === 'none', 'ఋ no longer does');
+  front(x => x.ipa === 'ɐ');
   ok($('rare-badge').style.display === 'none', 'అ shows no badge');
 
   // క్ష card
@@ -48,8 +50,8 @@ const keys = () => vis().length;
   // extras on
   h.again();
   h.setup(() => { $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change')); });
-  ok(G().total === 54 && keys() === 54, 'extras on: 54 cards / 54 keys');
-  ok(!!btn('ɽ') && !!btn('l̩') && !!btn('l̩ː'), 'ఱ ఌ ౡ keys appear');
+  ok(G().total === 56 && keys() === 56, 'extras on: 56 cards / 56 keys');
+  ok(!!btn('ɽ') && !!btn('ts') && !!btn('dz') && !!btn('lu') && !!btn('luː'), 'ఱ ఌ ౡ ౘ ౙ keys appear');
   front(x => x.ipa === 'ɽ');
   ok($('rare-badge').style.display !== 'none', 'extra letters carry the "rare" badge');
   h.setup(() => { $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change')); });

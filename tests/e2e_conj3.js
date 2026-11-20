@@ -42,10 +42,10 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
 
   /* ── the card shows the sound ── */
   put(KSHA);
-  ok($('tel-char').classList.contains('ipa-face') && $('tel-char').textContent === '/kʂa/' && $('tel-char').querySelectorAll('.sl').length === 2, 'card shows /kʂa/ between slashes');
+  ok($('tel-char').classList.contains('ipa-face') && $('tel-char').textContent === '/kʂɐ/' && $('tel-char').querySelectorAll('.sl').length === 2, 'card shows /kʂɐ/ between slashes');
   ok(!$('tel-char').textContent.includes('క') && $('cat-badge').textContent === 'Velar + Fricative', 'no Telugu on the card; label "Velar + Fricative"');
   put(STRA); const big = $('tel-char').style.fontSize; put('చ్ఛ');
-  ok(parseFloat($('tel-char').style.fontSize) < parseFloat(big) && $('tel-char').textContent === '/tʃtʃʰa/', 'longer sounds step down a size (/ʂʈra/ ' + big + ' → /tʃtʃʰa/ ' + $('tel-char').style.fontSize + ')');
+  ok(parseFloat($('tel-char').style.fontSize) < parseFloat(big) && $('tel-char').textContent === '/tʃtʃʰɐ/', 'longer sounds step down a size (/ʂʈɾɐ/ ' + big + ' → /tʃtʃʰɐ/ ' + $('tel-char').style.fontSize + ')');
   ok(slots().length === 2 && vals() === '–|–' && $('feedback').classList.contains('hint') && /Pick each consonant in order/.test($('feedback').textContent), 'two empty slots and the usual hint');
 
   /* ── a right answer ── */
@@ -65,7 +65,7 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   ok(key('స').classList.contains('err') && key('ష').classList.contains('ok') && key('క').classList.contains('ok'), 'the wrong key is red, the letters of the answer green');
   ok($('feedback').textContent === '✗  క్స' && $('feedback').classList.contains('err') && $('feedback').classList.contains('te'), 'the line shows the conjunct that was picked (క + స = క్స), not the answer (క్ష)');
   const m = P.misses().find(x => x.game === 'conjuncts-reverse');
-  ok(P.missCount() === misses0 + 1 && m && m.key === KSHA && m.ask === 'sound' && m.syllable === true && h.shown(m).prompt === '/kʂa/' && h.shown(m).answer === KSHA && m.note === 'Velar + Fricative', 'recorded for Review as conjuncts-reverse: /kʂa/ → క్ష, note "Velar + Fricative"');
+  ok(P.missCount() === misses0 + 1 && m && m.key === KSHA && m.ask === 'sound' && m.syllable === true && h.shown(m).prompt === '/kʂɐ/' && h.shown(m).answer === KSHA && m.note === 'Velar + Fricative', 'recorded for Review as conjuncts-reverse: /kʂɐ/ → క్ష, note "Velar + Fricative"');
   ok(!P.misses().some(x => x.game === 'conjuncts'), 'nothing filed under the forward game');
   await tick(); await tick();
   ok(G().deck.length === n0 && G().deck.some(c => c.glyph === KSHA) && vals().split('|').every(v => v === '–'), 'card re-queued; slots clear on the next card');
@@ -79,13 +79,13 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
 
   /* ── spoken differently ── */
   put(JNA);
-  ok($('tel-char').textContent === '/dʒɲa/' && /sound as written/.test($('feedback').textContent) && $('feedback').textContent.includes('/ɡɲa/'), 'జ్ఞ: the card gives the written sound /dʒɲa/; the hint adds how it is usually said');
+  ok($('tel-char').textContent === '/dʒɲɐ/' && /sound as written/.test($('feedback').textContent) && $('feedback').textContent.includes('/ɡɲɐ/'), 'జ్ఞ: the card gives the written sound /dʒɲɐ/; the hint adds how it is usually said');
   key('జ').click(); key('ఞ').click();
-  ok($('char-card').classList.contains('correct') && $('feedback').textContent === '✓  ' + JNA + '  ·  usually said /ɡɲa/', 'answered by its letters (జ + ఞ); feedback keeps the spoken note');
+  ok($('char-card').classList.contains('correct') && $('feedback').textContent === '✓  ' + JNA + '  ·  usually said /ɡɲɐ/', 'answered by its letters (జ + ఞ); feedback keeps the spoken note');
   await tick(); await tick();
 
   /* ── three letters ── */
-  put(STRA); ok(slots().length === 3 && $('tel-char').textContent === '/ʂʈra/', 'three slots for /ʂʈra/');
+  put(STRA); ok(slots().length === 3 && $('tel-char').textContent === '/ʂʈɾɐ/', 'three slots for /ʂʈɾɐ/');
   key('ష').click(); key('ట').click(); key('ర').click();
   ok($('char-card').classList.contains('correct'), 'ష + ట + ర clears it');
   await tick(); await tick();
@@ -98,8 +98,8 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   $('show-cat').dispatchEvent(new w.Event('change')); ok(kb().map(b => b.dataset.ch).join() === A, 'order stable within the round');
   clickBox('shuffle-kb'); clickBox('show-cat');
   h.setup(() => clickBox('include-uncommon'));
-  ok(kb().length === 35 && !!key('ఱ') && G().total === 40 && $('g-title').textContent === 'IPA → Conjuncts', 'uncommon clusters on: ఱ joins the keys; still reversed');
-  put(NKA); ok($('tel-char').textContent === '/ŋka/' && $('rare-badge').style.display !== 'none', 'an uncommon cluster shows its sound and the rare badge');
+  ok(kb().length === 37 && !!key('ఱ') && G().total === 40 && $('g-title').textContent === 'IPA → Conjuncts', 'uncommon clusters on: ఱ joins the keys; still reversed');
+  put(NKA); ok($('tel-char').textContent === '/ŋkɐ/' && $('rare-badge').style.display !== 'none', 'an uncommon cluster shows its sound and the rare badge');
   h.setup(() => clickBox('include-uncommon'));
 
   /* ── a whole reverse round ── */
@@ -116,6 +116,6 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   put(KSHA); ipaKey('k').click(); ok(vals() === 'k|–' && !slots()[0].querySelector('.slot-val').classList.contains('te'), 'slots show IPA again');
   ipaKey('s').click(); await tick(); await tick();
   const fm = P.misses().find(x => x.game === 'conjuncts');
-  ok(fm && fm.ask === 'telugu' && h.shown(fm).prompt === KSHA && h.shown(fm).answer === '/kʂa/' && fm.note === 'Velar + Fricative', 'a forward miss is filed under conjuncts, with the class label as its note (not the set name)');
+  ok(fm && fm.ask === 'telugu' && h.shown(fm).prompt === KSHA && h.shown(fm).answer === '/kʂɐ/' && fm.note === 'Velar + Fricative', 'a forward miss is filed under conjuncts, with the class label as its note (not the set name)');
   h.done();
 })();

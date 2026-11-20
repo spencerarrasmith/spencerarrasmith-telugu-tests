@@ -28,7 +28,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   ok(cons[0].textContent === 'క' && cons.at(-1).textContent === 'క్ష', 'in Phonemes\' alphabet order (క … క్ష)');
   ok(vows.length === 17 && vows.every(b => b.classList.contains('te') && b.classList.contains('sign') && !b.textContent.includes(KA)), 'vowel keys: 17 bare signs, no consonant');
   ok(btn('v', AA).textContent === 'ా' && btn('v', II).textContent === 'ీ' && btn('v', '∅').textContent === '్' && vows.some(b => b.textContent === 'ం') && vows.some(b => b.textContent === 'ః'), 'e.g. ా ీ, the virama ్, and ం ః on their own');
-  ok(btn('v', 'a').textContent === '\u25CC' && /no sign/.test(btn('v', 'a').getAttribute('aria-label')), 'the "no sign" key is ◌, with an accessible name');
+  ok(btn('v', 'ɐ').textContent === '\u25CC' && /no sign/.test(btn('v', 'ɐ').getAttribute('aria-label')), 'the "no sign" key is ◌, with an accessible name');
   ok([...d.querySelectorAll('.kb-col-title')].map(x => x.textContent).join('|') === 'Consonant|Vowel sign', 'panel titles');
   ok(!/[A-Za-z]/.test(cons.concat(vows).map(b => b.textContent).join('')), 'no IPA left on any key');
   ok(d.querySelectorAll('.kb-col[data-kind="c"] .kb-label').length === groups('c') && !labels('c').includes('Vowels'), 'consonant panel: labeled by place, no stray "Vowels" group');
@@ -40,7 +40,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   ok($('tel-char').classList.contains('ipa-face') && $('tel-char').textContent === '/kaː/', 'card shows the sound: ' + $('tel-char').textContent);
   ok($('cat-badge').textContent === 'Velar + Long' && $('cat-badge').style.visibility === '', 'category label still shown, for the consonant and the vowel: "Velar + Long"');
   inject('k', '∅'); ok($('tel-char').textContent === '/k/', 'pure consonant is just /k/');
-  inject('k', 'a'); ok($('tel-char').textContent === '/ka/', 'no sign: /ka/');
+  inject('k', 'ɐ'); ok($('tel-char').textContent === '/kɐ/', 'no sign: /kɐ/');
   inject(KH, 'au'); ok($('tel-char').style.fontSize !== '' && $('tel-char').style.fontSize !== '5rem', 'longer sounds step down a size (' + $('tel-char').style.fontSize + ')');
 
   /* ── right answer ── */
@@ -77,8 +77,8 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   await tick(); await tick();
 
   /* the no-sign key works as an answer */
-  inject('k', 'a');
-  btn('c', 'k').click(); btn('v', 'a').click();
+  inject('k', 'ɐ');
+  btn('c', 'k').click(); btn('v', 'ɐ').click();
   ok($('char-card').classList.contains('correct') && $('feedback').textContent.trim() === '✓  క' && $('slot-v').querySelector('.slot-val').textContent === '\u25CC', 'the no-sign key is accepted for క: ' + $('feedback').textContent.trim());
   await tick(); await tick();
 
@@ -96,7 +96,7 @@ const KA = 'క', KH = 'kʰ', AA = 'aː', II = 'iː';
   clickBox('shuffle-kb');
   clickBox('show-cat');
   h.setup(() => clickBox('include-extra'));
-  ok(kb('c').length === 36 && !!btn('c', 'r') && kb('v').length === 19 && btn('v', 'l̩').textContent === 'ౢ' && groups('c') === 8, 'extras join: ఱ and ౢ ౣ (36 + 19)');
+  ok(kb('c').length === 38 && !!btn('c', 'ɽ') && !!btn('c', 'ts') && kb('v').length === 19 && btn('v', 'lu').textContent === 'ౢ' && groups('c') === 8, 'extras join: ఱ ౘ ౙ and ౢ ౣ (38 + 19)');
   h.setup(() => clickBox('include-extra'));
   ok(kb('c').length === 35 && kb('v').length === 17, '…and leave');
 

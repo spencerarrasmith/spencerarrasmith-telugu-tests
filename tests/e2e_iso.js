@@ -48,7 +48,7 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
     key('v', 'aː').click();
     ok($('char-card').classList.contains('correct') && $('feedback').textContent === '✓  kā', 'Diacritics: k + ā answers కా; feedback ✓ kā');
     await tick(); await tick();
-    put('క', 'ం'); key('c', 'k').click(); key('v', 'a').click();
+    put('క', 'ం'); key('c', 'k').click(); key('v', 'ɐ').click();
     ok($('char-card').classList.contains('wrong') && $('feedback').textContent === '✗  ka', 'Diacritics: a wrong vowel on కం shows what was picked, ✗ ka');
     const m = P.misses().find(x => x.key === 'కం');
     ok(m.ask === 'telugu' && m.syllable === true && h.shown(m).answer === 'kaṁ', 'Diacritics: the miss stores the syllable; shown in ISO it is kaṁ');
@@ -74,9 +74,9 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
     ok($('char-card').classList.contains('correct') && $('feedback').textContent === '✓  kṣa', 'Conjuncts: k + ṣ answers క్ష; feedback ✓ kṣa');
     await tick(); await tick();
     put('జ్ఞ'); ipaKey('dʒ').click(); ipaKey('ɲ').click();
-    ok($('feedback').textContent === '✓  jña  ·  usually said /ɡɲa/', 'Conjuncts: జ్ఞ is jña; how it is usually SAID stays in IPA, between slashes');
+    ok($('feedback').textContent === '✓  jña  ·  usually said /ɡɲɐ/', 'Conjuncts: జ్ఞ is jña; how it is usually SAID stays in IPA, between slashes');
     await tick(); await tick();
-    put('క్య'); ipaKey('k').click(); ipaKey('r').click();
+    put('క్య'); ipaKey('k').click(); ipaKey('ɾ').click();
     const m = P.misses().find(x => x.key === 'క్య');
     ok($('feedback').textContent === '✗  kra' && m.ask === 'telugu' && h.shown(m).answer === 'kya', 'Conjuncts: a miss shows what was picked (✗ kra) and is stored as the conjunct on the card (kya)');
     await tick(); await tick();
@@ -84,7 +84,7 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
     ok($('g-title').textContent === 'ISO → Conjuncts' && $('setup-dir').textContent === 'ISO → Conjuncts', 'Conjuncts reversed: ISO → Conjuncts, in the title and in the popup');
     put('క్ష'); ok($('tel-char').textContent === 'kṣa' && !$('tel-char').querySelector('.sl'), 'Conjuncts reversed: the card shows kṣa, plain');
     put('ష్ట్ర'); ok($('tel-char').textContent === 'ṣṭra', 'Conjuncts reversed: three letters → ṣṭra');
-    put('జ్ఞ'); ok($('tel-char').textContent === 'jña' && $('feedback').textContent === 'This is the spelling as written · spoken Telugu usually says /ɡɲa/', 'Conjuncts reversed: జ్ఞ shows jña, and the hint calls it the spelling');
+    put('జ్ఞ'); ok($('tel-char').textContent === 'jña' && $('feedback').textContent === 'This is the spelling as written · spoken Telugu usually says /ɡɲɐ/', 'Conjuncts reversed: జ్ఞ shows jña, and the hint calls it the spelling');
     key('జ').click(); key('ఞ').click(); ok($('char-card').classList.contains('correct'), 'Conjuncts reversed: జ + ఞ answers jña');
     ok(D.clusters.every(c => { G().put(c); return $('tel-char').textContent === c.iso && noSlash($('tel-char').textContent); }), 'Conjuncts reversed: all 92 cards show their ISO spelling');
   }

@@ -15,7 +15,7 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   ok($('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false' && $('rev-btn').closest('#setup') && !$('g-title').closest('.g-header').querySelector('.rev-btn'), 'the 🔀 button is in the session popup, not pressed; the header no longer has one');
   ok($('highlight-correct').checked && $('highlight-correct').parentElement.textContent.includes('Highlight correct answer'), '"Highlight correct answer" checkbox exists, on by default');
   ok(!$('opts-menu') && !$('menu-btn') && d.querySelectorAll('#setup input[type=checkbox]').length === 5, 'no ⋮ menu on this page: the five checkboxes (categories, shuffle, extra letters, highlight, missed guesses reappear) are in the session popup');
-  ok(vis().every(b => !b.classList.contains('te')) && vis()[0].textContent === 'a', 'forward keys show IPA (first key: a)');
+  ok(vis().every(b => !b.classList.contains('te')) && vis()[0].textContent === 'ɐ', 'forward keys show IPA (first key: ɐ)');
 
   /* ── highlight checkbox, forward mode ── */
   front(x => x.ipa === 'k');
@@ -35,8 +35,8 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
 
   /* ── reverse: switch ── */
   const doneBefore = G().completed;
-  byIpa('a'); front(x => x.ipa === 'a'); byIpa('a').click();
-  ok($('feedback').textContent.trim() === '✓  /a/' && $('feedback').classList.contains('ok'), 'a right pick is shown the same way: ✓ /a/');
+  byIpa('ɐ'); front(x => x.ipa === 'ɐ'); byIpa('ɐ').click();
+  ok($('feedback').textContent.trim() === '✓  /ɐ/' && $('feedback').classList.contains('ok'), 'a right pick is shown the same way: ✓ /ɐ/');
   ok(/GameCore\.create\(\{[^}]*?errMs:\s*1500\b/.test(require('fs').readFileSync(require('path').join(require('./config').SITE_DIR, 'alphabet/01_phonemes.html'), 'utf8')), 'Phonemes: a wrong pick stays on screen for 1.5 seconds (errMs: 1500)');
   await tick(); await tick();
   ok(G().completed === 1, 'one card cleared before switching');
@@ -56,8 +56,8 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   /* ── reverse: card ── */
   front(x => x.ipa === 'kʰ');
   ok($('tel-char').classList.contains('ipa-face') && $('tel-char').textContent === '/kʰ/', 'card shows the phoneme as /kʰ/');
-  front(x => x.ipa === 'a');
-  ok($('tel-char').textContent === '/a/' && $('tel-char').style.fontSize === '', 'single-sound phoneme at full size');
+  front(x => x.ipa === 'ɐ');
+  ok($('tel-char').textContent === '/ɐ/' && $('tel-char').style.fontSize === '', 'single-sound phoneme at full size');
   front(x => x.ipa === 'tʃʰ');
   ok($('tel-char').style.fontSize === '4.2rem', 'three-symbol phoneme (tʃʰ) steps down a size');
   ok($('cat-badge').textContent === 'Palatal' && $('cat-badge').style.visibility === '', 'category label still shown (Palatal)');
@@ -90,7 +90,7 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
 
   /* extras in reverse */
   h.setup(() => { $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change')); });
-  ok(G().total === 54 && vis().length === 54 && !!byCh('ఌ') && !!byCh('ఱ') && vis().every(b => b.classList.contains('te')), 'extras on in reverse: 54 Telugu keys incl. ఌ ఱ');
+  ok(G().total === 56 && vis().length === 56 && !!byCh('ఌ') && !!byCh('ఱ') && vis().every(b => b.classList.contains('te')), 'extras on in reverse: 56 Telugu keys incl. ఌ ఱ');
   h.setup(() => { $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change')); });
   ok(vis().length === 51 && vis().every(b => b.classList.contains('te')), 'extras off: back to 51, still Telugu-faced');
 
@@ -106,16 +106,16 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   /* back to forward */
   h.flip();
   ok($('g-title').textContent === 'Telugu → IPA' && $('rev-btn').getAttribute('aria-pressed') === 'false', 'toggle back: title Telugu → IPA');
-  ok(vis().length === 51 && vis().every(b => !b.classList.contains('te')) && vis()[0].textContent === 'a', 'IPA keys restored');
+  ok(vis().length === 51 && vis().every(b => !b.classList.contains('te')) && vis()[0].textContent === 'ɐ', 'IPA keys restored');
   ok(!$('tel-char').classList.contains('ipa-face') && G().current.ch === $('tel-char').textContent, 'card shows the Telugu letter again');
 
   /* shared keyboard builder: reusable on its own */
   const host = d.createElement('div'); d.body.appendChild(host);
   const picks = [];
   const btns = D.buildKeyboard(host, { face: 'telugu', visible: l => l.kind === 'vowel' && l.core, onPick: (l, b) => picks.push(l.ch) });
-  ok(btns.length === 54 && btns.filter(b => b.style.display !== 'none').length === 16, 'buildKeyboard: visible as a predicate (16 book vowels shown of 54 keys)');
+  ok(btns.length === 56 && btns.filter(b => b.style.display !== 'none').length === 16, 'buildKeyboard: visible as a predicate (16 book vowels shown of 56 keys)');
   btns[1].click(); ok(picks.join() === 'ఆ', 'buildKeyboard: onPick receives the letter object');
   const all = D.buildKeyboard(host, {});
-  ok(all.length === 54 && all.every(b => b.style.display !== 'none' && !b.classList.contains('te') && b.textContent === b.dataset.ipa), 'buildKeyboard defaults: all letters, IPA face');
+  ok(all.length === 56 && all.every(b => b.style.display !== 'none' && !b.classList.contains('te') && b.textContent === b.dataset.ipa), 'buildKeyboard defaults: all letters, IPA face');
   h.done();
 })();

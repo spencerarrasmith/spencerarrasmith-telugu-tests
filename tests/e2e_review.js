@@ -93,15 +93,15 @@ const P = w.TeluguProgress, $ = s => d.querySelector(s), click = s => $(s).click
   };
   const A = mk(null); fill(A.P); await new Promise(r => setTimeout(r, 5));
   ok(A.play('phonemes') === 'క → /k/ [Velar]' && A.play('phonemes-reverse') === '/kʰ/ → ఖ [Velar]', 'IPA: a Phonemes miss replays as క → /k/, the reverse as /kʰ/ → ఖ');
-  ok(A.play('diacritics') === 'క → /ka/ [Short]' && A.play('diacritics-reverse') === '/kã/ → కం [Nasal · aspirate]', 'IPA: Diacritics misses read the character as a syllable (క → /ka/, not /k/)');
-  ok(A.play('conjuncts') === 'జ్ఞ → /dʒɲa/  ·  usually said /ɡɲa/ [Palatal + Nasal]' && A.play('conjuncts-reverse') === '/kʂa/ → క్ష [Velar + Fricative]', 'IPA: Conjuncts misses, with the spoken note; క్ష is /kʂa/');
+  ok(A.play('diacritics') === 'క → /kɐ/ [Short]' && A.play('diacritics-reverse') === '/kɐm/ → కం [Nasal · aspirate]', 'IPA: Diacritics misses read the character as a syllable (క → /kɐ/, not /k/)');
+  ok(A.play('conjuncts') === 'జ్ఞ → /dʒɲɐ/  ·  usually said /ɡɲɐ/ [Palatal + Nasal]' && A.play('conjuncts-reverse') === '/kʂɐ/ → క్ష [Velar + Fricative]', 'IPA: Conjuncts misses, with the spoken note; క్ష is /kʂɐ/');
   ok(A.play('lookalikes') === '/ʋu/ → వు [Among వు పు]' && A.play('grammar-nouns') === 'boy → అబ్బాయి', 'IPA: a Lookalikes miss; a lesson\'s text miss is shown as stored');
   ok(A.names() === 'Conjuncts | Conjuncts (IPA → Conjuncts) | Diacritics | Diacritics (IPA → Diacritics) | Lookalikes (IPA → Telugu) | Nouns: gender & number | Phonemes | Phonemes (IPA → Telugu)', 'IPA: game names');
 
   const B = mk('iso'); fill(B.P); await new Promise(r => setTimeout(r, 5));
   ok(B.play('phonemes') === 'క → ka [Velar]' && B.play('phonemes-reverse') === 'kha → ఖ [Velar]', 'ISO: the same misses replay as క → ka and kha → ఖ, with no slashes');
   ok(B.play('diacritics') === 'క → ka [Short]' && B.play('diacritics-reverse') === 'kaṁ → కం [Nasal · aspirate]', 'ISO: Diacritics misses (ka, kaṁ)');
-  ok(B.play('conjuncts') === 'జ్ఞ → jña  ·  usually said /ɡɲa/ [Palatal + Nasal]' && B.play('conjuncts-reverse') === 'kṣa → క్ష [Velar + Fricative]', 'ISO: Conjuncts misses (jña, kṣa); "usually said" stays IPA');
+  ok(B.play('conjuncts') === 'జ్ఞ → jña  ·  usually said /ɡɲɐ/ [Palatal + Nasal]' && B.play('conjuncts-reverse') === 'kṣa → క్ష [Velar + Fricative]', 'ISO: Conjuncts misses (jña, kṣa); "usually said" stays IPA');
   ok(B.play('lookalikes') === 'vu → వు [Among వు పు]' && B.play('grammar-nouns') === 'boy → అబ్బాయి', 'ISO: Lookalikes (vu); a lesson\'s text miss is unchanged');
   ok(B.names() === 'Conjuncts | Conjuncts (ISO → Conjuncts) | Diacritics | Diacritics (ISO → Diacritics) | Lookalikes (ISO → Telugu) | Nouns: gender & number | Phonemes | Phonemes (ISO → Telugu)', 'ISO: game names say ISO');
   B.q('[data-game="conjuncts-reverse"]').click();
@@ -115,7 +115,7 @@ const P = w.TeluguProgress, $ = s => d.querySelector(s), click = s => $(s).click
   } };
   const C = mk('iso', V1), E = mk(null, V1);
   ok(C.play('phonemes') === 'క → ka [Velar]' && C.play('diacritics-reverse') === 'kā → కా [Long]' && C.play('conjuncts') === 'క్ష → kṣa [Velar + Fricative]', 'old misses, read in ISO: క → ka, kā → కా, క్ష → kṣa');
-  ok(E.play('phonemes') === 'క → /k/ [Velar]' && E.play('diacritics-reverse') === '/kaː/ → కా [Long]' && E.play('conjuncts') === 'క్ష → /kʂa/ [Velar + Fricative]', 'old misses, read in IPA: exactly what they showed before');
+  ok(E.play('phonemes') === 'క → /k/ [Velar]' && E.play('diacritics-reverse') === '/kaː/ → కా [Long]' && E.play('conjuncts') === 'క్ష → /kʂɐ/ [Velar + Fricative]', 'old misses, read in IPA: rebuilt from the character with today\'s sounds (క్ష is now /kʂɐ/)');
   ok(JSON.parse(C.win.localStorage.getItem('telugu.progress.v1')).v === 2, 'the old store is now version 2');
 
   /* ── a character the app can no longer read ── */
@@ -128,7 +128,7 @@ const P = w.TeluguProgress, $ = s => d.querySelector(s), click = s => $(s).click
   Wz.P.miss({ game: 'words', key: 'zz', ask: 'word', note: '?' });
   await new Promise(r => setTimeout(r, 5));
   ok([...Wd.win.document.querySelectorAll('.rv-game')].map(g => g.querySelector('.name').textContent + ':' + g.querySelector('.count').textContent).join() === 'Words:1', 'a missed word is listed under Words');
-  { const shown = Wd.play('words'); ok(shown === 'పుస్తకం → /pust\u032Aaka\u0303/ [book]', 'its card shows the word with its meaning, and answers with its sound: ' + shown); }
+  { const shown = Wd.play('words'); ok(shown === 'పుస్తకం → /pust\u032Aɐkɐm/ [book]', 'its card shows the word with its meaning, and answers with its sound: ' + shown); }
   ok(Wi.play('words') === 'పుస్తకం → pustakaṁ [book]', 'in ISO for a reader who chose ISO: పుస్తకం → pustakaṁ');
   ok(Wz.play('words') === 'zz → This word can no longer be read. [?]', 'a stored word that can\'t be read any more says so');
   ok(/Letters, syllables, and words you get wrong/.test(html), 'the empty page says words collect here too');

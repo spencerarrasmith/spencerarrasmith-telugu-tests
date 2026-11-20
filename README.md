@@ -64,7 +64,7 @@ To run some suites only: `npm test -- e2e_index e2e_signs`.
 | `verify_notes` | The Signs & Conjuncts notes against Noto Sans Telugu's own shaping data |
 | `verify_fonts` | The app's own font files (`fonts/`): each holds the weights `base.css` declares for it, and every Telugu character and every sound character (IPA and ISO) that the app's pages and data contain is in the font meant to draw it |
 
-Some assertions deliberately pin current content (42 tiles, which pages are live, 7 + 3 + 4 + 8 + 12 + 8 per section, 31 placeholders, the 250 words and their lengths, the number of notes). When you add a page or turn a tile from "Soon" to live, expect `unit_units`, `e2e_index`, `e2e_links`, `e2e_placeholder`, `static_css`, and `e2e_browser` to need their numbers updated; that failure is the reminder.
+Some assertions deliberately pin current content (42 tiles, which pages are live, 7 + 3 + 4 + 8 + 12 + 8 per section, 31 placeholders, the 250 words and their lengths, the number of notes, the sounds and rare/extra flags of the letters, the links on External Links). When you change a sound or a flag in `telugu-data.js`, expect the game, Review, and reference suites to need their expected strings updated. When you add a page or turn a tile from "Soon" to live, expect `unit_units`, `e2e_index`, `e2e_links`, `e2e_placeholder`, `static_css`, and `e2e_browser` to need their numbers updated; that failure is the reminder.
 
 **IPA and ISO.** `require('./harness')(page)` loads a page as a first-time visitor gets it, in IPA. `require('./harness')(page, { notation: 'iso' })` loads it with ISO already chosen. `h.shown(miss)` gives a stored miss as Review would draw it now, since the store keeps the character and not the text.
 

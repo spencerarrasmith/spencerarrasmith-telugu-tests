@@ -50,11 +50,11 @@ function tools(h) {
     ok(d.querySelectorAll('.kb-cols .kb-col').length === 2 && [...d.querySelectorAll('.kb-col-title')].map(e => e.textContent).join() === 'Consonant,Vowel' && keys().length === 50, 'two keyboards side by side, Consonant and Vowel: 50 keys');
     ok(col('c').map(b => b.dataset.ipa).join(' ') === D.pool(D.consonants, false).map(c => c.ipa).join(' ') && col('c').length === 34 && col('c').every(b => b.dataset.kind === 'c' && b.textContent === b.dataset.ipa) && !keys().some(b => b.dataset.ipa === 'kʂ' || b.dataset.ipa === 'ɽ'),
       'the 34 usual consonants in alphabet order, each key its sound; క్ష has no key of its own (it is k, then ʂ), nor has ఱ');
-    ok(col('v').map(b => b.textContent).join(' ') === 'a aː i iː u uː e eː o oː ai au r̩ r̩ː ◌̃ ◌ʰ' && col('v').map(b => b.dataset.kind).join('') === 'vvvvvvvvvvvvvvmm',
-      'the 14 vowel sounds, each long one beside its short one, then ం and ః on a dotted circle: ' + col('v').map(b => b.textContent).join(' '));
+    ok(col('v').map(b => b.textContent).join(' ') === 'ɐ aː i iː u uː e eː o oː ai au ru ruː ṁ ◌ʰ' && col('v').map(b => b.dataset.kind).join('') === 'vvvvvvvvvvvvvvmm',
+      'the 14 vowel sounds, each long one beside its short one, then ం (ṁ, whichever nasal it is said as) and ః on a dotted circle: ' + col('v').map(b => b.textContent).join(' '));
     ok(col('v').slice(-2).map(b => b.getAttribute('aria-label')).join() === 'anusvara (ం),visarga (ః)' && !keys().some(b => b.dataset.ipa === '∅' || b.textContent === '∅'), 'the two marks are named for a screen reader; there is no "no vowel" key');
     const pairs = [...d.querySelectorAll('.kb-col[data-kind="v"] .kb-pair')].map(p => [...p.children].map(b => b.textContent));
-    ok(pairs.length === 6 && pairs.every(p => p.length === 2 && p[1] === p[0] + 'ː') && !d.querySelector('.kb-col[data-kind="c"] .kb-pair'), 'a vowel and its long form are one unit in the row (six pairs)');
+    ok(pairs.length === 6 && pairs.every(p => p.length === 2 && p[1] === D.longOf(p[0])) && !d.querySelector('.kb-col[data-kind="c"] .kb-pair'), 'a vowel and its long form are one unit in the row (six pairs)');
     ok(d.querySelectorAll('.kb-col[data-kind="c"] .kb-group').length === 1 && d.querySelectorAll('.kb-label').length === 0, 'categories off: each keyboard is one plain block');
     $('show-cat').click();
     const labels = k => [...d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-label`)].map(e => e.textContent).join(' | ');
@@ -93,9 +93,9 @@ function tools(h) {
   ok(G().misses === m0 + 1 && G().attempts === a0 + 4, 'a wrong pick is one answer and one mistake');
   ok(fb() === '✗  /k/' && $('feedback').classList.contains('err') && $('char-card').classList.contains('wrong'), 'the line under the card says what was picked, never the answer: ' + fb());
   ok(card() === 'పు{స్త}కం' && !d.querySelector('.sp-slot.cur'), 'that character is over: it turns red in the word, and nothing is asked while the pick is showing: ' + card());
-  ok(spell() === 'p u | s t̪! a~ | _ _ _', 'with "Highlight correct answer" its boxes show what it spells: the missed sound marked, the rest never asked: ' + spell());
+  ok(spell() === 'p u | s t̪! ɐ~ | _ _ _', 'with "Highlight correct answer" its boxes show what it spells: the missed sound marked, the rest never asked: ' + spell());
   ok(keyOf({ kind: 'c', key: 'k' }).classList.contains('err') && keyOf({ kind: 'c', key: 't̪' }).classList.contains('ok') && d.querySelectorAll('.kb-btn.ok, .kb-btn.err').length === 2, 'the key pressed turns red and the right key is lit');
-  { const a = G().attempts; keyOf({ kind: 'c', key: 'k' }).click(); keyOf({ kind: 'v', key: 'a' }).click();
+  { const a = G().attempts; keyOf({ kind: 'c', key: 'k' }).click(); keyOf({ kind: 'v', key: 'ɐ' }).click();
     ok(G().locked && G().attempts === a && G().misses === m0 + 1, 'picks made while it is showing are ignored'); }
   $('show-cat').click();
   ok(keyOf({ kind: 'c', key: 'k' }).classList.contains('err') && keyOf({ kind: 'c', key: 't̪' }).classList.contains('ok'), 'the two marks survive the keyboard being redrawn (an option changed)');
@@ -105,22 +105,22 @@ function tools(h) {
     'then play goes on with the next character; the marks are gone, the missed character stays red: ' + card());
   const deck0 = G().deck.length;
   right(); right(); right();
-  ok(G().locked && fb() === '✗  2 of 3 characters right' && $('char-card').classList.contains('wrong') && spell() === 'p u | s t̪! a~ | k a ◌̃', 'at the end of a word that took a mistake the line says how much of it was right: ' + fb());
+  ok(G().locked && fb() === '✗  2 of 3 characters right' && $('char-card').classList.contains('wrong') && spell() === 'p u | s t̪! ɐ~ | k ɐ m', 'at the end of a word that took a mistake the line says how much of it was right: ' + fb());
   ok(G().completed === c0 && G().deck.length === deck0 && G().deck[0].te !== 'పుస్తకం' && G().deck.some(c => c.te === 'పుస్తకం') && G().attempts === a0 + 7 && G().misses === m0 + 1,
     'the word is not cleared: it goes back into the deck, to come up again later (seven answers, one mistake)');
   await tick();
   ok(JSON.stringify(P.misses().map(m => [m.game, m.key, m.ask, m.note, m.count])) === '[["words","పుస్తకం","word","book",1]]' && !('prompt' in P.misses()[0]) && !('answer' in P.misses()[0]),
     'it is filed for Review as the word itself, with its meaning as the note');
-  ok(h.shown(P.misses()[0]).prompt === 'పుస్తకం' && h.shown(P.misses()[0]).answer === '/pust̪akã/', 'Review will show the word and ask for its sound: ' + h.shown(P.misses()[0]).answer);
+  ok(h.shown(P.misses()[0]).prompt === 'పుస్తకం' && h.shown(P.misses()[0]).answer === '/pust̪ɐkɐm/', 'Review will show the word and ask for its sound: ' + h.shown(P.misses()[0]).answer);
 
   /* a mistake on the last character ends the word at once */
   put('అమ్మ'); right(); wrong('c', 'k');
-  ok(G().locked && card() === 'అ{మ్మ}' && fb() === '✗  /k/  ·  1 of 2 characters right' && spell() === 'a | m! m~ a~', 'missing the last character ends the word: what was picked, then the tally: ' + fb());
+  ok(G().locked && card() === 'అ{మ్మ}' && fb() === '✗  /k/  ·  1 of 2 characters right' && spell() === 'ɐ | m! m~ ɐ~', 'missing the last character ends the word: what was picked, then the tally: ' + fb());
   await tick();
   /* two mistakes in one word are filed once; a word costs at most one mistake a character */
   put('పుస్తకం'); const m1 = G().misses;
   wrong('c', 'k'); await tick(); wrong('c', 'k'); await tick(); wrong('c', 'p');
-  ok(G().misses === m1 + 3 && fb() === '✗  /p/  ·  0 of 3 characters right' && card() === '{పు}{స్త}{కం}' && spell() === 'p! u~ | s! t̪~ a~ | k! a~ ◌̃~', 'every character missed: three mistakes, and no more than that: ' + spell());
+  ok(G().misses === m1 + 3 && fb() === '✗  /p/  ·  0 of 3 characters right' && card() === '{పు}{స్త}{కం}' && spell() === 'p! u~ | s! t̪~ ɐ~ | k! ɐ~ m~', 'every character missed: three mistakes, and no more than that: ' + spell());
   await tick();
   ok(P.misses().find(m => m.key === 'పుస్తకం').count === 2 && P.missCount() === 2, 'a word is filed once each time it is played, however many mistakes it took');
 
@@ -129,16 +129,16 @@ function tools(h) {
   put('అమ్మ'); wrong('v', 'i');
   ok(spell() === '✗! | _ _ _' && d.querySelectorAll('.kb-btn.ok').length === 0 && keyOf({ kind: 'v', key: 'i' }).classList.contains('err') && fb() === '✗  /i/', '"Highlight correct answer" off: a ✗ in the box and no key lit: ' + spell());
   await tick(); right(); wrong('c', 'k');
-  ok(spell() === '✗! | m ✗! ·~' && !/a/.test(spell().split('|')[1].replace('m', '')), 'the sounds never asked show a dot, not what they are: ' + spell());
+  ok(spell() === '✗! | m ✗! ·~' && !/ɐ/.test(spell().split('|')[1].replace('m', '')), 'the sounds never asked show a dot, not what they are: ' + spell());
   await tick();
   $('highlight-correct').click();
 
   /* a clean word */
   put('పక్షి'); const c1 = G().completed, a1 = G().attempts;
   for (let i = 0; i < 4; i++) right();
-  ok(card() === 'ప[క్షి]' && spell() === 'p a | k ʂ _', 'క్షి asks for k, then ʂ, then i: ' + spell());
+  ok(card() === 'ప[క్షి]' && spell() === 'p ɐ | k ʂ _', 'క్షి asks for k, then ʂ, then i: ' + spell());
   right();
-  ok(fb() === '✓  /pakʂi/' && $('feedback').classList.contains('ok') && $('char-card').classList.contains('correct') && card() === 'పక్షి' && G().locked, 'a word spelled without a mistake: the card turns green and the line gives its sound: ' + fb());
+  ok(fb() === '✓  /pɐkʂi/' && $('feedback').classList.contains('ok') && $('char-card').classList.contains('correct') && card() === 'పక్షి' && G().locked, 'a word spelled without a mistake: the card turns green and the line gives its sound: ' + fb());
   await tick();
   ok(G().completed === c1 + 1 && G().attempts === a1 + 5 && $('s-done').textContent === String(c1 + 1) && !G().deck.some(c => c.te === 'పక్షి'), 'it is cleared: one more correct, five answers');
   ok(/okMs:\s*800/.test(fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8')) && /errMs:\s*1500/.test(fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8')), 'a finished word stays up 0.8 s; a wrong pick shows for 1.5 s');

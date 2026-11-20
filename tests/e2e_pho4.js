@@ -30,7 +30,7 @@ const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles:
   await tick(); await tick(); clickBox('highlight-correct');
   clickBox('include-extra'); ok(G().total === 51, 'checking "Include extra letters" does not restart the session in play');
   clickBox('include-extra');
-  h.setup(() => clickBox('include-extra')); ok(G().total === 54 && vis().length === 54, 'the extra letters come in at Start (54)');
+  h.setup(() => clickBox('include-extra')); ok(G().total === 56 && vis().length === 56, 'the extra letters come in at Start (56)');
   h.setup(() => clickBox('include-extra')); ok(G().total === 51, '…and go out again (51)');
   clickBox('show-cat'); ok(groups() === 1 && labels() === 0 && $('cat-badge').style.visibility === 'hidden', 'the categories box (now in the session popup) still works (flat, card label hidden)');
   clickBox('show-cat'); ok(groups() === 9 && labels() === 9 && $('cat-badge').style.visibility === '', '…and back');
@@ -63,7 +63,7 @@ const pointerdown = el => el.dispatchEvent(new w.Event('pointerdown', { bubbles:
   ok(vis().length === 51 && vis().every(b => b.classList.contains('te')) && same(T, alpha) && T !== alpha && groups() === 1 && labels() === 0, 'Telugu keys: shuffled too, flat, unlabeled');
   ok($('shuffle-kb').checked && $('show-cat').disabled, 'shuffle setting survives switching direction');
   h.setup(() => $('include-extra').click());
-  ok(vis().length === 54 && vis().some(b => b.dataset.ch === 'ఌ') && groups() === 1, 'extra letters join the shuffled keyboard (54)');
+  ok(vis().length === 56 && vis().some(b => b.dataset.ch === 'ఌ') && groups() === 1, 'extra letters join the shuffled keyboard (56)');
   h.setup(() => $('include-extra').click());
   front(x => x.ipa === 'k'); vis().find(b => b.dataset.ch === 'క').click();
   ok($('char-card').classList.contains('correct'), 'shuffled Telugu keyboard plays too');

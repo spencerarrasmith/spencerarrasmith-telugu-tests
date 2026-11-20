@@ -116,22 +116,22 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   ok(G().total === 51, 'a full session is in play');
   reopen();
   $('include-extra').click();
-  ok($('setup-rounds').max === '54' && $('setup-rounds').value === '54' && $('setup-rounds-n').value === '54' && $('setup-rounds-n').max === '54' && G().total === 51, 'checking "Include extra letters": the slider runs to 54 and "all" stays all; the session in play is untouched');
+  ok($('setup-rounds').max === '56' && $('setup-rounds').value === '56' && $('setup-rounds-n').value === '56' && $('setup-rounds-n').max === '56' && G().total === 51, 'checking "Include extra letters": the slider runs to 56 and "all" stays all; the session in play is untouched');
   $('include-extra').click();
   ok($('setup-rounds').max === '51' && $('setup-rounds').value === '51', 'unchecking it: back to 51');
   slide('setup-rounds', 10); $('include-extra').click();
-  ok($('setup-rounds').max === '54' && $('setup-rounds').value === '10' && $('setup-rounds-n').value === '10', 'a chosen number stays put when the top end moves: 10 of 54');
+  ok($('setup-rounds').max === '56' && $('setup-rounds').value === '10' && $('setup-rounds-n').value === '10', 'a chosen number stays put when the top end moves: 10 of 56');
   $('setup-start').click();
-  ok(G().total === 10 && keys() === 54 && $('include-extra').checked, 'Start: 10 rounds drawn from the 54, with all 54 keys');
-  reopen(); slide('setup-rounds', 54); $('setup-start').click();
-  ok(G().total === 54, 'the slider at its top end with the extras on: all 54');
+  ok(G().total === 10 && keys() === 56 && $('include-extra').checked, 'Start: 10 rounds drawn from the 56, with all 56 keys');
+  reopen(); slide('setup-rounds', 56); $('setup-start').click();
+  ok(G().total === 56, 'the slider at its top end with the extras on: all 56');
   // Cancel puts every checkbox back, and what follows them follows them back
   reopen();
   $('include-extra').click(); $('shuffle-kb').click(); $('highlight-correct').click();
   ok(!$('show-cat').checked && $('show-cat').disabled && !$('cat-note').hidden && $('cat-note').closest('#setup') && $('show-cat').closest('.menu-opt').classList.contains('disabled') && d.querySelectorAll('#kb-area .kb-group').length === 1,
     'checking "Shuffle keyboard" holds "Show categories" off, with its note, here in the popup');
   $('setup-cancel').click();
-  ok(!open() && $('include-extra').checked && !$('shuffle-kb').checked && $('highlight-correct').checked && $('show-cat').checked && !$('show-cat').disabled && $('cat-note').hidden && d.querySelectorAll('#kb-area .kb-group').length > 1 && G().total === 54,
+  ok(!open() && $('include-extra').checked && !$('shuffle-kb').checked && $('highlight-correct').checked && $('show-cat').checked && !$('show-cat').disabled && $('cat-note').hidden && d.querySelectorAll('#kb-area .kb-group').length > 1 && G().total === 56,
     'Cancel: all four boxes are as they were (categories back on, keyboard grouped again), and the session in play is untouched');
   reopen(); $('include-extra').click(); $('setup-start').click();
   ok(G().total === 51 && keys() === 51, 'extras off again: 51');
@@ -234,8 +234,8 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     $('rev-btn').click(); slide('setup-rounds', 51); slide('setup-misses', w.GameSetup.MISS_STOPS + 1); $('include-extra').click(); $('shuffle-kb').click();
     ok($('setup-rounds').max === '57' && $('setup-rounds').value === '57' && !$('show-cat').checked && $('show-cat').disabled && !$('cat-note').hidden, 'Diacritics: extras on with the slider at its top keeps "all" (57); "Shuffle keyboard" holds categories off');
     $('setup-start').click();
-    ok(G().total === 57 && G().limit === null && lives() === EVER && kb('c').length === 36 && kb('v').length === 19 && d.querySelectorAll('.kb-col[data-kind="c"] .kb-group').length === 1 && $('g-title').textContent === 'Diacritics → IPA',
-      'Diacritics: Start deals all 57, forward, unlimited, on a shuffled keyboard with the extras (36 + 19 keys)');
+    ok(G().total === 57 && G().limit === null && lives() === EVER && kb('c').length === 38 && kb('v').length === 19 && d.querySelectorAll('.kb-col[data-kind="c"] .kb-group').length === 1 && $('g-title').textContent === 'Diacritics → IPA',
+      'Diacritics: Start deals all 57, forward, unlimited, on a shuffled keyboard with the extras (38 + 19 keys)');
     w.GameSetup.current.open(); $('include-extra').click(); $('shuffle-kb').click(); $('show-cat').click(); $('setup-start').click();
     let n = 0; while (G().deck.length && n++ < 200) { right(); await tick(); await tick(); }
     ok(G().total === 51 && $('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && P.runs('diacritics').at(-1).end === 'done' && P.runs('diacritics').at(-1).n === 51 && !P.runs('diacritics').at(-1).dir, 'Diacritics: a full session of 51 is recorded for the Profile page');
@@ -285,7 +285,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     $('include-uncommon').click();
     ok($('setup-rounds').max === '92' && $('setup-rounds').value === '92', 'Conjuncts: at the top end, "all" stays all when the uncommon clusters join: 92');
     $('setup-start').click();
-    ok(G().total === 92 && kb().length === 35 && !!key('ɽ'), 'Conjuncts: all 92, with ఱ on the keyboard');
+    ok(G().total === 92 && kb().length === 37 && !!key('ɽ'), 'Conjuncts: all 92, with ఱ ౘ ౙ on the keyboard');
     w.GameSetup.current.open(); $('include-uncommon').click(); $('rev-btn').click(); slide('setup-rounds', 5); slide('setup-misses', 3); $('setup-start').click();
     ok(G().total === 5 && G().limit === 3 && $('g-title').textContent === 'IPA → Conjuncts' && lives() === L3 && kb().length === 34 && kb().every(b => b.classList.contains('te')), 'Conjuncts: 5 rounds, reversed, game over at 3 (three hearts): the whole keyboard (34 Telugu keys)');
     wrong(); await tick(); await tick(); wrong(); await tick(); await tick();

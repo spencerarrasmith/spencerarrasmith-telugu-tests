@@ -16,7 +16,7 @@ const vis = els => els.filter(e => !e.hidden);
 ok(d.title === 'Signs & Conjuncts' && /\.\.\/game\.css/.test(raw) && !!d.querySelector('header.g-header .g-title'), 'titled, uses the shared stylesheet and header');
 /* ── the chart ── */
 const cons = TD.letters.filter(l => l.cat !== 'Vowel');
-ok(rows().length === cons.length && rows().length === 36, 'one row per consonant plus క్ష: ' + rows().length);
+ok(rows().length === cons.length && rows().length === 38, 'one row per consonant plus క్ష: ' + rows().length);
 ok(rows().every(r => r.querySelectorAll('td.c').length === 1 + SD.SIGN_ORDER.length), 'every row: the letter alone + ' + SD.SIGN_ORDER.length + ' signs');
 ok([...d.querySelectorAll('#chart thead th .mark')].slice(1).map(m => m.textContent).join('') === SD.SIGN_ORDER.join(''), 'column headers are the bare signs, in textbook order');
 ok(rows().every((r, i) => { const l = cons[i]; return [...r.querySelectorAll('td.c')].every((c, j) => c.firstChild.textContent === l.ch + (j === 0 ? '' : SD.SIGN_ORDER[j - 1])); }), 'every cell is exactly letter + sign');
@@ -31,9 +31,11 @@ ok(!cell('కు').classList.contains('n') && !cell('క').classList.contains('n
 /* ── the notes ── */
 const sn = [...d.querySelectorAll('#sign-notes .note')], cn = [...d.querySelectorAll('#conj-notes .note')];
 ok(sn.length === SD.signNotes.length && cn.length === SD.conjNotes.length && sn[0].querySelector('.num').textContent === '1', 'notes render: ' + sn.length + ' + ' + cn.length);
-ok(SD.signNotes.map(n => n.id).join() === 'o-flat,u-own,ya-i,ha-aa,ai-two,vocalic,nasal' && SD.conjNotes.map(n => n.id).join() === 'first-full,kssa,ra,ta', '7 sign notes and 4 conjunct notes');
+ok(SD.signNotes.map(n => n.id).join() === 'o-flat,u-own,ya-i,ha-aa,ai-two,vocalic,nasal,ardha' && SD.conjNotes.map(n => n.id).join() === 'first-full,kssa,ra,ta', '8 sign notes (the last on ఁ, the old mark) and 4 conjunct notes');
+ok(/silent/.test(SD.signNotes.find(n => n.id === 'ardha').text) && /m̐/.test(SD.signNotes.find(n => n.id === 'ardha').text) && !SD.SIGN_ORDER.includes('ఁ'), 'ఁ is described in a note, not drawn as a chart column');
+ok(/next consonant/.test(SD.signNotes.find(n => n.id === 'nasal').text) && !/nasalizes/.test(SD.signNotes.find(n => n.id === 'nasal').text) && /కృషి/.test(SD.signNotes.find(n => n.id === 'vocalic').text), 'ం is described as the nasal of the next consonant; ృ as part of everyday loanwords');
 ok(![...SD.signNotes, ...SD.conjNotes].some(n => /sit noticeably higher|drawn lower|drop lower/.test(n.title + n.text)), 'no note is only about a mark sitting a little higher or lower');
-ok(sn.map(n => n.querySelector('.num').textContent).join('') === '1234567' && cn.map(n => n.querySelector('.num').textContent).join('') === '1234', 'notes are numbered 1–7 and 1–4, with no gap');
+ok(sn.map(n => n.querySelector('.num').textContent).join('') === '12345678' && cn.map(n => n.querySelector('.num').textContent).join('') === '1234', 'notes are numbered 1–8 and 1–4, with no gap');
 ok(sn[0].querySelectorAll('.chip:not(.usual)').length === 12 && sn[0].querySelectorAll('.chip.usual').length === 3, 'note 1: 12 combinations + 3 usual ones to compare');
 ok([...sn[0].querySelectorAll('.chip:not(.usual)')].map(c => c.textContent).includes('మో'), 'note 1 lists మో');
 ok(sn[0].querySelector('h4 .te.bare') && /bare/.test(sn[0].querySelector('h4').innerHTML), 'bare signs in a title are wrapped so they cannot attach to the letter before');
@@ -41,10 +43,12 @@ ok(sn.every(n => n.querySelector('p').textContent.length > 30), 'every note has 
 /* ── the conjunct cards ── */
 const all = [...d.querySelectorAll('.cj')];
 const consOnly = TD.letters.filter(l => l.cat !== 'Vowel' && l.cat !== 'Conjunct');
-ok(all.length === consOnly.length && all.length === 35, 'one card per consonant: ' + all.length);
-ok(all.every(c => c.querySelector('.ex').firstChild.textContent === SD.HOST + '్' + c.dataset.ch), 'every example is ' + SD.HOST + ' + virama + the letter');
-ok(all.every(c => c.querySelector('.meta .tag:nth-child(2)').textContent === (SD.BELOW.includes(c.dataset.ch) ? 'below' : 'beside')), 'below/beside tags follow the data');
-ok(SD.BELOW.length + SD.BESIDE.length === 35 && [...SD.BELOW].every(c => !SD.BESIDE.includes(c)), 'the two families partition the 35 consonants');
+ok(all.length === consOnly.length && all.length === 37, 'one card per consonant: ' + all.length);
+const formed = all.filter(c => !SD.NONE.includes(c.dataset.ch));
+ok(formed.length === 35 && formed.every(c => c.querySelector('.ex').firstChild.textContent === SD.HOST + '్' + c.dataset.ch), 'every example is ' + SD.HOST + ' + virama + the letter');
+ok(SD.NONE === 'ౘౙ' && ['ౘ', 'ౙ'].every(ch => card(ch).querySelector('.ex').textContent === '—' && card(ch).querySelector('.meta .tag:nth-child(2)').textContent === 'no conjunct form'), 'ౘ ౙ have no conjunct form, and their cards say so');
+ok(formed.every(c => c.querySelector('.meta .tag:nth-child(2)').textContent === (SD.BELOW.includes(c.dataset.ch) ? 'below' : 'beside')), 'below/beside tags follow the data');
+ok(SD.BELOW.length + SD.BESIDE.length + SD.NONE.length === 37 && [...SD.BELOW].every(c => !SD.BESIDE.includes(c) && !SD.NONE.includes(c)), 'below, beside, and none partition the 37 consonants');
 ok(card('ష').querySelector('.ex').textContent.includes('త్ష') && card('ష').querySelector('sup').textContent === '2', 'ష card also shows its usual below-form, note 2');
 ok(card('ర').querySelector('sup').textContent === '3' && card('త').querySelector('sup').textContent === '4', 'ర → 3, త → 4');
 ok(['జ', 'ట', 'డ', 'ద', 'ల'].every(ch => !card(ch).querySelector('sup')), 'జ ట డ ద ల carry no note (their below-forms only sit lower after some letters)');
@@ -52,10 +56,10 @@ ok([...d.querySelectorAll('.cj sup')].map(s => s.textContent).sort().join('') ==
 ok(!card('క').querySelector('sup'), 'క has no note');
 /* ── rare and extra ── */
 $('show-rare').checked = false; $('show-rare').dispatchEvent(new w.Event('change'));
-ok(vis(rows()).length === 33 && /^33 letters$/.test($('count').textContent), 'unchecked: ఙ ఞ ఱ rows hidden, count ' + $('count').textContent);
-ok(vis(all).length === 32 && card('ఱ').hidden && !card('క').hidden, 'unchecked: 3 cards hidden');
+ok(vis(rows()).length === 34 && /^34 letters$/.test($('count').textContent), 'unchecked: ఙ ఱ ౘ ౙ rows hidden, count ' + $('count').textContent);
+ok(vis(all).length === 33 && card('ఱ').hidden && card('ౘ').hidden && !card('ఞ').hidden && !card('క').hidden, 'unchecked: 4 cards hidden (ఞ is no longer rare)');
 ok(['ౢ', 'ౣ'].every(s => [...d.querySelectorAll('#chart th.s')].find(h => h.textContent.startsWith(s)).hidden), 'unchecked: ౢ ౣ columns hidden');
 $('show-rare').checked = true; $('show-rare').dispatchEvent(new w.Event('change'));
-ok(vis(rows()).length === 36 && vis(all).length === 35 && $('count').textContent === '36 letters', 'checking restores everything');
+ok(vis(rows()).length === 38 && vis(all).length === 37 && $('count').textContent === '38 letters', 'checking restores everything');
 ok(['sec-signs', 'sec-conjuncts'].every(id => !!$(id)) && [...d.querySelectorAll('.jump a')].every(a => $(a.getAttribute('href').slice(1))), 'jump links point to real sections');
 console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
