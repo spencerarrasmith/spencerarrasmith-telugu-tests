@@ -162,6 +162,10 @@ w = fakeWin(false); P = load(w);
   ok(same(M(ab, B), ab) && same(M(ab, A), ab) && same(M(ab, ab), ab), 'merging a copy in again changes nothing');
   ok(Object.keys(ab.misses).sort().join() === 'g|a,g|b,g|c' && ab.misses['g|a'].streak === 1 && ab.misses['g|a'].t === NOW - 20, 'misses from both are kept; of two copies of one, the later');
   ok(ab.runs.pho.map(r => r.t).join() === [NOW - 30, NOW - 20, NOW - 10].join() && ab.runs.dia.length === 1, 'runs from both are kept, oldest first, a run both copies hold counted once');
+  // the account server hands records back with every object's keys sorted: still the same runs and misses
+  const back = JSON.parse(JSON.stringify(ab, (k, v) => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.keys(v).sort().reverse().map(n => [n, v[n]])) : v)));
+  ok(same(M(ab, back), ab) && same(M(back, back), ab) && M(ab, back).runs.pho.length === 3, 'a copy whose keys come back in another order is the same copy: no run counted twice, nothing to save');
+  ok(Object.values(ab.runs).flat().concat(Object.values(ab.misses)).every(o => JSON.stringify(Object.keys(o)) === JSON.stringify(Object.keys(o).sort())), 'a merged store has every run and miss with its keys in one order');
   ok(same(A, st({ misses: { 'g|a': miss('a', NOW - 50, { count: 3 }), 'g|b': miss('b', NOW - 40) }, runs: { pho: [run(NOW - 30), run(NOW - 10)] } })), 'merge changes neither input');
   // something cleared in Review on one device stays cleared against the other's older copy …
   const cleared = st({ gone: { 'g|b': NOW - 30 } });

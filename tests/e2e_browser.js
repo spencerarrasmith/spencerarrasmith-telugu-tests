@@ -258,6 +258,10 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(await top.evaluate(() => { const x = s => document.querySelector(s).getBoundingClientRect(), hero = x('.hero'), title = x('.hero-title'), prof = x('#profile-btn'), set = x('#settings-btn');
     return prof.left > title.right && set.left > prof.right && Math.abs(set.right - hero.right) < 1 && Math.abs(prof.top - set.top) < 1 && prof.width >= 36 && set.width >= 36 && x('#settings-menu').width === 0
       && getComputedStyle(document.querySelector('#settings-btn svg')).fill === 'none'; }), 'the top right of the home page: the Profile button, then ☰ against the right edge, both on the title\'s line; the menu is closed');
+  // Log In (sync.js runs: the app comes from a web server here) sits just before them, on the same line, the same height
+  ok(await top.evaluate(() => { const x = s => document.querySelector(s).getBoundingClientRect(), title = x('.hero-title'), acc = x('#account-btn'), prof = x('#profile-btn');
+    return !document.getElementById('account').hidden && document.getElementById('account-btn').textContent === 'Log In' && acc.left > title.right && prof.left > acc.right && Math.abs(acc.top - prof.top) < 1 && Math.abs(acc.height - prof.height) < 1 && document.getElementById('account-name').hidden; }),
+    'Log In sits before the Profile button, on the same line and as tall, with no name beside it (logged out)');
   await pg.click('#settings-btn'); await pg.waitForTimeout(100);
   ok(await top.evaluate(() => { const x = s => document.querySelector(s).getBoundingClientRect(), menu = x('#settings-menu'), btn = x('#settings-btn'), seg = x('#prefs .seg-opt.on');
     return menu.width > 150 && menu.top >= btn.bottom && Math.abs(menu.right - btn.right) < 1 && menu.left >= 0 && menu.right <= innerWidth
