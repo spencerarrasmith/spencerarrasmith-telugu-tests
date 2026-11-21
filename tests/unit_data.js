@@ -69,14 +69,9 @@ ok(D.read('ఙ').rare && D.read('ఱ').core === false && D.read('కౢ').core =
 ok(D.letters.every(l => { const r = D.read(l.ch); return r && r.ipa === l.ipa && r.iso === l.iso; }) && D.clusters.every(c => { const r = D.read(c.glyph, { syllable: true }); return r && r.ipa === c.sound && r.iso === c.iso; }), 'read agrees with the data for every letter and (as a syllable) every cluster');
 ok(D.consonants.every(c => D.signs.every(g => { const r = D.read(c.ch + g.sign, { syllable: true }); return r && r.ipa === NP.syllable(c, g) && r.iso === NI.syllable(c, g); })), 'read agrees with syllable() for every consonant + sign (' + D.consonants.length * D.signs.length + ' syllables)');
 
-/* ── keyboard faces ── */
-(() => { const { JSDOM } = require('jsdom'); const fs = require('fs'), path = require('path'); const rd = f => fs.readFileSync(path.join(SITE_DIR, f), 'utf8');
-  const w = new JSDOM(`<div id="a"></div><div id="b"></div><div id="c"></div><script>localStorage.setItem('telugu.settings.v1','{"notation":"iso"}')</script><script>${rd('settings.js')}</script><script>${rd('telugu-data.js')}</script>`, { runScripts: 'dangerously', url: 'http://localhost/' }).window;
-  const T = w.TeluguData, $ = id => w.document.getElementById(id);
-  const a = T.buildKeyboard($('a'), { face: 'sound' }), b = T.buildKeyboard($('b'), { face: 'ipa' }), c = T.buildKeyboard($('c'), { text: T.notation.part });
-  const k = list => list.find(x => x.dataset.ch === 'క');
-  ok(k(a).textContent === 'ka' && k(b).textContent === 'ka' && k(a).dataset.ipa === 'k' && !k(a).classList.contains('te'), 'buildKeyboard face "sound" (and its old name "ipa") prints the letter in the reader\'s notation; data-ipa stays the key');
-  ok(k(c).textContent === 'k' && c.length === 56, 'buildKeyboard text: prints what the page asks for instead (the bare consonant)');
+/* ── no keyboard here: the games draw theirs with telugu-keyboard.js (e2e_board) ── */
+(() => { const fs = require('fs'), path = require('path'); const src = fs.readFileSync(path.join(SITE_DIR, 'telugu-data.js'), 'utf8');
+  ok(!('buildKeyboard' in D) && !/buildKeyboard/.test(src), 'telugu-data.js no longer builds a keyboard: the games lay theirs out as the Telugu keyboard (TeluguKeyboard.board)');
 })();
 /* ── sounds settled in the Nov 2026 review ── */
 ok(L1('అ').ipa === 'ɐ' && L1('ఆ').ipa === 'aː' && L1('ర').ipa === 'ɾ' && ['ఋ', 'ౠ', 'ఌ', 'ౡ'].map(ch => L1(ch).ipa).join(' ') === 'ru ruː lu luː' && L1('అః').ipa === 'ɐʰ',

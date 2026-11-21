@@ -3,7 +3,8 @@ const { w, d, tick, ok, $ } = h;
 const G = h.game;                                          // the round: G().deck, .current, .total, .completed
 // Conjuncts in the other direction (🔀, in the session popup): the card shows the sound, the keys are Telugu letters.
 const D = w.TeluguData, P = w.TeluguProgress;
-const kb     = () => [...d.querySelectorAll('#kb-area .kb-btn')];
+const kb     = () => [...d.querySelectorAll('#kb-area button.kb-btn[data-ipa]')];      // the game's keys
+const joining = () => d.querySelector('#kb-area .gkb').classList.contains('joining');
 const key    = ch => kb().find(b => b.dataset.ch === ch);
 const ipaKey = ipa => kb().find(b => b.dataset.ipa === ipa);
 const groups = () => d.querySelectorAll('#kb-area .kb-group').length;
@@ -14,12 +15,12 @@ const put    = g => G().put(D.clusters.find(c => c.glyph === g));
 const clickBox = id => $(id).click();
 const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = 'ఙ్క';
 (async () => {
-  ok(!$('show-cat').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'categories are off to begin with: a plain keyboard, no label on the card');
-  $('show-cat').click();                                    // on for the rest of this suite, which is about the grouped keyboard
+  ok(!$('group-kb').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'not grouped to begin with: the Telugu keyboard\'s layout, no label on the card');
+  $('group-kb').click();                                    // on for the rest of this suite, which is mostly about the grouped keyboard
   /* ── the swap button ── */
   ok($('rev-btn') && $('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false', 'swap button present (same 🔀 as Phonemes and Diacritics)');
   ok($('rev-btn').closest('#setup') && !d.querySelector('.g-header .rev-btn'), 'it is in the session popup, and no longer in the header');
-  ok($('g-title').textContent === 'Conjuncts → IPA' && !d.querySelector('.kb-btn.te') && !$('tel-char').classList.contains('ipa-face') && $('setup-dir').textContent === 'Conjuncts → IPA', 'forward: IPA keys, Telugu conjunct on the card');
+  ok($('g-title').textContent === 'Conjuncts → IPA' && !d.querySelector('#kb-area button.kb-btn.te') && !$('tel-char').classList.contains('ipa-face') && $('setup-dir').textContent === 'Conjuncts → IPA', 'forward: IPA keys, Telugu conjunct on the card');
 
   /* ── the card label never names a letter (either direction) ── */
   put('క్య'); ok($('cat-badge').textContent === 'Velar + Approx.', 'forward: క్య is labeled "Velar + Approx.", not "+ య (ya)"');
@@ -35,8 +36,8 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
   h.flip();
   ok($('g-title').textContent === 'IPA → Conjuncts' && $('rev-btn').getAttribute('aria-pressed') === 'true' && $('setup-dir').textContent === 'IPA → Conjuncts', 'title and button state flip');
   ok(G().completed === 0 && G().deck.length === 40 && G().total === 40, 'a fresh round starts (40 cards)');
-  ok(kb().length === 34 && kb().every(b => b.classList.contains('te') && b.textContent === b.dataset.ch), 'keys: the 34 book consonants as Telugu letters, from the shared keyboard');
-  ok(kb()[0].textContent === 'క' && kb().at(-1).textContent === 'హ' && !key('ఱ') && !key(KSHA), 'in the keyboard\'s alphabet order (క … హ); no extra ఱ, no క్ష key');
+  ok(kb().length === 34 && kb().every(b => b.classList.contains('te') && b.textContent === b.dataset.ch), 'keys: the 34 book consonants as Telugu letters');
+  ok(kb()[0].textContent === 'క' && kb().at(-1).textContent === 'హ' && !key('ఱ') && !key(KSHA), 'grouped by place, in alphabet order (క … హ); no ఱ, no క్ష key');
   ok(labels().join() === 'Velar,Palatal,Retroflex,Dental,Labial,Approx.,Fricative', 'grouped by place of articulation, as in the forward game');
   ok(!/[A-Za-zɡʰʱ]/.test(kb().map(b => b.textContent).join('')), 'no IPA left on any key');
 
@@ -50,9 +51,14 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
 
   /* ── a right answer ── */
   put(KSHA); const before = G().deck.length;
+  ok(!joining() && key('ష').textContent === 'ష', 'before a pick the keys are letters');
   key('క').click();
   ok(vals() === 'క|–' && slots()[0].classList.contains('filled') && slots()[0].querySelector('.slot-val').classList.contains('te'), 'a pick fills the next slot with the Telugu letter');
+  // "Keyboard shows syllables" (on unless turned off in Settings): the keys show the conjunct each would make
+  ok(joining() && key('ష').textContent === 'క్ష' && key('య').textContent === 'క్య' && key('క').textContent === 'క్క' && kb().every(b => b.textContent === 'క్' + b.dataset.ch),
+    'with క picked, every key shows the conjunct it makes (క్ష క్య క్క …), as the Telugu keyboard does after క్');
   key('ష').click();
+  ok(!joining() && key('ష').textContent === 'ష', 'once the conjunct is answered, the keys are letters again (the right ones lit)');
   ok($('char-card').classList.contains('correct') && G().deck.length === before - 1 && G().completed === 1, 'both letters right: card cleared');
   ok($('feedback').textContent === '✓  ' + KSHA && $('feedback').classList.contains('ok') && $('feedback').classList.contains('te'), 'feedback shows the conjunct itself: ✓ క్ష');
   ok(key('క').classList.contains('ok') && key('ష').classList.contains('ok') && slots().every(s => s.classList.contains('ok')), 'keys and slots go green');
@@ -86,19 +92,26 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
 
   /* ── three letters ── */
   put(STRA); ok(slots().length === 3 && $('tel-char').textContent === '/ʂʈɾɐ/', 'three slots for /ʂʈɾɐ/');
-  key('ష').click(); key('ట').click(); key('ర').click();
+  key('ష').click(); key('ట').click();
+  ok(key('ర').textContent === 'ష్ట్ర', 'after ష and ట the keys show the three-letter conjunct (ష్ట్ర)');
+  slots()[0].click();
+  ok(vals() === '–|ట|–' && !joining() && key('ర').textContent === 'ర', 'clearing the first slot leaves nothing to build on: the letters come back');
+  key('ష').click();
+  ok(vals() === 'ష|ట|–' && key('ర').textContent === 'ష్ట్ర', 'filling it again brings the conjunct back');
+  key('ర').click();
   ok($('char-card').classList.contains('correct'), 'ష + ట + ర clears it');
   await tick(); await tick();
 
-  /* ── the options menu still applies ── */
-  clickBox('show-cat');
-  ok(groups() === 1 && labels().length === 0 && kb().length === 34 && $('cat-badge').style.visibility === 'hidden' && kb().map(b => b.dataset.ch).join() === w.eval('keys.map(c => c.ch)').join(), 'unchecking categories: one flat block in alphabet order; card label hidden');
-  clickBox('shuffle-kb'); const A = kb().map(b => b.dataset.ch).join();
-  ok(kb().length === 34 && A !== w.eval('keys.map(c => c.ch)').join() && kb().every(b => b.classList.contains('te')), 'shuffle: random order, still Telugu');
-  $('show-cat').dispatchEvent(new w.Event('change')); ok(kb().map(b => b.dataset.ch).join() === A, 'order stable within the round');
-  clickBox('shuffle-kb'); clickBox('show-cat');
+  /* ── the options still apply ── */
+  clickBox('group-kb');
+  ok(d.querySelector('#kb-area .gkb').dataset.mode === 'layout' && labels().length === 0 && kb().length === 34 && $('cat-badge').style.visibility === 'hidden' && kb().every(b => b.classList.contains('te')), 'unchecking "Group keyboard phonetically": the Telugu keyboard\'s layout, still Telugu; card label hidden');
+  put(KSHA); key('క').click();
+  ok(joining() && key('ష').textContent === 'క్ష', 'the conjunct in the making shows on the laid-out keys too');
+  clickBox('group-kb');
+  ok(joining() && key('ష').textContent === 'క్ష' && vals() === 'క|–', 'and survives the keyboard being redrawn');
+  key('ష').click(); await tick(); await tick();
   h.setup(() => clickBox('include-uncommon'));
-  ok(kb().length === 37 && !!key('ఱ') && G().total === 40 && $('g-title').textContent === 'IPA → Conjuncts', 'uncommon clusters on: ఱ joins the keys; still reversed');
+  ok(kb().length === 34 && !key('ఱ') && G().total === 40 && $('g-title').textContent === 'IPA → Conjuncts', 'uncommon clusters on: the same 34 keys; still reversed');
   put(NKA); ok($('tel-char').textContent === '/ŋkɐ/' && $('rare-badge').style.display !== 'none', 'an uncommon cluster shows its sound and the rare badge');
   h.setup(() => clickBox('include-uncommon'));
 
@@ -111,11 +124,19 @@ const KSHA = 'క్ష', JNA = 'జ్ఞ', STRA = 'ష్ట్ర', NKA = '�
 
   /* ── and back ── */
   h.flip();
-  ok($('g-title').textContent === 'Conjuncts → IPA' && $('rev-btn').getAttribute('aria-pressed') === 'false' && !d.querySelector('.kb-btn.te') && kb()[0].textContent === 'k' && !$('tel-char').classList.contains('ipa-face') && $('tel-char').style.fontSize === '', 'swapping back restores IPA keys and the Telugu card');
+  ok($('g-title').textContent === 'Conjuncts → IPA' && $('rev-btn').getAttribute('aria-pressed') === 'false' && !d.querySelector('#kb-area button.kb-btn.te') && kb()[0].textContent === 'k' && !$('tel-char').classList.contains('ipa-face') && $('tel-char').style.fontSize === '', 'swapping back restores IPA keys and the Telugu card');
   ok(!$('g-complete').classList.contains('show') && G().total === 40 && G().completed === 0 && $('tel-char').textContent === G().current.glyph, 'with a fresh forward round');
   put(KSHA); ipaKey('k').click(); ok(vals() === 'k|–' && !slots()[0].querySelector('.slot-val').classList.contains('te'), 'slots show IPA again');
+  ok(!joining() && ipaKey('ʂ').textContent === 'ʂ', 'forward, the keys are sounds, and stay sounds after a pick');
   ipaKey('s').click(); await tick(); await tick();
   const fm = P.misses().find(x => x.game === 'conjuncts');
   ok(fm && fm.ask === 'telugu' && h.shown(fm).prompt === KSHA && h.shown(fm).answer === '/kʂɐ/' && fm.note === 'Velar + Fricative', 'a forward miss is filed under conjuncts, with the class label as its note (not the set name)');
+
+  /* ── "Keyboard shows syllables" off (Settings): the keys keep their letters ── */
+  { const g = require('./harness')('alphabet/03_conjuncts.html', { storage: { 'telugu.settings.v1': JSON.stringify({ notation: 'ipa', syllables: 'off' }) } });
+    g.flip(); g.game().put(D.clusters.find(c => c.glyph === KSHA));
+    const k = ch => [...g.d.querySelectorAll('#kb-area button.kb-btn[data-ch]')].find(b => b.dataset.ch === ch);
+    k('క').click();
+    ok(k('ష').textContent === 'ష' && !g.d.querySelector('#kb-area .gkb').classList.contains('joining'), 'with "Keyboard shows syllables" off in Settings, picking క leaves the keys as letters'); }
   h.done();
 })();

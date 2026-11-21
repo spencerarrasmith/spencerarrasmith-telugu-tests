@@ -1,33 +1,34 @@
 const h = require('./harness')('alphabet/02_diacritics.html');
 const { w, d, tick, ok, front, $ } = h;
 const G = h.game;                                          // the round: G().deck, .current, .total, .completed
-const btn = (kind, ipa) => [...d.querySelectorAll(`.kb-btn[data-kind="${kind}"]`)].find(b => b.dataset.ipa === ipa);
+const btn = (kind, ipa) => [...d.querySelectorAll(`#kb-area button.kb-btn[data-kind="${kind}"]`)].find(b => b.dataset.ipa === ipa);
 const cur = () => G().current;
-const n = kind => d.querySelectorAll(`.kb-btn[data-kind="${kind}"]`).length;
+const n = kind => d.querySelectorAll(`#kb-area button.kb-btn[data-kind="${kind}"]`).length;
+const faces = (page, i) => [...d.querySelectorAll(`#kb-area .gkb-${page} > .kb-row`)[i].children].map(b => (b.classList.contains('gkb-off') ? '·' : '') + b.textContent).join(' ');
 const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa==='${cIpa}'),v=VOWELS.find(x=>x.sign==='${vSign}');GameCore.current.put({c,v,glyph:c.ch+v.sign,cat:c.cat,uncommon:c.uncommon||v.uncommon});})()`); };
 (async () => {
-  ok(!$('show-cat').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'categories are off to begin with: a plain keyboard, no label on the card');
-  $('show-cat').click();                                    // on for the rest of this suite, which is about the grouped keyboard
-  ok(!$('include-extra').checked && $('include-extra').parentElement.textContent.includes('Include extra letters'), 'extras unchecked by default, labeled "Include extra letters"');
+  ok(!$('group-kb').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'not grouped to begin with: the Telugu keyboard\'s layout, no label on the card');
+  // one keyboard, laid out as the Telugu keyboard: each vowel sign's key where its vowel sits, each consonant where it sits
+  ok(faces('letters', 0) === 'ɐ aː i iː u uː ru ruː e eː' && faces('letters', 1) === 'ai o oː au ɐm ɐʰ k kʰ ɡ ɡʱ' && faces('letters', 4) === 'j ɾ l ʋ ɭ ʃ ʂ s ɦ ⌫' && faces('digits', 2).startsWith('ɲ ·◌ఁ ∅ kʂ'),
+    'not grouped: one keyboard, each sign where its vowel sits on the Telugu keyboard (no sign, ɐ, on అ; ం ః on themselves), each consonant on its letter; ∅ and క్ష, which have no place, on the second page');
+  ok(!d.querySelector('.kb-col, .kb-pair, .kb-col-title'), 'no "Consonant" and "Vowel" panels any more: one keyboard holds both');
+  $('group-kb').click();                                    // on for the rest of this suite, which is about the grouped keyboard
+  ok(!$('include-extra') && !$('shuffle-kb') && !$('show-cat'), 'no "Include extra letters", "Shuffle keyboard", or "Show categories"');
   ok(G().total === 51, 'default: 51 cards (17 vowel signs × 3)');
   ok(n('c') === 35 && n('v') === 17, 'default keys: 35 consonants (ఱ out, క్ష in) / 17 vowels (ౢ ౣ out)');
   ok(!btn('c', 'ɽ') && !btn('c', 'ts') && !btn('c', 'dz') && !btn('v', 'lu') && !btn('v', 'luː') && !!btn('v', 'ru') && !!btn('v', '∅'), 'ఱ, ౘ, ౙ, ౢ, ౣ hidden; ృ and ∅ stay');
   ok(!!btn('c', 'kʂ'), 'consonant keyboard has kʂ (క్ష)');
   // the vowel keyboard: each long vowel right after its short one, in one block
-  const vkeys = () => [...d.querySelectorAll('.kb-btn[data-kind="v"]')], blocks = () => [...d.querySelectorAll('.kb-col[data-kind="v"] .kb-group')].map(g => g.querySelector('.kb-label').textContent + ': ' + [...g.querySelectorAll('.kb-btn')].map(b => b.textContent).join(' '));
+  const vkeys = () => [...d.querySelectorAll('#kb-area button.kb-btn[data-kind="v"]')], blocks = () => [...d.querySelectorAll('#kb-area .kb-group')].filter(g => g.querySelector('[data-kind="v"]')).map(g => g.querySelector('.kb-label').textContent + ': ' + [...g.querySelectorAll('.kb-btn')].map(b => b.textContent).join(' '));
   ok(vkeys().slice(0, 10).map(b => b.textContent).join(' ') === 'ɐ aː i iː u uː e eː o oː', 'the vowel keys pair each long vowel with its short one: ɐ aː i iː u uː e eː o oː');
   ok(blocks()[0] === 'Short · long: ɐ aː i iː u uː e eː o oː' && blocks().map(b => b.split(':')[0]).join(' | ') === 'Short · long | Diphthong | Vocalic | Nasal · aspirate | Pure consonant' && blocks()[1] === 'Diphthong: ai au' && blocks()[2] === 'Vocalic: ru ruː',
-    'with categories shown they are one block, "Short · long", ahead of the others: ' + blocks().map(b => b.split(':')[0]).join(' | '));
+    'grouped, they are one block, "Short · long", ahead of the others: ' + blocks().map(b => b.split(':')[0]).join(' | '));
+  ok([...d.querySelectorAll('#kb-area .kb-label')].map(l => l.textContent).join() === 'Short · long,Diphthong,Vocalic,Nasal · aspirate,Pure consonant,Velar,Palatal,Retroflex,Dental,Labial,Approx.,Fricative,Conjunct', 'grouped: the vowel blocks, then the consonants by place, in one keyboard');
   ok(w.TeluguData.signs.slice(0, 10).map(s => s.grp).join() === 'Short,Short,Short,Short,Short,Long,Long,Long,Long,Long', 'the shared data still lists the five short signs, then the five long (the other pages group them that way)');
   // the card's label names the consonant's category and the vowel's
   const badge = () => $('cat-badge').textContent, kinds = [];
   for (const grp of ['Short', 'Long', 'Diphthong', 'Vocalic', 'Nasal · aspirate', 'Pure consonant']) { front(x => x.v.grp === grp); kinds.push(badge() === cur().c.cat + ' + ' + grp && $('cat-badge').style.visibility === '' ? grp : 'WRONG: ' + badge()); }
   ok(kinds.join(' | ') === 'Short | Long | Diphthong | Vocalic | Nasal · aspirate | Pure consonant', 'the card label is "<consonant category> + <vowel category>", for every kind of sign: ' + badge());
-  const pairs = [...d.querySelectorAll('.kb-col[data-kind="v"] .kb-pair')].map(p => [...p.children].map(b => b.dataset.ipa));
-  ok(pairs.length === 6 && pairs.every(p => p.length === 2 && p[1] === w.TeluguData.longOf(p[0])) && pairs.map(p => p[0]).join(' ') === 'ɐ i u e o ru' && !d.querySelector('.kb-col[data-kind="c"] .kb-pair')
-    && /\.kb-pair \{ display: inline-flex; gap: inherit; \}/.test(require('fs').readFileSync(require('path').join(require('./config').SITE_DIR, 'game.css'), 'utf8')),      // game.css: Words lays its vowels out the same way
-    'a vowel and its long form are one unit in the row (six pairs: ɐ i u e o ru, ɐ paired with aː by longOf), so a row never breaks between them');
-
   // క్ష + sign
   inject('kʂ', 'ా');
   ok(cur().glyph === 'క్షా', 'క్షా card built: ' + cur().glyph);
@@ -65,8 +66,8 @@ const inject = (cIpa, vSign) => { w.eval(`(()=>{const c=CONSONANTS.find(x=>x.ipa
 
   $('retry-btn').click();
   ok(!$('setup').hidden && $('g-complete').classList.contains('show'), '"Practice Again" opens the session popup');
-  $('include-extra').click(); $('setup-start').click();
-  ok(G().total === 57 && n('c') === 38 && n('v') === 19, 'extras on: 57 cards, 38 consonant + 19 vowel keys');
-  ok(!!btn('c', 'ɽ') && !!btn('c', 'ts') && !!btn('c', 'dz') && !!btn('v', 'lu') && !!btn('v', 'luː'), 'ఱ ౘ ౙ ౢ ౣ keys return');
+  ok($('setup-rounds').max === '51', 'the most rounds is 51: there are no extra letters to add');
+  $('setup-start').click();
+  ok(G().total === 51 && n('c') === 35 && n('v') === 17 && !G().deck.some(c => /[ఱౘౙౢౣ]/.test(c.glyph)), 'a new session: 51 cards on the same 35 + 17 keys, none with ఱ ౘ ౙ ౢ ౣ');
   h.done();
 })();

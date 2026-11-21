@@ -45,7 +45,7 @@ ok([game, shell, home, ref].every(c => !/:root\s*\{/.test(c)) && /:root\s*\{/.te
   const fonts = files.filter(f => /fonts\.(googleapis|gstatic)|@font-face/.test(read(f)));
   ok(fonts.length === 0, 'no file but base.css declares a font, and none asks another site for one' + (fonts.length ? ' → ' + fonts.join(', ') : ''));
   const styled = walk(dir).filter(f => /\.html$/.test(f)).map(f => path.relative(dir, f)).filter(f => /<style/.test(read(f))).sort();
-  ok(styled.join() === 'alphabet/02_diacritics.html,alphabet/03_conjuncts.html,alphabet/04_words.html,profile.html,reference/01_rosetta.html,reference/02_signs-conjuncts.html,reference/03_sound-charts.html,training/01_review.html,training/02_lookalike-builder.html,training/03_lookalikes.html', 'inline <style> only where a page has layout of its own (10 pages): ' + styled.length);
+  ok(styled.join() === 'alphabet/02_diacritics.html,alphabet/03_conjuncts.html,alphabet/04_words.html,profile.html,reference/01_rosetta.html,reference/02_signs-conjuncts.html,reference/03_sound-charts.html,reference/04_bookish.html,training/01_review.html,training/02_lookalike-builder.html,training/03_lookalikes.html,training/04_keyboard.html', 'inline <style> only where a page has layout of its own (12 pages): ' + styled.length);
 })();
 ok(!/cat-toggle|g-controls/.test(game), 'game.css has no dead controls-bar rules');
 // The fonts are files in this folder (fonts/), declared once in base.css; no other site is asked for them.

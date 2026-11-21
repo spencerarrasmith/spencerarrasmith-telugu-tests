@@ -17,15 +17,15 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
     window.setInterval = (fn, ms, ...rest) => { if (ms === 5000) { window.__titleFlip = fn; return 0; } return real(fn, ms, ...rest); }; });
   await pg.goto('http://localhost:8779/index.html'); await pg.waitForTimeout(300);
   const tiles = await pg.evaluate(() => TeluguUnits.all.map(t => ({ id: t.id, src: t.src, title: t.title, soon: !!t.soon })));
-  ok(tiles.length === 42, tiles.length + ' tiles');
+  ok(tiles.length === 44, tiles.length + ' tiles');
   let opened = 0, titled = 0;
   for (const t of tiles) {
     await pg.evaluate(id => { location.hash = '#/' + id; }, t.id); let fr; for (let i = 0; i < 40 && !fr; i++) { await pg.waitForTimeout(50); fr = pg.frames().find(f => f.url().endsWith('/' + t.src)); }
     if (!fr) console.log('   not loaded:', t.id, t.src, pg.frames().map(f => f.url()).join(' '));
     if (fr) { opened++; await fr.waitForLoadState('load').catch(() => {}); if (await fr.title()) titled++; else console.log('   no title:', t.src); }
   }
-  ok(opened === 42, 'every tile loads its page in the iframe at the right path: ' + opened + '/42');
-  ok(titled === 42, 'every loaded page has a title');
+  ok(opened === 44, 'every tile loads its page in the iframe at the right path: ' + opened + '/44');
+  ok(titled === 44, 'every loaded page has a title');
   // the live pages actually initialize (their shared scripts were found)
   const live = { 'alphabet/01_phonemes.html': 'TeluguData', 'alphabet/02_diacritics.html': 'TeluguData', 'alphabet/03_conjuncts.html': 'TeluguData', 'alphabet/04_words.html': 'TeluguWords', 'training/02_lookalike-builder.html': 'LookalikeData', 'training/03_lookalikes.html': 'LookalikeData', 'reference/01_rosetta.html': 'RosettaData', 'reference/02_signs-conjuncts.html': 'SignsConjunctsData', 'reference/03_sound-charts.html': 'SoundChartsData' };
   for (const [src, g] of Object.entries(live)) {
@@ -69,7 +69,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
     return { bad, n: document.querySelectorAll('#sections a.tile').length, heights: [...new Set([...document.querySelectorAll('#sections a.tile')].map(t => Math.round(x(t).height)))].sort((a, b) => a - b), icon: Math.round(x(first.querySelector('.tile-icon')).width), sideways: document.documentElement.scrollWidth > innerWidth, row: Math.round(fx.width) }; });
   await pg.evaluate(() => { for (let i = 0; i < 12; i++) TeluguProgress.miss({ game: 'phonemes', key: 'k' + i, prompt: 'p', answer: 'a' }); }); await pg.waitForTimeout(200);
   let tk = await tileLook(pg);
-  ok(tk.n === 42 && tk.bad.length === 0 && tk.icon === 44 && !tk.sideways, 'Home: on every tile the title is on the icon\'s line, centered on it, and the description runs under the two; no title reaches its badge ("Soon", or Review\'s "12 to revisit") ' + tk.bad.join(' | '));
+  ok(tk.n === 44 && tk.bad.length === 0 && tk.icon === 44 && !tk.sideways, 'Home: on every tile the title is on the icon\'s line, centered on it, and the description runs under the two; no title reaches its badge ("Soon", or Review\'s "12 to revisit") ' + tk.bad.join(' | '));
   // (how tall a tile is depends on where its description wraps, which differs by a line from one machine's text rendering to another's: only a loose range is checked)
   ok(tk.heights[0] >= 110 && tk.heights.at(-1) <= 170, 'Home: the tiles are shorter for it (' + tk.heights.join(', ') + 'px): an icon-and-title line and a few lines of description');
   {
@@ -77,7 +77,7 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
     await ph.goto('http://localhost:8779/index.html'); await ph.waitForTimeout(500);
     await ph.evaluate(() => { for (let i = 0; i < 12; i++) TeluguProgress.miss({ game: 'phonemes', key: 'k' + i, prompt: 'p', answer: 'a' }); }); await ph.waitForTimeout(200);
     const pk = await tileLook(ph);
-    ok(pk.n === 42 && pk.bad.length === 0 && pk.icon === 40 && !pk.sideways && pk.row === 358 && pk.heights[0] >= 60 && pk.heights.at(-1) <= 125, 'Home on a phone (390px): each tile is one compact row, the icon at the left with the title and description beside it, clear of the badge (' + pk.heights.join(', ') + 'px) ' + pk.bad.join(' | '));
+    ok(pk.n === 44 && pk.bad.length === 0 && pk.icon === 40 && !pk.sideways && pk.row === 358 && pk.heights[0] >= 60 && pk.heights.at(-1) <= 125, 'Home on a phone (390px): each tile is one compact row, the icon at the left with the title and description beside it, clear of the badge (' + pk.heights.join(', ') + 'px) ' + pk.bad.join(' | '));
     await ph.evaluate(() => TeluguProgress.clearMisses()); await ph.close();
   }
   await pg.evaluate(() => TeluguProgress.clearMisses()); await pg.waitForTimeout(200);
@@ -111,6 +111,35 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   for (const id of ['rosetta', 'signs-conjuncts', 'sound-charts']) { const f = await frameOf(id);
     ok(await css(f, '.g-header', 'position') === 'sticky' && await css(f, 'html', 'overflow-y') === 'auto' && await css(f, 'body', 'overflow-y') === 'visible' && await css(f, '.jump a', 'border-radius') === '999px' && await css(f, '.wrap', 'display') === 'grid', id + ' is styled by reference.css on top of game.css'); }
   ok(await css(await frameOf('signs-conjuncts'), '.wrap', 'row-gap') === '16px' && await css(await frameOf('rosetta'), '.wrap', 'row-gap') === '14px', 'a reference page\'s own <style> still wins over reference.css');
+  // The Telugu keyboard (Training): laid out at the foot of its page, ten keys a row; hold a key, slide to a choice, let go
+  { const fk = await frameOf('keyboard');
+    const lay = await fk.evaluate(() => { const kb = document.querySelector('.tkb').getBoundingClientRect(), keys = [...document.querySelectorAll('.tkb-letters > .tkb-row:first-child .tkb-key')].map(k => k.getBoundingClientRect());
+      return { bottom: Math.round(innerHeight - kb.bottom), w: new Set(keys.map(k => Math.round(k.width))).size, n: keys.length, row: Math.round(keys[0].top) === Math.round(keys[9].top), sideways: document.documentElement.scrollWidth > innerWidth,
+               font: getComputedStyle(document.querySelector('.tkb-key[data-key="క"]')).fontFamily, vowel: getComputedStyle(document.querySelector('.tkb-key[data-key="అ"]')).color, cons: getComputedStyle(document.querySelector('.tkb-key[data-key="క"]')).color }; });
+    ok(lay.bottom <= 1 && lay.n === 10 && lay.w === 1 && lay.row && !lay.sideways && /Noto Sans Telugu/.test(lay.font) && lay.vowel !== lay.cons,
+      'Telugu Keyboard: the keyboard sits at the foot of the page, ten keys of one width a row, in Noto Sans Telugu, vowels in their own color');
+    // its two pages: the keys keep their height, and ⌫'s row and the bottom row sit where they do on the first page
+    const pages = () => fk.evaluate(() => { const R = e => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)].join(','); };
+      const pg = [...document.querySelectorAll('.tkb-page')], back = pg.map(p => R(p.querySelector('.tkb-key[data-key="BACK"]'))), bottom = pg.map(p => [...p.querySelector('.tkb-bottom').children].map(R).join(' '));
+      return { h: new Set([...document.querySelectorAll('.tkb-key')].map(k => Math.round(k.getBoundingClientRect().height))).size, back, bottom, tall: pg.map(p => Math.round(p.getBoundingClientRect().height)), kb: R(document.querySelector('.tkb')) }; });
+    const p1 = await pages();
+    ok(p1.h === 1 && p1.back[0] === p1.back[1] && p1.bottom[0] === p1.bottom[1] && p1.tall[0] === p1.tall[1], 'Telugu Keyboard: every key on both pages is one height; ⌫ and the bottom row are in the same place on both, so turning the page moves neither');
+    for (const k of ['స', 'అ', 'త', 'అ', 'ర', 'అ']) await fk.locator(`.tkb-key[data-key="${k}"]`).first().click();
+    const p2 = await pages();
+    ok(await fk.evaluate(() => document.querySelector('.tkb-key[data-key="య"]').textContent) === 'స్త్ర్య' && p2.h === 1 && p2.kb === p1.kb && JSON.stringify(p2.bottom) === JSON.stringify(p1.bottom),
+      'after స్త్ర్ the consonant keys show four-letter conjuncts (స్త్ర్య), and no key, row, or the keyboard grows to hold them');
+    await fk.click('#clear');
+    const mid = async sel => { const b = await fk.locator(sel).first().boundingBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
+    await pg.mouse.move(...await mid('.tkb-key[data-key="క"]')); await pg.mouse.down(); await pg.mouse.up(); await pg.waitForTimeout(50);
+    await pg.mouse.move(...await mid('.tkb-key[data-key="శ"]')); await pg.mouse.down(); await pg.waitForTimeout(450);
+    const pop = await fk.evaluate(() => { const p = document.querySelector('.tkb-pop'), r = p.getBoundingClientRect(), k = document.querySelector('.tkb-key[data-key="శ"]').getBoundingClientRect();
+      return { open: !p.hidden, above: r.bottom <= k.top, inside: r.left >= 0 && r.right <= innerWidth, first: p.querySelector('.tkb-choice.on') && p.querySelector('.tkb-choice.on').textContent }; });
+    ok(pop.open && pop.above && pop.inside && pop.first === 'క్శ', 'hold శ after క: the popup opens above the key, inside the page, with క్శ lit');
+    await pg.mouse.move(...await mid('.tkb-choice:nth-child(3)'), { steps: 5 });
+    ok(await fk.evaluate(() => document.querySelector('.tkb-choice.on').textContent) === 'శ్చ', 'sliding over the choices lights the one under the finger');
+    await pg.mouse.move(...await mid('.tkb-choice:first-child'), { steps: 5 }); await pg.mouse.up(); await pg.waitForTimeout(50);
+    ok(await fk.inputValue('#text') === 'క్శ' && await fk.evaluate(() => document.querySelector('.tkb-pop').hidden),
+      'letting go on క్శ types it and closes the popup'); }
   fr0 = await frameOf('links');
   ok(await fr0.evaluate(() => { const g = s => getComputedStyle(document.querySelector(s)); const t = [...document.querySelectorAll('a.tile.link')].map(e => e.getBoundingClientRect());
     return t.length === 9 && g('.tiles').display === 'grid' && g('.tile.link').borderRadius === '16px' && g('.tile-thumb').height === '96px' && g('.tile-page').overflowY === 'auto' && t[0].top === t[1].top && t[1].left > t[0].right; }),
@@ -129,20 +158,20 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   ok(await fr0.evaluate(() => { const s = document.getElementById('setup'), r = s.getBoundingClientRect(), box = s.querySelector('.setup-box').getBoundingClientRect(), x = id => document.getElementById(id).getBoundingClientRect();
     return !s.hidden && r.width === innerWidth && r.height === innerHeight && s.contains(document.elementFromPoint(30, 30)) && s.contains(document.elementFromPoint(innerWidth / 2, innerHeight - 30)) && box.width <= 440 && box.left > 0
       && x('setup-cancel').right < x('setup-title').left && x('setup-title').right < x('setup-start').left && Math.abs(x('setup-cancel').top - x('setup-start').top) < 2 && x('setup-rounds').right < x('setup-rounds-n').left
-      && Math.abs((x('show-cat').left + x('show-cat').right) / 2 - (x('rev-btn').left + x('rev-btn').right) / 2) < 2 && x('rev-btn').bottom < x('setup-rounds').top && x('setup-rounds').bottom < x('setup-misses').top && x('setup-misses').bottom < x('show-cat').top
+      && Math.abs((x('group-kb').left + x('group-kb').right) / 2 - (x('rev-btn').left + x('rev-btn').right) / 2) < 2 && x('rev-btn').bottom < x('setup-rounds').top && x('setup-rounds').bottom < x('setup-misses').top && x('setup-misses').bottom < x('group-kb').top
       && document.activeElement.id === 'setup-start'; }), 'Phonemes opens with the session popup covering the page: Cancel top left, Start top right, the direction first, then the two sliders, then the checkboxes in line under the 🔀 button, the rounds box to the right of its slider, Start focused');
-  await fr0.focus('#shuffle-kb');
-  ok(await fr0.evaluate(() => { const row = document.getElementById('shuffle-kb').closest('.setup-opt'), g = getComputedStyle(row), r = row.getBoundingClientRect(), t = row.querySelector('.menu-txt span').getBoundingClientRect(), b = document.getElementById('shuffle-kb').getBoundingClientRect(), dir = document.getElementById('setup-dir').getBoundingClientRect(), box = document.querySelector('.setup-box').getBoundingClientRect();
+  await fr0.focus('#highlight-correct');
+  ok(await fr0.evaluate(() => { const row = document.getElementById('highlight-correct').closest('.setup-opt'), g = getComputedStyle(row), r = row.getBoundingClientRect(), t = row.querySelector('.menu-txt span').getBoundingClientRect(), b = document.getElementById('highlight-correct').getBoundingClientRect(), dir = document.getElementById('setup-dir').getBoundingClientRect(), box = document.querySelector('.setup-box').getBoundingClientRect();
     return g.outlineStyle === 'solid' && g.outlineWidth === '1px' && t.left - r.left >= 7 && t.top - r.top >= 5 && r.bottom - t.bottom >= 5 && r.right - b.right >= 7 && r.left > box.left + 4 && r.right < box.right - 4 && Math.abs(t.left - dir.left) < 1; }),
     'the outline around a checkbox row in use is 1px, with room on every side of the words and the box, inside the popup; the words stay in line with the direction');
   await fr0.focus('#setup-start');
   await fr0.fill('#setup-rounds-n', '4'); await fr0.press('#setup-rounds-n', 'Enter'); await pg.waitForTimeout(150);
-  ok(await fr0.evaluate(() => document.getElementById('setup').hidden && GameCore.current.total === 4 && [...document.querySelectorAll('.kb-btn')].filter(b => b.style.display !== 'none').length === 51 && !document.querySelector('.menu-btn')), 'typing 4 in the box and pressing Enter starts a session of 4 (all 51 keys, no ⋮ menu)');
-  await fr0.click('.kb-btn:not([style*="none"])'); await pg.waitForTimeout(100);
+  ok(await fr0.evaluate(() => document.getElementById('setup').hidden && GameCore.current.total === 4 && document.querySelectorAll('#kb-area button.kb-btn[data-ipa]').length === 51 && !document.querySelector('.menu-btn')), 'typing 4 in the box and pressing Enter starts a session of 4 (all 51 keys, no ⋮ menu)');
+  await fr0.click('#kb-area button.kb-btn[data-ipa]'); await pg.waitForTimeout(100);
   ok(await fr0.evaluate(() => GameCore.current.attempts === 1), 'with the popup closed the keyboard takes taps again');
   // a wrong pick: the line under the card shows it (not the answer) and stays for about a second and a half
   await pg.waitForTimeout(1600);
-  const pickedText = await fr0.evaluate(() => { const b = [...document.querySelectorAll('.kb-btn')].find(k => k.style.display !== 'none' && k.dataset.ch !== GameCore.current.current.ch); b.click(); return b.textContent; });
+  const pickedText = await fr0.evaluate(() => { const b = [...document.querySelectorAll('#kb-area .gkb-letters button.kb-btn[data-ipa]')].find(k => k.dataset.ch !== GameCore.current.current.ch); b.click(); return b.textContent; });
   await pg.waitForTimeout(900);          // (well inside the 1.5 seconds, so a slow machine does not miss it)
   ok(await fr0.evaluate(t => { const f = document.getElementById('feedback'); return f.textContent === '✗  /' + t + '/' && f.getBoundingClientRect().height > 0 && GameCore.current.locked; }, pickedText), 'a wrong pick is shown under the card (✗ and the key that was pressed) and is still there after 0.9 seconds');
   await pg.waitForTimeout(1000);
@@ -156,13 +185,11 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
     fr0 = await frameOf(id);
     ok(await fr0.evaluate(([title, rounds, top]) => { const s = document.getElementById('setup'), r = s.getBoundingClientRect(), x = i => document.getElementById(i).getBoundingClientRect();
       return !s.hidden && r.width === innerWidth && r.height === innerHeight && s.contains(document.elementFromPoint(innerWidth / 2, innerHeight - 30)) && document.getElementById('setup-title').textContent === title
-        && document.getElementById('setup-rounds').value === rounds && document.getElementById('setup-rounds').max === top && document.getElementById('setup-misses-out').textContent === 'Unlimited' && document.getElementById('setup-misses-note').textContent === 'Never ends early' && x('setup-misses').bottom <= x('setup-misses-note').top && x('setup-misses-note').height > 0 && x('setup-misses-note').bottom < x('show-cat').top
-        && x('rev-btn').bottom < x('setup-rounds').top && x('setup-misses').bottom < x('show-cat').top && Math.abs((x('show-cat').left + x('show-cat').right) / 2 - (x('rev-btn').left + x('rev-btn').right) / 2) < 2
+        && document.getElementById('setup-rounds').value === rounds && document.getElementById('setup-rounds').max === top && document.getElementById('setup-misses-out').textContent === 'Unlimited' && document.getElementById('setup-misses-note').textContent === 'Never ends early' && x('setup-misses').bottom <= x('setup-misses-note').top && x('setup-misses-note').height > 0 && x('setup-misses-note').bottom < x('group-kb').top
+        && x('rev-btn').bottom < x('setup-rounds').top && x('setup-misses').bottom < x('group-kb').top && Math.abs((x('group-kb').left + x('group-kb').right) / 2 - (x('rev-btn').left + x('rev-btn').right) / 2) < 2
         && !document.querySelector('.menu-btn') && !document.querySelector('.g-header .rev-btn') && document.activeElement.id === 'setup-start'; }, [title, rounds, top]),
       title + ' opens with the session popup covering the page (' + rounds + ' rounds of ' + top + ', no game over), with no ⋮ menu or 🔀 left in the header');
-    if (id === 'diacritics') ok(await fr0.evaluate(() => { const pairs = [...document.querySelectorAll('.kb-col[data-kind="v"] .kb-pair')].map(p => [...p.children].map(b => b.getBoundingClientRect())), row = document.querySelector('.kb-col[data-kind="v"] .kb-row');
-      return pairs.length === 6 && pairs.every(([a, b]) => Math.abs(a.top - b.top) < 1 && b.left > a.right && Math.abs(b.left - a.right - parseFloat(getComputedStyle(row).columnGap)) < 1); }),
-      'Diacritics: each vowel key has its long form right beside it on the same row, spaced like any two keys');
+
     await fr0.fill('#setup-rounds-n', '3'); await fr0.evaluate(() => { const m = document.getElementById('setup-misses'); m.value = 2; m.dispatchEvent(new Event('input', { bubbles: true })); });
     await fr0.press('#setup-rounds-n', 'Enter'); await pg.waitForTimeout(150);
     ok(await fr0.evaluate(() => { const st = document.getElementById('s-lives'), r = st.getBoundingClientRect(), c = document.getElementById('s-total').getBoundingClientRect();
@@ -179,23 +206,20 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
   fr0 = await frameOf('words');
   ok(await fr0.evaluate(() => { const s = document.getElementById('setup'), r = s.getBoundingClientRect(), x = i => document.getElementById(i).getBoundingClientRect();
     return !s.hidden && r.width === innerWidth && r.height === innerHeight && document.getElementById('setup-title').textContent === 'Words' && document.getElementById('setup-rounds').value === '20' && document.getElementById('setup-rounds').max === '250'
-      && !document.getElementById('rev-btn') && !document.getElementById('setup-dir-row') && x('setup-rounds').bottom < x('setup-misses').top && x('setup-misses').bottom < x('show-cat').top && !document.querySelector('.menu-btn') && document.activeElement.id === 'setup-start'; }),
+      && !document.getElementById('rev-btn') && !document.getElementById('setup-dir-row') && x('setup-rounds').bottom < x('setup-misses').top && x('setup-misses').bottom < x('group-kb').top && !document.querySelector('.menu-btn') && document.activeElement.id === 'setup-start'; }),
     'Words opens with the session popup (20 rounds of 250), with no direction row and no ⋮ menu');
   await fr0.press('#setup-start', 'Enter'); await pg.waitForTimeout(150);
   const ACCENT = 'rgb(201, 152, 26)', TEXT = 'rgb(251, 248, 238)', ERROR = 'rgb(248, 113, 113)', SUCCESS = 'rgb(74, 222, 128)';
   const wordsLook = () => fr0.evaluate(() => { const x = e => e.getBoundingClientRect(), $ = i => document.getElementById(i), card = x($('char-card')), syl = [...document.querySelectorAll('#tel-char .syl')];
-    const boxes = [...document.querySelectorAll('.sp-slot')].map(x), cols = [...document.querySelectorAll('.kb-col')].map(x);
-    return { en: x($('word-en')), card, word: x($('tel-char')), spell: x($('spell')), fb: x($('feedback')), kb: x($('kb-area')), cols, boxRows: new Set(boxes.map(b => Math.round(b.top))).size, boxes: boxes.length,
+    const boxes = [...document.querySelectorAll('.sp-slot')].map(x), rows = [...document.querySelectorAll('#kb-area .gkb-letters > .kb-row')].map(r => [...r.children].map(x));
+    return { en: x($('word-en')), card, word: x($('tel-char')), spell: x($('spell')), fb: x($('feedback')), kb: x($('kb-area')), rows, boxRows: new Set(boxes.map(b => Math.round(b.top))).size, boxes: boxes.length,
       colors: syl.map(e => getComputedStyle(e).color), size: parseFloat(getComputedStyle($('tel-char')).fontSize), enText: $('word-en').textContent, enFont: getComputedStyle($('word-en')).fontFamily }; });
   await fr0.evaluate(() => { GameCore.current.put(TeluguWords.get('పుస్తకం')); });
   let wl = await wordsLook();
   ok(wl.enText === 'book' && wl.en.bottom <= wl.card.top && wl.en.height >= 18 && Math.abs((wl.en.left + wl.en.right) / 2 - (wl.card.left + wl.card.right) / 2) < 1 && /Inter/.test(wl.enFont), 'Words: the meaning sits above the card, centered on it');
   ok(Math.round(wl.card.width) === 420 && Math.round(wl.card.height) === 144 && wl.card.bottom <= wl.spell.top && wl.spell.bottom <= wl.fb.top && wl.fb.bottom <= wl.kb.top, 'Words: the card is wider than a single character\'s (420 × 144); under it the row of boxes, the feedback line, then the keyboards');
   ok(wl.colors.join('|') === [ACCENT, TEXT, TEXT].join('|'), 'Words: the character being spelled is in the accent color (gold), the rest of the word in the text color');
-  ok(wl.boxes === 8 && wl.boxRows === 1 && wl.cols.length === 2 && wl.cols[0].right < wl.cols[1].left && Math.abs(wl.cols[0].top - wl.cols[1].top) < 1 && wl.cols[0].width > wl.cols[1].width, 'Words: eight boxes in one row; the consonant and vowel keyboards side by side');
-  ok(await fr0.evaluate(() => { const pairs = [...document.querySelectorAll('.kb-col[data-kind="v"] .kb-pair')].map(p => [...p.children].map(b => b.getBoundingClientRect())), row = document.querySelector('.kb-col[data-kind="v"] .kb-row');
-    return pairs.length === 6 && pairs.every(([a, b]) => Math.abs(a.top - b.top) < 1 && b.left > a.right && Math.abs(b.left - a.right - parseFloat(getComputedStyle(row).columnGap)) < 1); }),
-    'Words: each vowel key has its long form right beside it on the same row, as on Diacritics (the layout is in game.css)');
+  ok(wl.boxes === 8 && wl.boxRows === 1 && wl.rows.length === 6 && wl.rows.slice(0, 5).every(r => r.length === 10 && new Set(r.map(k => Math.round(k.width))).size === 1 && new Set(r.map(k => Math.round(k.top))).size === 1), 'Words: eight boxes in one row; one keyboard, laid out as the Telugu keyboard, ten keys of one width a row');
   // every word fits its card, at the size its length gives it
   const fits = () => fr0.evaluate(() => { const G = GameCore.current, card = document.getElementById('char-card'), tel = document.getElementById('tel-char'), bad = [], sizes = {};
     for (const w of TeluguWords.words) { G.put(w); const c = card.getBoundingClientRect(), t = tel.getBoundingClientRect(); sizes[w.syllables.length] = parseFloat(getComputedStyle(tel).fontSize);
@@ -225,12 +249,63 @@ const srv = http.createServer((q, r) => { const f = path.join(root, decodeURICom
       for (const w of TeluguWords.words) { G.put(w); const c = card.getBoundingClientRect(), t = tel.getBoundingClientRect(); sizes[w.syllables.length] = parseFloat(getComputedStyle(tel).fontSize);
         if (t.width > c.width - 16 || t.left < c.left + 6 || t.right > c.right - 6 || document.documentElement.scrollWidth > innerWidth) bad.push(w.te); }
       G.put(TeluguWords.get('ధన్యవాదాలు'));
-      const x = e => e.getBoundingClientRect(), cols = [...document.querySelectorAll('.kb-col')], v = x(cols.find(c => c.dataset.kind === 'v')), c = x(cols.find(c => c.dataset.kind === 'c')), sp = x(document.getElementById('spell'));
-      return { bad, sizes, card: Math.round(x(card).width), vFirst: v.bottom <= c.top && Math.abs(v.left - c.left) < 1, spell: sp.left >= 0 && sp.right <= innerWidth, boxes: [...document.querySelectorAll('.sp-slot')].every(b => x(b).left >= 0 && x(b).right <= innerWidth),
+      const x = e => e.getBoundingClientRect(), kb = x(document.querySelector('#kb-area .gkb')), sp = x(document.getElementById('spell'));
+      return { bad, sizes, card: Math.round(x(card).width), vFirst: kb.left >= 0 && kb.right <= innerWidth && [...document.querySelectorAll('#kb-area .kb-btn')].every(b => b.scrollWidth <= b.clientWidth + 1), spell: sp.left >= 0 && sp.right <= innerWidth, boxes: [...document.querySelectorAll('.sp-slot')].every(b => x(b).left >= 0 && x(b).right <= innerWidth),
         en: x(document.getElementById('word-en')).bottom <= x(card).top, sideways: document.documentElement.scrollWidth > innerWidth, header: x(document.getElementById('s-lives')).right <= innerWidth }; });
     ok(r.bad.length === 0 && !r.sideways && r.card === 358 && r.sizes[5] < r.sizes[4] && r.sizes[4] < r.sizes[3], 'Words on a phone (390px): the card takes the width there is (358px) and every word still fits, the long ones a size smaller (' + [3, 4, 5].map(n => r.sizes[n]).join(', ') + 'px) ' + r.bad.join(' '));
-    ok(r.vFirst && r.spell && r.boxes && r.en && r.header, 'Words on a phone: the vowel keyboard comes first, above the consonants; the eleven boxes of the longest word wrap inside the screen; the header fits');
+    ok(r.vFirst && r.spell && r.boxes && r.en && r.header, 'Words on a phone: the keyboard fits the screen, every face inside its key; the eleven boxes of the longest word wrap inside the screen; the header fits');
     await ph.close();
+  }
+  // The games' keyboard (telugu-keyboard.js board()): always the whole Telugu keyboard, both pages; what a game does not use is dimmed
+  for (const vp of [{ width: 1100, height: 900, n: 'desktop' }, { width: 390, height: 780, n: 'phone' }]) {
+    const gp = await b.newPage({ viewport: vp }); gp.on('pageerror', e => errs.push('keyboard (' + vp.n + '): ' + e.message));
+    const geo = () => gp.evaluate(() => { const R = e => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)]; };
+      const pg = [...document.querySelectorAll('#kb-area .gkb-page')], rows = pg.map(p => [...p.children].map(r => [...r.children].map(R)));
+      return { rows, back: pg.map(p => JSON.stringify(R(p.querySelector('.gkb-back')))), bottom: rows.map(r => JSON.stringify(r.at(-1))), tall: pg.map(p => Math.round(p.getBoundingClientRect().height)),
+        heights: [...new Set(pg.flatMap(p => [...p.querySelectorAll('.kb-btn')].map(k => Math.round(k.getBoundingClientRect().height))))], kb: JSON.stringify(R(document.querySelector('#kb-area .gkb'))),
+        slots: [...document.querySelectorAll('.slot')].map(e => Math.round(e.getBoundingClientRect().height)), header: Math.round(document.querySelector('.g-header').getBoundingClientRect().height),
+        sideways: document.documentElement.scrollWidth > innerWidth, over: [...document.querySelectorAll('#kb-area .kb-btn')].filter(k => k.offsetParent && k.scrollWidth > k.clientWidth + 1).map(k => k.textContent) }; });
+    for (const page of ['01_phonemes', '02_diacritics', '03_conjuncts', '04_words']) {
+      await gp.goto('http://localhost:8779/alphabet/' + page + '.html'); await gp.waitForTimeout(300); await gp.click('#setup-start'); await gp.waitForTimeout(150);
+      const g = await geo(), r0 = g.rows[0], w = r => r.map(k => k[2]);
+      const ratio = w(r0[5]).map(x => Math.round(x / w(r0[0])[0] * 2) / 2).join(' ');
+      ok(r0.length === 6 && r0.slice(0, 5).every(r => r.length === 10 && new Set(w(r)).size === 1) && ratio === '1.5 1 5 1 1.5' && g.heights.length === 1 && g.tall[0] === g.tall[1] && g.back[0] === g.back[1] && g.bottom[0] === g.bottom[1] && !g.sideways && g.over.length === 0,
+        vp.n + ' ' + page + ': the whole Telugu keyboard: five rows of ten keys of one width, the bottom row 1½ 1 5 1 1½; every key one height (' + g.heights + 'px) on both pages, which are as tall as each other, with ⌫ and the bottom row in the same place; nothing scrolls sideways ' + g.over.join(' '));
+    }
+    // dimmed keys look dimmed, and do nothing
+    ok(await gp.evaluate(() => { const off = document.querySelector('#kb-area .gkb-off'), cs = getComputedStyle(off), r = off.getBoundingClientRect(), hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return cs.opacity === '0.3' && cs.pointerEvents === 'none' && (!hit || !hit.closest('button')); }), vp.n + ': a dimmed key is faint (opacity .3) and takes no taps');
+    // Conjuncts, reversed: the conjunct in the making on the keys, ⌫, and nothing moves
+    await gp.goto('http://localhost:8779/alphabet/03_conjuncts.html'); await gp.waitForTimeout(300); await gp.click('#rev-btn'); await gp.click('#setup-start'); await gp.waitForTimeout(150);
+    await gp.evaluate(() => GameCore.current.put(TeluguData.clusters.find(c => c.glyph === 'ష్ట్ర')));
+    const before = await geo(), backLook = () => gp.evaluate(() => [...document.querySelectorAll('#kb-area .gkb-back')].map(b => getComputedStyle(b).opacity + (b.disabled ? ' off' : ' on')).join());
+    ok(await backLook() === '0.3 off,0.3 off', vp.n + ' Conjuncts: before a pick ⌫ is dimmed and off');
+    const press = ch => gp.evaluate(c => [...document.querySelectorAll('#kb-area button.kb-btn[data-ch]')].find(b => b.dataset.ch === c).click(), ch);
+    await press('ష'); await press('ట'); await gp.waitForTimeout(60);
+    const mid = await geo();
+    ok(await gp.evaluate(() => [...document.querySelectorAll('#kb-area button.kb-btn[data-ch]')].find(b => b.dataset.ch === 'ర').textContent) === 'ష్ట్ర' && await backLook() === '1 on,1 on'
+      && mid.kb === before.kb && JSON.stringify(mid.heights) === JSON.stringify(before.heights) && JSON.stringify(mid.slots) === JSON.stringify(before.slots) && mid.over.length === 0,
+      vp.n + ' Conjuncts: after ష and ట the keys show ష్ట్ర …, ⌫ is lit; no key, slot, or the keyboard has moved or grown ' + mid.over.join(' '));
+    await gp.click('#kb-area .gkb-page.on .gkb-back'); await gp.waitForTimeout(40);
+    ok(await gp.evaluate(() => [...document.querySelectorAll('#slots .slot-val')].map(v => v.textContent).join('|')) === 'ష|–|–', vp.n + ' Conjuncts: tapping ⌫ clears the last pick');
+    await press('ట'); await press('ర'); await gp.waitForTimeout(100);
+    const after = await geo();
+    ok(after.kb === before.kb && JSON.stringify(after.slots) === JSON.stringify(before.slots), vp.n + ' Conjuncts: answered, the keyboard is still where it was');
+    // the header keeps its height while the counters change (9 → 10 correct, 51 → 9 left)
+    await gp.goto('http://localhost:8779/alphabet/02_diacritics.html'); await gp.waitForTimeout(300); await gp.click('#setup-start'); await gp.waitForTimeout(150);
+    const heads = await gp.evaluate(async () => { const G = GameCore.current, out = new Set(), kb = new Set();
+      for (let i = 0; i < 14; i++) { const c = G.current; [...document.querySelectorAll('#kb-area button.kb-btn[data-kind="c"]')].find(b => b.dataset.ipa === c.c.ipa).click(); [...document.querySelectorAll('#kb-area button.kb-btn[data-kind="v"]')].find(b => b.dataset.ipa === c.v.ipa).click();
+        out.add(Math.round(document.querySelector('.g-header').getBoundingClientRect().height)); kb.add(Math.round(document.querySelector('#kb-area .gkb').getBoundingClientRect().top)); await new Promise(r => setTimeout(r, 950)); }
+      return { h: [...out], kb: [...kb], done: G.completed }; });
+    ok(heads.done >= 10 && heads.h.length === 1 && heads.kb.length === 1, vp.n + ' Diacritics: as the counters grow a digit (' + heads.done + ' correct) the header keeps its height (' + heads.h + 'px) and the keyboard stays put');
+    // Diacritics, reversed: syllables on the sign keys fit them
+    await gp.goto('http://localhost:8779/alphabet/02_diacritics.html'); await gp.waitForTimeout(300); await gp.click('#rev-btn'); await gp.click('#setup-start'); await gp.waitForTimeout(150);
+    const d0 = await geo();
+    await gp.evaluate(() => [...document.querySelectorAll('#kb-area button.kb-btn[data-kind="c"]')].find(b => b.textContent === 'క్ష').click()); await gp.waitForTimeout(60);
+    const d1 = await geo();
+    ok(await gp.evaluate(() => document.querySelector('#kb-area .gkb').classList.contains('syl') && [...document.querySelectorAll('#kb-area button.kb-btn[data-kind="v"]')].some(b => b.textContent === 'క్షౌ')) && d1.over.length === 0 && d1.kb === d0.kb && JSON.stringify(d1.slots) === JSON.stringify(d0.slots),
+      vp.n + ' Diacritics reversed: with క్ష picked the sign keys read క్షా … క్షౌ, each inside its key, and nothing moves ' + d1.over.join(' '));
+    await gp.close();
   }
   fr0 = await frameOf('lookalike-builder');
   ok(await fr0.evaluate(() => document.querySelectorAll('#kCons .key').length === TeluguData.consonants.length && document.querySelectorAll('#kDigits .key').length === TeluguData.digits.length && !!LookalikeData.rows), 'the Lookalike Builder draws its keys from TeluguData and has LookalikeData\'s CSV reader');

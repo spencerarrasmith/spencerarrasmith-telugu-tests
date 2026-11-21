@@ -1,5 +1,6 @@
 const { SITE_DIR } = require('./config');
-// settings.js: the app-wide choice of how sounds are written (IPA or ISO), remembered in this browser.
+// settings.js: the app-wide choices, remembered in this browser: how sounds are written (IPA or ISO), and whether
+// the keyboard shows syllables (కా, క్శ on the keys).
 const fs = require('fs'), path = require('path');
 const src = fs.readFileSync(path.join(SITE_DIR, 'settings.js'), 'utf8');
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
@@ -36,6 +37,15 @@ ok(JSON.parse(keep.store[KEY]).future === 'kept', 'setting one value keeps the o
 w = boot(true); S = w.TeluguSettings;
 ok(S.get('notation') === 'ipa' && S.set('notation', 'iso') && S.get('notation') === 'iso' && S.persistent === false, 'blocked storage: the choice holds for this page view, and persistent is false');
 
+// "Keyboard shows syllables": on unless turned off
+{ const w = boot(), S = w.TeluguSettings;
+  ok(S.get('syllables') === 'on' && !(KEY in w.store), 'syllables: on by default, with nothing stored');
+  ok(JSON.stringify(S.options('syllables').map(o => [o.value, o.label])) === '[["on","On"],["off","Off"]]' && S.options('syllables').every(o => o.hint.length > 10), 'two values, on and off, each with a hint');
+  ok(S.set('syllables', 'off') && S.get('syllables') === 'off' && S.get('notation') === 'ipa' && JSON.parse(w.store[KEY]).syllables === 'off', 'off is stored beside the notation, which it leaves alone');
+  ok(S.set('syllables', 'maybe') === false && S.get('syllables') === 'off', 'anything but on or off is refused');
+  ok(S.absorb({ syllables: 'on', _t: Date.now() + 5 }) === true && S.get('syllables') === 'on', 'it syncs as the notation does: a newer copy from another device wins');
+  ok(boot(false, { [KEY]: '{"notation":"iso"}' }).TeluguSettings.get('syllables') === 'on', 'a store from before the setting existed reads as on'); }
+
 // syncing: each change is stamped (_t); of two copies, the choices made later win
 { const w = boot(), S = w.TeluguSettings; let ev = 0; S.onChange(() => ev++);
   const t0 = Date.now(); S.set('notation', 'iso');
@@ -62,11 +72,12 @@ const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDi
 const pages = walk(SITE_DIR).filter(f => f.endsWith('.html')).map(f => [path.relative(SITE_DIR, f), fs.readFileSync(f, 'utf8')]);
 const needs = pages.filter(([, s]) => /<script src="(\.\.\/)?telugu-data\.js">/.test(s));
 const bad = needs.filter(([, s]) => !/<script src="(\.\.\/)?settings\.js"><\/script>\s*(<script src="(\.\.\/)?units\.js"><\/script>\s*)?<script src="(\.\.\/)?telugu-data\.js">/.test(s)).map(([f]) => f);
-ok(needs.length === 11 && bad.length === 0, 'every page that loads telugu-data.js loads settings.js first (' + needs.length + ' pages) ' + bad.join(', '));
+ok(needs.length === 13 && bad.length === 0, 'every page that loads telugu-data.js loads settings.js first (' + needs.length + ' pages) ' + bad.join(', '));
 const idx = pages.find(([f]) => f === 'index.html')[1];
 ok(/<script src="settings\.js"><\/script>\s*<script src="units\.js">/.test(idx), 'the home page loads settings.js before units.js');
 const setters = pages.filter(([, s]) => /Settings\.set\(|TeluguSettings\.set\(/.test(s)).map(([f]) => f);
-ok(setters.join() === 'index.html', 'only the home page changes a setting: ' + setters.join());
+ok(setters.join() === 'index.html,training/04_keyboard.html' && !/Settings\.set\('notation'/.test(pages.find(([f]) => f === 'training/04_keyboard.html')[1]),
+  'only the home page changes a setting, and the Telugu Keyboard page its own one ("Keyboard shows syllables"): ' + setters.join());
 const direct = walk(SITE_DIR).filter(f => /\.(html|js)$/.test(f) && !f.endsWith('settings.js')).filter(f => fs.readFileSync(f, 'utf8').includes(KEY)).map(f => path.relative(SITE_DIR, f));
 ok(direct.length === 0, 'nothing but settings.js touches its storage key ' + direct.join(', '));
 console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);

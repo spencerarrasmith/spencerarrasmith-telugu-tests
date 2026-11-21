@@ -10,11 +10,11 @@ const src = fs.readFileSync(dir + 'index.html', 'utf8');
 ok(/<script src="units\.js"><\/script>/.test(src) && !/\bsrc: ['"]/.test(src) && !/soon: true/.test(src), 'index.html holds no tile list of its own (it loads units.js)');
 ok(/<link rel="stylesheet" href="home\.css">/.test(src) && !/<style/.test(src) && !/fonts\.googleapis/.test(src), 'index.html links home.css: no inline <style>, no font link of its own');
 ok(S.map(s => s.title).join(' · ') === 'Reference · Training · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'section order (Reference first, then Training, above Alphabet)');
-ok(S.map(s => s.tiles.length).join(',') === '7,3,4,8,12,8' && ALL.length === 42, 'tile counts 7/3/4/8/12/8 = 42');
+ok(S.map(s => s.tiles.length).join(',') === '8,4,4,8,12,8' && ALL.length === 44, 'tile counts 8/4/4/8/12/8 = 44');
 ok(new Set(ALL.map(t => t.id)).size === ALL.length, 'tile ids unique');
 ok(ALL.every(t => fs.existsSync(dir + t.src)), 'every src file exists');
 ok(new Set(ALL.map(t => t.src)).size === ALL.length, 'every src is distinct');
-ok(ALL.filter(t => !t.soon).map(t => t.id).join() === 'links,rosetta,signs-conjuncts,sound-charts,review,lookalike-builder,lookalikes,phonemes,diacritics,conjuncts,words', 'only the 11 built pages are live');
+ok(ALL.filter(t => !t.soon).map(t => t.id).join() === 'links,rosetta,signs-conjuncts,sound-charts,bookish,review,lookalike-builder,lookalikes,keyboard,phonemes,diacritics,conjuncts,words', 'only the 13 built pages are live');
 const FOLDERS = ['reference', 'training', 'alphabet', 'grammar', 'vocabulary', 'advanced-grammar'];
 // a folder's numbering starts at 01, or at 00 when it opens with a page that is not a unit (the external links)
 ok(S.every((s, i) => { const first = +s.tiles[0].src.split('/')[1].slice(0, 2); return first <= 1 && s.tiles.every((t, j) => t.src === FOLDERS[i] + '/' + String(j + first).padStart(2, '0') + '_' + t.src.split('_').slice(1).join('_') && /^[a-z0-9-]+\.html$/.test(t.src.split('_').slice(1).join('_'))); }), 'every tile lives in its section folder, numbered in tile order (NN_name.html)');
@@ -29,12 +29,12 @@ ok(d.querySelectorAll('.section-count').length === 0 && !/\d+ of \d+ ready/.test
     'each heading holds one button that is the whole line: the section\'s name, then the arrow (the heading stays a heading for a screen reader)');
   ok(heads.map(h => h.querySelector('.section-title').textContent).join(' · ') === 'Reference · Training · Alphabet · Grammar · Vocabulary · Advanced Grammar' && heads.every(h => b(h).querySelector('.section-name').textContent === h.closest('.section').dataset.section),
     'the heading still reads as the section\'s name, and nothing else'); }
-ok(d.querySelectorAll('a.tile').length === 42 && d.querySelectorAll('a.tile.soon').length === 31 && d.querySelectorAll('.tile-badge').length === 31 && d.querySelectorAll('#sections a.tile').length === 42 && !d.getElementById('featured') && !d.querySelector('.featured, .tile.review'),
-  '42 tiles, all inside the sections (no strip above them), 31 marked Soon');
+ok(d.querySelectorAll('a.tile').length === 44 && d.querySelectorAll('a.tile.soon').length === 31 && d.querySelectorAll('.tile-badge').length === 31 && d.querySelectorAll('#sections a.tile').length === 44 && !d.getElementById('featured') && !d.querySelector('.featured, .tile.review'),
+  '44 tiles, all inside the sections (no strip above them), 31 marked Soon');
 // a tile: its icon and its title together on one line (.tile-head), its description under them
 { const all = [...d.querySelectorAll('#sections a.tile')], kids = t => [...t.children].map(e => e.className).join();
   const bad = all.filter(t => !/^tile-head,tile-desc(,tile-badge)?$/.test(kids(t)) || [...t.querySelector('.tile-head').children].map(e => e.className).join() !== 'tile-icon,tile-title' || t.querySelector('.tile-icon').getAttribute('aria-hidden') !== 'true');
-  ok(all.length === 42 && bad.length === 0, 'every tile is a head (icon, then title) followed by its description, then a badge if it has one ' + bad.map(t => t.getAttribute('href')).join(' '));
+  ok(all.length === 44 && bad.length === 0, 'every tile is a head (icon, then title) followed by its description, then a badge if it has one ' + bad.map(t => t.getAttribute('href')).join(' '));
   const t = d.querySelector('a.tile[href="#/signs-conjuncts"]');
   ok(t.querySelector('.tile-head .tile-title').textContent === 'Signs & Conjuncts' && t.querySelector('.tile-head + .tile-desc').textContent === ALL.find(x => x.id === 'signs-conjuncts').desc && t.querySelector('.tile-icon').textContent === ALL.find(x => x.id === 'signs-conjuncts').icon,
     'a tile shows its icon, title, and description from units.js: ' + t.querySelector('.tile-title').textContent);
@@ -43,8 +43,8 @@ ok(d.querySelectorAll('a.tile').length === 42 && d.querySelectorAll('a.tile.soon
     'home.css puts the icon and the title side by side, centered on each other, and keeps the title clear of a badge in the corner');
   ok(/\.tile:not\(\.link\) \{ display: grid; grid-template-columns: 40px minmax\(0, 1fr\);/.test(phone) && /\.tile-head \{ display: contents; \}/.test(phone) && /\.tile-icon \{ grid-row: 1 \/ span 2;/.test(phone),
     'on a phone the tile stays one compact row: the icon at the left, the title and description stacked beside it'); }
-ok([...d.querySelectorAll('.section')[1].querySelectorAll('a.tile')].map(a => a.getAttribute('href')).join() === '#/review,#/lookalike-builder,#/lookalikes' && d.querySelector('.section').dataset.section === 'Reference',
-  'Review is the first tile of Training, the second section: Review, Lookalike Builder, Lookalikes');
+ok([...d.querySelectorAll('.section')[1].querySelectorAll('a.tile')].map(a => a.getAttribute('href')).join() === '#/review,#/lookalike-builder,#/lookalikes,#/keyboard' && d.querySelector('.section').dataset.section === 'Reference',
+  'Review is the first tile of Training, the second section: Review, Lookalike Builder, Lookalikes, Telugu Keyboard');
 (async () => {
   const wait = () => new Promise(r => setTimeout(r, 5));
   const frame = d.getElementById('app-frame');
@@ -116,10 +116,21 @@ ok([...d.querySelectorAll('.section')[1].querySelectorAll('a.tile')].map(a => a.
   seg()[1].click();
   ok(on() === 'iso' && seg()[1].getAttribute('aria-checked') === 'true' && d.getElementById('pref-eg').textContent === 'క is written ka', 'choosing ISO selects it; the example becomes "క is written ka"');
   ok(JSON.parse(w.localStorage.getItem('telugu.settings.v1')).notation === 'iso' && w.TeluguSettings.get('notation') === 'iso', 'the choice is saved for every other page');
-  ok(d.querySelectorAll('a.tile').length === 42 && rvBadge() === '3 to revisit', 'the tiles are untouched by the change');
+  ok(d.querySelectorAll('a.tile').length === 44 && rvBadge() === '3 to revisit', 'the tiles are untouched by the change');
   seg()[1].click(); ok(on() === 'iso', 'choosing the selected option again changes nothing');
   w.TeluguSettings.set('notation', 'ipa'); ok(on() === 'ipa' && d.getElementById('pref-eg').textContent === 'క is written /k/', 'a change made elsewhere (another tab) shows here at once');
   ok(!/telugu-data\.js/.test(src) && /Settings\.set\('notation'/.test(src), 'the home page only stores the choice; it loads no letter data');
+  /* ── "Keyboard shows syllables": the second setting, a checkbox, on unless turned off ── */
+  { const box = d.getElementById('pref-syl'), row = box && box.closest('.pref');
+    ok(row && row.querySelector('.pref-label').textContent === 'Keyboard' && box.closest('label.pref-check').textContent.trim() === 'Shows syllables' && d.querySelectorAll('#prefs .pref').length === 2 && d.querySelectorAll('#prefs .pref')[1] === row,
+      'the Settings menu has a second row, under "Sounds as": Keyboard ☑ Shows syllables');
+    ok(box.type === 'checkbox' && box.checked && w.TeluguSettings.get('syllables') === 'on' && /కా కి/.test(row.querySelector('.pref-eg').textContent) && /క్క క్ష/.test(row.querySelector('.pref-eg').textContent), 'checked by default, with an example under it (after క: కా కి …; after క్: క్క క్ష …)');
+    box.click();
+    ok(w.TeluguSettings.get('syllables') === 'off' && JSON.parse(w.localStorage.getItem('telugu.settings.v1')).syllables === 'off' && JSON.parse(w.localStorage.getItem('telugu.settings.v1')).notation === 'ipa', 'unchecking it stores "off" for every page, beside the notation');
+    ok(!d.getElementById('pref-syl').checked, 'and the menu, drawn again, shows it unchecked');
+    w.TeluguSettings.set('syllables', 'on');
+    ok(d.getElementById('pref-syl').checked, 'a change made elsewhere (the Telugu Keyboard page, another tab) shows here at once');
+    ok(/Settings\.set\('syllables'/.test(src), 'the home page stores it as the notation is stored'); }
   /* ── a section folds away to its heading line ── */
   {
     const KEY = 'telugu.home.v1';
@@ -135,7 +146,7 @@ ok([...d.querySelectorAll('.section')[1].querySelectorAll('a.tile')].map(a => a.
     ok(sec('Alphabet').querySelector('.section-title').textContent === 'Alphabet' && !sec('Alphabet').querySelector('.section-count') && !!sec('Alphabet').querySelector('.section-head .section-toggle'), 'the heading line stays: its name and its arrow');
     ok(S.filter(s => s.title !== 'Alphabet').every(s => !tiles(s.title).hidden && btn(s.title).getAttribute('aria-expanded') === 'true'), 'the other sections are not touched');
     ok(stored(w).join() === 'Alphabet', 'the folded section is remembered in this browser');
-    ok(d.querySelectorAll('a.tile').length === 42 && tiles('Alphabet').querySelectorAll('a.tile').length === 4, 'its tiles are still there, only hidden');
+    ok(d.querySelectorAll('a.tile').length === 44 && tiles('Alphabet').querySelectorAll('a.tile').length === 4, 'its tiles are still there, only hidden');
     w.location.hash = '#/rosetta'; await wait(); w.location.hash = '#/'; await wait();
     ok(tiles('Alphabet').hidden && btn('Alphabet').getAttribute('aria-expanded') === 'false' && !tiles('Reference').hidden, 'it is still folded after opening a page and coming back');
     P.miss({ game: 'diacritics', key: 'కీ', ask: 'telugu', syllable: true });

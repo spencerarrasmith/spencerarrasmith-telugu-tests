@@ -1,17 +1,16 @@
 const h = require('./harness')('alphabet/01_phonemes.html');
 const { w, d, tick, ok, front, $ } = h;
 const G = h.game;                                          // the round: G().deck, .current, .total, .completed
-const vis = () => [...d.querySelectorAll('.kb-btn')].filter(b => b.style.display !== 'none');
+const vis = () => [...d.querySelectorAll('#kb-area button.kb-btn[data-ipa]')];      // the game's keys (not ౧౨౩, not the dimmed ones)
 const btn = ipa => vis().find(b => b.dataset.ipa === ipa);
 const cur = () => G().current;
 const keys = () => vis().length;
 (async () => {
-  ok(!$('show-cat').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'categories are off to begin with: a plain keyboard, no label on the card');
-  $('show-cat').click();                                    // on for the rest of this suite, which is about the grouped keyboard
-  ok(!$('include-extra').checked, '"Include extra letters" is unchecked by default');
-  ok($('include-extra').parentElement.textContent.includes('Include extra letters') && $('include-extra').closest('#setup'), 'label reads "Include extra letters"; the box is in the session popup');
-  ok(G().total === 51 && keys() === 51, 'book set by default: 51 cards / 51 keys');
-  ok(!btn('ɽ') && !btn('ts') && !btn('dz') && !btn('lu') && !btn('luː'), 'ఱ ఌ ౡ ౘ ౙ keys hidden by default');
+  ok(!$('group-kb').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'not grouped to begin with: the Telugu keyboard\'s layout, no label on the card');
+  $('group-kb').click();                                    // on for the rest of this suite, which is about the grouped keyboard
+  ok(!$('include-extra') && !/Include extra letters|include-extra/.test(require('fs').readFileSync(require('path').join(require('./config').SITE_DIR, 'alphabet/01_phonemes.html'), 'utf8')), 'no "Include extra letters": the letters out of use are on the Bookish Telugu page instead');
+  ok(G().total === 51 && keys() === 51, 'the book\'s letters: 51 cards / 51 keys');
+  ok(!btn('ɽ') && !btn('ts') && !btn('dz') && !btn('lu') && !btn('luː') && !d.querySelector('#kb-area [data-ch="ఱ"], #kb-area [data-ch="ఌ"]') && !G().deck.some(c => /[ఱఌౡౘౙ]/.test(c.ch)), 'no ఱ ఌ ౡ ౘ ౙ: not dealt, and no key for them');
   ok(!!btn('kʂ') && [...d.querySelectorAll('.kb-label')].some(l => l.textContent === 'Conjunct'), 'క్ష has its own "Conjunct" key (kʂ)');
   ok(!!btn('ru') && !!btn('ruː') && !!btn('ŋ') && !!btn('ɲ'), 'ఋ ౠ ఙ ఞ stay in the default set');
 
@@ -47,14 +46,8 @@ const keys = () => vis().length;
   ok($('g-complete').classList.contains('show') && G().completed === 51, 'session completes with all 51 cleared');
   { const r = P.runs('phonemes').at(-1); ok(r && r.ok === G().completed && r.tries === G().attempts && r.n === G().total && r.end === 'done' && !('dir' in r) && !('isComplete' in P), 'the session is recorded for the Profile page (forward); nothing is marked complete'); }
 
-  // extras on
+  // Practice Again: the same 51
   h.again();
-  h.setup(() => { $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change')); });
-  ok(G().total === 56 && keys() === 56, 'extras on: 56 cards / 56 keys');
-  ok(!!btn('ɽ') && !!btn('ts') && !!btn('dz') && !!btn('lu') && !!btn('luː'), 'ఱ ఌ ౡ ౘ ౙ keys appear');
-  front(x => x.ipa === 'ɽ');
-  ok($('rare-badge').style.display !== 'none', 'extra letters carry the "rare" badge');
-  h.setup(() => { $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change')); });
-  ok(G().total === 51, 'unchecking returns to 51');
+  ok(G().total === 51 && keys() === 51, 'Practice Again deals the 51 again');
   h.done();
 })();

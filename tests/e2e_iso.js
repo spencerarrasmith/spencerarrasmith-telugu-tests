@@ -10,11 +10,11 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
   /* ── Phonemes ── */
   {
     const h = load('alphabet/01_phonemes.html', ISO); const { w, d, tick, $ } = h, G = h.game, P = w.TeluguProgress, D = w.TeluguData;
-    const kb = () => [...d.querySelectorAll('.kb-btn')].filter(b => b.style.display !== 'none'), key = ch => kb().find(b => b.dataset.ch === ch);
+    const kb = () => [...d.querySelectorAll('#kb-area button.kb-btn[data-ipa]')], key = ch => kb().find(b => b.dataset.ch === ch);
     ok(D.notation.id === 'iso' && $('g-title').textContent === 'Telugu → ISO' && $('setup-dir').textContent === 'Telugu → ISO', 'Phonemes: the title and the popup\'s direction say ISO');
     ok(key('క').textContent === 'ka' && key('ఖ').textContent === 'kha' && key('ట').textContent === 'ṭa' && key('ఆ').textContent === 'ā' && key('అం').textContent === 'aṁ' && key('క్ష').textContent === 'kṣa' && key('ఋ').textContent === 'r̥', 'Phonemes: keys spell each letter in ISO, consonants with their a (ka kha ṭa ā aṁ kṣa r̥)');
     ok(kb().length === 51 && kb().every(b => noSlash(b.textContent) && !IPA_ONLY.test(b.textContent)) && key('క').dataset.ipa === 'k', 'Phonemes: no slashes or IPA letters on any key; data-ipa is still the key\'s identity');
-    ok(kb().map(b => b.textContent).join(' ') === D.pool(D.letters, false).map(l => l.iso).join(' '), 'Phonemes: every key is the letter\'s iso from telugu-data.js');
+    ok(kb().length === D.pool(D.letters, false).length && kb().every(b => b.textContent === D.letters.find(l => l.ch === b.dataset.ch).iso), 'Phonemes: every key is the letter\'s iso from telugu-data.js');
     h.front(c => c.ch === 'క'); key('క').click();
     ok($('char-card').classList.contains('correct') && G().completed === 1, 'Phonemes: the ka key answers క');
     await tick(); await tick();
@@ -36,12 +36,12 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
   /* ── Diacritics ── */
   {
     const h = load('alphabet/02_diacritics.html', ISO); const { w, d, tick, $ } = h, G = h.game, D = w.TeluguData, P = w.TeluguProgress;
-    const keys = k => [...d.querySelectorAll(`.kb-btn[data-kind="${k}"]`)], key = (k, ipa) => keys(k).find(b => b.dataset.ipa === ipa);
+    const keys = k => [...d.querySelectorAll(`#kb-area button.kb-btn[data-kind="${k}"]`)], key = (k, ipa) => keys(k).find(b => b.dataset.ipa === ipa);
     const C = ch => D.letters.find(l => l.ch === ch), V = sg => D.signs.find(g => g.sign === sg);
     const put = (c, v) => G().put({ c: C(c), v: V(v), glyph: c + v, cat: V(v).grp, rare: false });
     ok($('g-title').textContent === 'Diacritics → ISO', 'Diacritics: title says ISO');
-    ok(keys('c').map(b => b.textContent).join(' ') === D.pool([...D.consonants, ...D.conjunctLetters], false).map(l => l.isoStem).join(' ') && key('c', 'k').textContent === 'k' && key('c', 'kʂ').textContent === 'kṣ', 'Diacritics: consonant keys are the bare consonants (k … kṣ): the vowel is the other pick');
-    ok(keys('v').map(b => b.textContent).join(' ') === 'a ā i ī u ū e ē o ō ai au r̥ r̥̄ aṁ aḥ ∅', 'Diacritics: vowel keys are what each sign adds, each long vowel beside its short one (a ā i ī … aṁ aḥ), ∅ for the pollu');
+    ok(keys('c').map(b => b.textContent).sort().join(' ') === D.pool([...D.consonants, ...D.conjunctLetters], false).map(l => l.isoStem).sort().join(' ') && key('c', 'k').textContent === 'k' && key('c', 'kʂ').textContent === 'kṣ', 'Diacritics: consonant keys are the bare consonants (k … kṣ): the vowel is the other pick');
+    ok(keys('v').map(b => b.textContent).join(' ') === 'a ā i ī u ū r̥ r̥̄ e ē ai o ō au aṁ aḥ ∅', 'Diacritics: vowel keys are what each sign adds, each where its vowel sits on the keyboard (a ā i ī … aṁ aḥ), ∅ for the pollu');
     ok([...keys('c'), ...keys('v')].every(b => noSlash(b.textContent) && !IPA_ONLY.test(b.textContent)), 'Diacritics: no slashes or IPA letters on any key');
     put('క', 'ా'); key('c', 'k').click();
     ok($('slot-c').querySelector('.slot-val').textContent === 'k', 'Diacritics: the consonant slot shows k');
@@ -65,10 +65,10 @@ const IPA_ONLY = /[ɡʂʈɖɳɲŋʃʰʱɽːɦʒʋɭ]/;                        //
   /* ── Conjuncts ── */
   {
     const h = load('alphabet/03_conjuncts.html', ISO); const { w, d, tick, $ } = h, G = h.game, D = w.TeluguData, P = w.TeluguProgress;
-    const kb = () => [...d.querySelectorAll('#kb-area .kb-btn')], ipaKey = ipa => kb().find(b => b.dataset.ipa === ipa), key = ch => kb().find(b => b.dataset.ch === ch);
+    const kb = () => [...d.querySelectorAll('#kb-area button.kb-btn[data-ipa]')], ipaKey = ipa => kb().find(b => b.dataset.ipa === ipa), key = ch => kb().find(b => b.dataset.ch === ch);
     const put = g => G().put(D.clusters.find(c => c.glyph === g));
     const vals = () => [...d.querySelectorAll('#slots .slot-val')].map(s => s.textContent).join('|');
-    ok($('g-title').textContent === 'Conjuncts → ISO' && kb().length === 34 && kb().map(b => b.textContent).join(' ') === D.pool(D.consonants, false).map(l => l.isoStem).join(' '), 'Conjuncts: title says ISO; keys are the 34 bare consonants in ISO');
+    ok($('g-title').textContent === 'Conjuncts → ISO' && kb().length === 34 && kb().map(b => b.textContent).sort().join(' ') === D.pool(D.consonants, false).map(l => l.isoStem).sort().join(' '), 'Conjuncts: title says ISO; keys are the 34 bare consonants in ISO');
     put('క్ష'); ipaKey('k').click(); ok(vals() === 'k|–', 'Conjuncts: a pick shows in its slot as k');
     ipaKey('ʂ').click();
     ok($('char-card').classList.contains('correct') && $('feedback').textContent === '✓  kṣa', 'Conjuncts: k + ṣ answers క్ష; feedback ✓ kṣa');

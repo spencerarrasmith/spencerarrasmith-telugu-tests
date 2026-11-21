@@ -2,19 +2,19 @@ const h = require('./harness')('alphabet/01_phonemes.html');
 const { w, d, tick, ok, front, $ } = h;
 const G = h.game;                                          // the round: G().deck, .current, .total, .completed
 const D = w.TeluguData, P = w.TeluguProgress;
-const vis  = () => [...d.querySelectorAll('.kb-btn')].filter(b => b.style.display !== 'none');
+const vis  = () => [...d.querySelectorAll('#kb-area button.kb-btn[data-ipa]')];      // the game's keys (not ౧౨౩, not the dimmed ones)
 const byCh = ch => vis().find(b => b.dataset.ch === ch);
 const byIpa = ipa => vis().find(b => b.dataset.ipa === ipa);
 const cur  = () => G().current;
 const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
 (async () => {
-  ok(!$('show-cat').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'categories are off to begin with: a plain keyboard, no label on the card');
-  $('show-cat').click();                                    // on for the rest of this suite, which is about the grouped keyboard
+  ok(!$('group-kb').checked && $('cat-badge').style.visibility === 'hidden' && d.querySelectorAll('#kb-area .kb-label').length === 0, 'not grouped to begin with: the Telugu keyboard\'s layout, no label on the card');
+  $('group-kb').click();                                    // on for the rest of this suite, which is about the grouped keyboard
   /* ── controls + defaults ── */
   ok($('g-title').textContent === 'Telugu → IPA', 'forward title: Telugu → IPA');
   ok($('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false' && $('rev-btn').closest('#setup') && !$('g-title').closest('.g-header').querySelector('.rev-btn'), 'the 🔀 button is in the session popup, not pressed; the header no longer has one');
   ok($('highlight-correct').checked && $('highlight-correct').parentElement.textContent.includes('Highlight correct answer'), '"Highlight correct answer" checkbox exists, on by default');
-  ok(!$('opts-menu') && !$('menu-btn') && d.querySelectorAll('#setup input[type=checkbox]').length === 5, 'no ⋮ menu on this page: the five checkboxes (categories, shuffle, extra letters, highlight, missed guesses reappear) are in the session popup');
+  ok(!$('opts-menu') && !$('menu-btn') && d.querySelectorAll('#setup input[type=checkbox]').length === 3, 'no ⋮ menu on this page: the three checkboxes (group keyboard phonetically, highlight, missed guesses reappear) are in the session popup');
   ok(vis().every(b => !b.classList.contains('te')) && vis()[0].textContent === 'ɐ', 'forward keys show IPA (first key: ɐ)');
 
   /* ── highlight checkbox, forward mode ── */
@@ -45,12 +45,12 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   ok(G().completed === 0 && G().deck.length === 51 && G().total === 51, 'switching starts a fresh round (0 cleared, 51 cards)');
 
   /* ── reverse: keyboard ── */
-  const expected = D.letters.filter(l => l.core).map(l => l.ch);
+  const expected = D.letterGroups.flatMap(g => D.letters.filter(l => l.inBook && g.letters.includes(l))).map(l => l.ch);
   ok(vis().length === 51 && vis().every(b => b.classList.contains('te')), 'reverse: 51 Telugu-faced keys');
-  ok(vis().map(b => b.textContent).join('|') === expected.join('|'), 'keys appear in alphabet order (అ ఆ ఇ … క ఖ గ … స హ క్ష)');
+  ok(vis().map(b => b.textContent).join('|') === expected.join('|'), 'grouped, the keys go group by group, in alphabet order within each (అ ఆ ఇ … క ఖ గ … క్ష)');
   ok(vis()[0].textContent === 'అ' && vis()[vis().length - 1].textContent === 'క్ష', 'starts with అ, ends with క్ష');
   ok([...d.querySelectorAll('.kb-label')].map(e => e.textContent).join() === D.letterGroups.map(g => g.lbl).join(), 'same group labels as the IPA keyboard');
-  ok(!byCh('ఌ') && !byCh('ఱ') && !!byCh('ఋ'), 'extras hidden by default; ఋ present');
+  ok(!byCh('ఌ') && !byCh('ఱ') && !!byCh('ఋ'), 'no letters out of use (ఌ ఱ); ఋ present');
   ok(vis().every(b => !/[a-z]/.test(b.textContent)), 'no IPA leaks onto the Telugu keys');
 
   /* ── reverse: card ── */
@@ -88,11 +88,6 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   await tick(); await tick();
   $('highlight-correct').checked = true;
 
-  /* extras in reverse */
-  h.setup(() => { $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change')); });
-  ok(G().total === 56 && vis().length === 56 && !!byCh('ఌ') && !!byCh('ఱ') && vis().every(b => b.classList.contains('te')), 'extras on in reverse: 56 Telugu keys incl. ఌ ఱ');
-  h.setup(() => { $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change')); });
-  ok(vis().length === 51 && vis().every(b => b.classList.contains('te')), 'extras off: back to 51, still Telugu-faced');
 
   /* full reverse session */
   let g = 0;
@@ -109,13 +104,5 @@ const lit  = () => d.querySelectorAll('.kb-btn.ok').length;
   ok(vis().length === 51 && vis().every(b => !b.classList.contains('te')) && vis()[0].textContent === 'ɐ', 'IPA keys restored');
   ok(!$('tel-char').classList.contains('ipa-face') && G().current.ch === $('tel-char').textContent, 'card shows the Telugu letter again');
 
-  /* shared keyboard builder: reusable on its own */
-  const host = d.createElement('div'); d.body.appendChild(host);
-  const picks = [];
-  const btns = D.buildKeyboard(host, { face: 'telugu', visible: l => l.kind === 'vowel' && l.core, onPick: (l, b) => picks.push(l.ch) });
-  ok(btns.length === 56 && btns.filter(b => b.style.display !== 'none').length === 16, 'buildKeyboard: visible as a predicate (16 book vowels shown of 56 keys)');
-  btns[1].click(); ok(picks.join() === 'ఆ', 'buildKeyboard: onPick receives the letter object');
-  const all = D.buildKeyboard(host, {});
-  ok(all.length === 56 && all.every(b => b.style.display !== 'none' && !b.classList.contains('te') && b.textContent === b.dataset.ipa), 'buildKeyboard defaults: all letters, IPA face');
   h.done();
 })();

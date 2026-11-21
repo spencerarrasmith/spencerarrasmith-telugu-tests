@@ -105,7 +105,7 @@ ok(['తెలుగు', 'భాష', 'అక్షరం', 'పదం', 'అ�
 /* ── the file ── */
 {
   const src = fs.readFileSync(path.join(SITE_DIR, 'alphabet/words-data.js'), 'utf8'), page = fs.readFileSync(path.join(SITE_DIR, 'alphabet/04_words.html'), 'utf8');
-  ok(!fs.existsSync(path.join(SITE_DIR, 'words-data.js')) && /<script src="\.\.\/telugu-data\.js"><\/script>\s*<script src="words-data\.js"><\/script>/.test(page), 'the list sits beside the page that uses it (alphabet/words-data.js), loaded after telugu-data.js');
+  ok(!fs.existsSync(path.join(SITE_DIR, 'words-data.js')) && /<script src="\.\.\/telugu-data\.js"><\/script>\s*<script src="\.\.\/telugu-keyboard\.js"><\/script>\s*<script src="words-data\.js"><\/script>/.test(page), 'the list sits beside the page that uses it (alphabet/words-data.js), loaded after telugu-data.js and the keyboard');
   ok(!/\bipa\s*:|\biso\s*:|\/[a-zʰː]+\//.test(src.replace(/\/\*[\s\S]*?\*\//, '')), 'the file holds words and meanings only: no sound is typed in by hand');
   const modern = ['నాన్న', 'ఎలా', 'ఉంది', 'తెలుసు', 'కావాలి', 'ధన్యవాదాలు', 'ఉదాహరణ', 'భారతదేశం', 'సంస్కృతి'];
   ok(/WHERE THE WORDS COME FROM/.test(src) && /Brown/.test(src) && /241 of the 250/.test(src) && modern.every(t => src.split('*/')[0].includes(t) && W.get(t)) && /not from a dictionary/.test(src),

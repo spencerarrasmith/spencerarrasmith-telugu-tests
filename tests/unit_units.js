@@ -5,8 +5,8 @@ const U = require(path.join(SITE_DIR, 'units.js'));
 let fails = 0; const ok = (c, m) => { console.log((c ? 'PASS ' : 'FAIL ') + m); if (!c) fails++; };
 
 ok(U.sections.map(s => s.title).join(' · ') === 'Reference · Training · Alphabet · Grammar · Vocabulary · Advanced Grammar', 'six sections: Reference first, then Training, above Alphabet');
-ok(U.sections.map(s => s.tiles.length).join() === '7,3,4,8,12,8' && U.tiles.length === 42, 'tile counts 7/3/4/8/12/8 = 42');
-ok(!('featured' in U) && U.all === U.tiles && U.all.length === 42 && U.sections[1].tiles[0].id === 'review', 'Review is a tile like any other, the first in Training: nothing is pinned above the sections any more');
+ok(U.sections.map(s => s.tiles.length).join() === '8,4,4,8,12,8' && U.tiles.length === 44, 'tile counts 8/4/4/8/12/8 = 44');
+ok(!('featured' in U) && U.all === U.tiles && U.all.length === 44 && U.sections[1].tiles[0].id === 'review', 'Review is a tile like any other, the first in Training: nothing is pinned above the sections any more');
 // pages that are not tiles (reached from the top right of the home page), and the games whose sessions the Profile page charts
 ok(JSON.stringify(U.pages) === '[{"id":"profile","title":"Profile","src":"profile.html"}]' && fs.existsSync(path.join(SITE_DIR, 'profile.html')) && !U.all.some(t => U.pages.some(p => p.id === t.id || p.src === t.src)), 'pages: Profile, with its own id and file, and not among the tiles');
 const charted = U.all.filter(t => t.stats).map(t => t.id), onCore = U.all.filter(t => !t.soon && /<script src="[^"]*game-core\.js">/.test(fs.readFileSync(path.join(SITE_DIR, t.src), 'utf8'))).map(t => t.id);
@@ -15,29 +15,33 @@ ok(charted.join() === 'phonemes,diacritics,conjuncts,words' && U.all.every(t => 
 const keepsNone = id => /GameCore\.create\(\{[^]*?\n\s*record:\s*false,/.test(fs.readFileSync(path.join(SITE_DIR, U.get(id).src), 'utf8'));
 ok(onCore.join() === 'lookalikes,phonemes,diacritics,conjuncts,words' && onCore.every(id => charted.includes(id) !== keepsNone(id)) && keepsNone('lookalikes'),
   'the five games are built on game-core.js; the four charted ones are recorded, and Lookalikes (a training tool) asks for no record: record: false');
-ok(new Set(U.all.map(t => t.id)).size === 42 && new Set(U.all.map(t => t.src)).size === 42, 'ids and page paths are unique');
+ok(new Set(U.all.map(t => t.id)).size === 44 && new Set(U.all.map(t => t.src)).size === 44, 'ids and page paths are unique');
 ok(U.all.every(t => t.id && t.icon && t.title && t.desc && t.src && /^[a-z0-9-]+$/.test(t.id)), 'every tile has id, icon, title, desc, and src');
 ok(U.all.every(t => fs.existsSync(path.join(SITE_DIR, t.src))), 'every src is a file');
 const soon = U.tiles.filter(t => t.soon);
 // the Training section (the two lookalike pages, moved out of Alphabet into a folder of their own), and what is left in Alphabet
-ok(U.sections[1].title === 'Training' && U.sections[1].tiles.map(t => t.id + ' ' + t.src).join() === 'review training/01_review.html,lookalike-builder training/02_lookalike-builder.html,lookalikes training/03_lookalikes.html'
-  && U.sectionOf('lookalikes').title === 'Training' && U.sectionOf('review').title === 'Training' && !U.get('lookalikes').stats && !U.get('lookalike-builder').stats && !U.get('review').stats
+ok(U.sections[1].title === 'Training' && U.sections[1].tiles.map(t => t.id + ' ' + t.src).join() === 'review training/01_review.html,lookalike-builder training/02_lookalike-builder.html,lookalikes training/03_lookalikes.html,keyboard training/04_keyboard.html'
+  && U.sectionOf('lookalikes').title === 'Training' && U.sectionOf('review').title === 'Training' && !U.get('lookalikes').stats && !U.get('lookalike-builder').stats && !U.get('review').stats && !U.get('keyboard').stats && !U.get('keyboard').review
   && !fs.existsSync(path.join(SITE_DIR, 'review.html')) && !/[.!?]$/.test(U.get('review').desc),
-  'Training: Review, Lookalike Builder, Lookalikes, in training/, numbered from 01; none is charted on the Profile page');
+  'Training: Review, Lookalike Builder, Lookalikes, Telugu Keyboard, in training/, numbered from 01; none is charted on the Profile page');
+// Reference: Bookish Telugu (the letters out of use, and Sanskrit loanwords) after Sound Charts; the placeholders after it renumbered
+ok(U.sections[0].tiles.map(t => t.id + ' ' + t.src).join() === 'links reference/00_external.html,rosetta reference/01_rosetta.html,signs-conjuncts reference/02_signs-conjuncts.html,sound-charts reference/03_sound-charts.html,bookish reference/04_bookish.html,reference-idioms reference/05_idioms.html,reference-dictionary reference/06_dictionary.html,reference-verbs reference/07_verbs.html'
+  && !U.get('bookish').soon && !U.get('bookish').stats && U.get('bookish').title === 'Bookish Telugu' && ['04_idioms', '05_dictionary', '06_verbs'].every(f => !fs.existsSync(path.join(SITE_DIR, 'reference', f + '.html'))),
+  'Reference: External Links, Rosetta Stone, Signs & Conjuncts, Sound Charts, Bookish Telugu, then the three placeholders, renumbered 05 to 07');
 ok(U.sections[2].title === 'Alphabet' && U.sections[2].tiles.map(t => t.id).join() === 'phonemes,diacritics,conjuncts,words' && ['spelling', 'writing', 'alphabet-chart'].every(id => !U.get(id))
   && fs.readdirSync(path.join(SITE_DIR, 'alphabet')).sort().join() === '01_phonemes.html,02_diacritics.html,03_conjuncts.html,04_words.html,words-data.js',
   'Alphabet: Phonemes, Diacritics, Conjuncts, Words, and nothing else in its folder but the word list');
 { // nothing in the app still points at where those pages used to be
   const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)]);
   const stale = walk(SITE_DIR).filter(f => /\.(html|js|css|md)$/.test(f) && /alphabet\/0\d_lookalike|0[1456]_lookalike|0[12]_lookalikes|06_spelling|07_writing|08_alphabet-chart|["'`(\s]review\.html/.test(fs.readFileSync(f, 'utf8'))).map(f => path.relative(SITE_DIR, f));
-  ok(stale.length === 0 && fs.readdirSync(path.join(SITE_DIR, 'training')).sort().join() === '01_review.html,02_lookalike-builder.html,03_lookalikes.html', 'no file mentions the old paths of Review or the lookalike pages, or the removed pages; training/ holds exactly the three ' + stale.join(' ')); }
+  ok(stale.length === 0 && fs.readdirSync(path.join(SITE_DIR, 'training')).sort().join() === '01_review.html,02_lookalike-builder.html,03_lookalikes.html,04_keyboard.html', 'no file mentions the old paths of Review or the lookalike pages, or the removed pages; training/ holds exactly its four pages ' + stale.join(' ')); }
 ok(!U.get('words').soon && U.get('words').stats === true && U.get('words').src === 'alphabet/04_words.html' && !/[.!?]$/.test(U.get('words').desc) && U.label('words') === 'Words', 'Words is a built game, fourth in Alphabet, charted on the Profile page: ' + U.get('words').desc);
 // pages are named NN_name.html, numbered in the order their tiles appear (README, "Conventions")
 const fileNo = t => +path.basename(t.src).slice(0, 2);
 ok(U.sections.every(sec => sec.tiles.every((t, i) => /^\d\d_/.test(path.basename(t.src)) && (i === 0 || fileNo(t) === fileNo(sec.tiles[i - 1]) + 1))),
   'in every section the file numbers follow the tile order, with none skipped (a removed page renumbers the ones after it)');
 ok(soon.length === 31 && soon.every(t => ['learn', 'practice', 'fits'].every(k => typeof t.soon[k] === 'string' && t.soon[k].length > 10)), '31 placeholders, each with its three lines (learn, practice, fits)');
-ok(U.tiles.filter(t => !t.soon).map(t => t.id).join() === 'links,rosetta,signs-conjuncts,sound-charts,review,lookalike-builder,lookalikes,phonemes,diacritics,conjuncts,words', 'the 11 built pages carry no `soon` block');
+ok(U.tiles.filter(t => !t.soon).map(t => t.id).join() === 'links,rosetta,signs-conjuncts,sound-charts,bookish,review,lookalike-builder,lookalikes,keyboard,phonemes,diacritics,conjuncts,words', 'the 13 built pages carry no `soon` block');
 ok(!soon.some(t => /once progress tracking exists/.test(JSON.stringify(t.soon))), 'no placeholder still talks about progress tracking as future work');
 
 // lookups
@@ -63,7 +67,7 @@ ok(/\{sound\} → Telugu/.test(U.get('phonemes').review['phonemes-reverse']) && 
   ok(titled('Signs & Conjuncts') && titled('Tap or Flap') && titled('Non-sibilant Fricative') && !titled('Signs & conjuncts') && !titled('Sound charts') && !titled('of Mice'), 'the title-case check itself: "Signs & Conjuncts" passes, "Sound charts" does not');
   const names = [...U.sections.map(s => s.title), ...U.all.map(t => t.title), ...U.pages.map(p => p.title)];
   const low = names.filter(t => !titled(t));
-  ok(names.length === 6 + 42 + 1 && low.length === 0, 'every section, tile, and page name in units.js is in title case ' + low.join(' | '));
+  ok(names.length === 6 + 44 + 1 && low.length === 0, 'every section, tile, and page name in units.js is in title case ' + low.join(' | '));
   ok(['Signs & Conjuncts', 'Sound Charts', 'Idioms & Proverbs', 'Nouns: Gender & Number', 'Post Office · Phone · Bank', 'Voice & Causatives', 'At Home'].every(t => U.all.some(x => x.title === t)), 'among them: Signs & Conjuncts, Sound Charts, Post Office · Phone · Bank …');
   // each tile's page is titled as its tile is (a lesson or placeholder adds "· Telugu Suite")
   const unesc = t => t.replace(/&amp;/g, '&');

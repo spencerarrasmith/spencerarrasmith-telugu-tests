@@ -1,6 +1,6 @@
 // The session popup (game-setup.js), on the Phonemes page: it opens with the page and asks how to play.
 // Cancel on the left, Start on the right; then every option the game has: direction, the number of rounds,
-// the mistake that is game over, and its five checkboxes (categories start off). The page has no ⋮ menu.
+// the mistake that is game over, and its three checkboxes ("Group keyboard phonetically" starts off). The page has no ⋮ menu.
 // Then the same popup on Diacritics and Conjuncts, with what is their own (their checkboxes, their number of rounds).
 const load = require('./harness');
 const fs = require('fs'), path = require('path'), { SITE_DIR } = require('./config');
@@ -15,19 +15,23 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   const slide = (id, v) => { $(id).value = v; $(id).dispatchEvent(new w.Event('input', { bubbles: true })); };
   const typeRounds = v => { $('setup-rounds-n').value = v; $('setup-rounds-n').dispatchEvent(new w.Event('input', { bubbles: true })); };
   const press = (k, target = d.activeElement || d.body) => target.dispatchEvent(new w.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
-  const wrong = () => [...d.querySelectorAll('.kb-btn')].find(b => b.dataset.ch !== G().current.ch && b.style.display !== 'none');
-  const right = () => [...d.querySelectorAll('.kb-btn')].find(b => b.dataset.ch === G().current.ch);
+  const live = () => [...d.querySelectorAll('#kb-area button.kb-btn[data-ipa]')];        // the game's keys (not ౧౨౩, not the dimmed ones)
+  const wrong = () => live().find(b => b.dataset.ch !== G().current.ch);
+  const right = () => live().find(b => b.dataset.ch === G().current.ch);
+  const grouped = () => d.querySelector('#kb-area .gkb').dataset.mode === 'grouped' && d.querySelectorAll('#kb-area .kb-group').length > 1;
+  const layout = () => d.querySelector('#kb-area .gkb').dataset.mode === 'layout' && d.querySelectorAll('#kb-area .kb-group').length === 0;
   const lives = () => $('s-lives').hidden ? 'hidden' : $('s-lives').textContent;          // the mistakes left, as the header shows them
   const reopen = () => w.GameSetup.current.open();           // what "Practice Again" does, without finishing a session first
-  const keys = () => [...d.querySelectorAll('.kb-btn')].filter(b => b.style.display !== 'none').length;
+  const keys = () => live().length;
 
   /* ── it opens with the page ── */
   ok(lives() === EVER && !$('s-lives').hidden && !/<span class="g-lives" id="s-lives" role="img" hidden>/.test(fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8')), 'the header shows the mistakes left from the start: ❤️×♾️ while there is no limit');
   ok(open() && $('setup').classList.contains('setup') && $('setup').querySelector('[role="dialog"]').getAttribute('aria-modal') === 'true' && $('setup-title').textContent === 'Phonemes', 'the popup is open as soon as the page is, titled "Phonemes"');
   const head = [...$('setup').querySelector('.setup-head').children].map(e => e.id);
   ok(head.join() === 'setup-cancel,setup-title,setup-start' && $('setup-cancel').textContent === 'Cancel' && $('setup-start').textContent === 'Start', 'Cancel is on the left, Start on the right, the title between');
-  const rows = [...$('setup').querySelectorAll('.setup-label, .menu-opt')].map(e => e.textContent.replace('Off while keyboard is shuffled', '').trim());
-  ok(rows.join(' | ') === 'Direction | Number of rounds | Game over | Show categories | Shuffle keyboard | Include extra letters | Highlight correct answer | Missed guesses reappear', 'the options, in order (direction, the sliders, then the checkboxes): ' + rows.join(' | '));
+  const rows = [...$('setup').querySelectorAll('.setup-label, .menu-opt')].map(e => e.textContent.trim());
+  ok(rows.join(' | ') === 'Direction | Number of rounds | Game over | Group keyboard phonetically | Highlight correct answer | Missed guesses reappear', 'the options, in order (direction, the sliders, then the checkboxes): ' + rows.join(' | '));
+  ok(!$('show-cat') && !$('shuffle-kb') && !$('include-extra') && !$('cat-note'), 'no "Show categories", "Shuffle keyboard", or "Include extra letters" any more');
   ok([...$('setup').querySelectorAll('.setup-opt')].every(l => l.lastElementChild.type === 'checkbox' && l.firstElementChild.classList.contains('menu-txt')) && /\.setup-opt \{[^}]*justify-content: space-between/.test(css) && $('rev-btn').parentElement.lastElementChild === $('rev-btn'),
     'each checkbox sits at the right of its row, as the 🔀 button does');
   ok(!$('menu-btn') && !$('opts-menu') && !$('menu-wrap') && !/class="menu"|menu-btn/.test(raw), 'the page has no ⋮ menu');
@@ -41,10 +45,10 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   ok($('setup-rounds').type === 'range' && $('setup-rounds').min === '1' && $('setup-rounds').max === '51' && $('setup-rounds').value === '51' && $('setup-rounds-n').value === '51' && $('setup-rounds-n').nextElementSibling === null && $('setup-rounds').nextElementSibling === $('setup-rounds-n'),
     'number of rounds: a slider from 1 to 51 with a text box on its right, both at 51 (all characters)');
   ok($('setup-misses').type === 'range' && $('setup-misses').min === '1' && d.querySelector('label[for="setup-misses"]').textContent === 'Game over' && $('setup-misses').value === $('setup-misses').max && $('setup-misses-out').textContent === 'Unlimited' && $('setup-misses-note').textContent === 'Never ends early' && /^Unlimited/.test($('setup-misses').getAttribute('aria-valuetext')) && $('setup-misses-note').previousElementSibling === $('setup-misses').parentElement, '"Game over": a slider from 1, at Unlimited, with the note "Never ends early" under it');
-  ok(['show-cat', 'shuffle-kb', 'include-extra', 'highlight-correct', 'missed-again'].every(id => $(id).closest('#setup-opts')) && !$('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked && $('highlight-correct').checked && $('missed-again').checked, 'the five checkboxes are here: highlight and "Missed guesses reappear" on; categories, shuffle, and extra letters off');
-  ok(d.querySelectorAll('#kb-area .kb-group').length === 1 && $('cat-badge').style.visibility === 'hidden', 'with categories off the keyboard behind is one plain block, and the card has no label');
-  $('show-cat').click();
-  ok($('show-cat').checked && d.querySelectorAll('#kb-area .kb-group').length > 1 && $('cat-badge').style.visibility === '', 'checking "Show categories" groups the keyboard and labels the card at once (kept on for the rest of this page)');
+  ok(['group-kb', 'highlight-correct', 'missed-again'].every(id => $(id).closest('#setup-opts')) && !$('group-kb').checked && $('highlight-correct').checked && $('missed-again').checked, 'the three checkboxes are here: highlight and "Missed guesses reappear" on; grouping off');
+  ok(layout() && $('cat-badge').style.visibility === 'hidden', 'not grouped, the keyboard behind is laid out as the Telugu keyboard, and the card has no label');
+  $('group-kb').click();
+  ok($('group-kb').checked && grouped() && $('cat-badge').style.visibility === '', 'checking "Group keyboard phonetically" groups the keyboard and labels the card at once (kept on for the rest of this page)');
   ok($('setup-dir').textContent === 'Telugu → IPA' && $('rev-btn').closest('#setup') && $('rev-btn').textContent === '🔀' && $('rev-btn').getAttribute('aria-pressed') === 'false' && !d.querySelector('.g-header .rev-btn'), 'direction: Telugu → IPA, with the 🔀 button here and no longer in the header');
 
   /* ── the slider and the text box are one value ── */
@@ -68,7 +72,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   ok($('setup-dir').textContent === 'IPA → Telugu' && $('rev-btn').getAttribute('aria-pressed') === 'true' && $('g-title').textContent === 'Telugu → IPA' && G().total === 51, '🔀 turns the direction around in the popup only: the game is untouched');
   $('setup-start').click();
   ok(!open() && $('g-title').textContent === 'IPA → Telugu' && G().total === 5 && G().deck.length === 5 && G().limit === 3 && G().completed === 0 && $('s-total').textContent === '5' && $('s-rem').textContent === '5', 'Start: the popup closes and a session of 5 is dealt, reversed, with "Game over" at 3');
-  ok(keys() === 51 && [...d.querySelectorAll('.kb-btn')].every(b => b.classList.contains('te')), 'the keyboard still has all 51 letters, as Telugu keys: fewer rounds, not fewer choices');
+  ok(keys() === 51 && live().every(b => b.classList.contains('te')), 'the keyboard still has all 51 letters, as Telugu keys: fewer rounds, not fewer choices');
   ok(lives() === L3 && $('s-lives').getAttribute('aria-label') === 'Mistakes left: 3' && $('s-lives').closest('.g-stats'), 'the header shows the mistakes left as hearts, green white orange for the last three: ' + lives());
   ok(new Set(G().deck.map(c => c.ch)).size === 5 && G().deck.every(c => w.TeluguData.letters.includes(c)), 'the 5 are different letters from the usual pool');
 
@@ -96,10 +100,10 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   ok(JSON.stringify(P.runs('phonemes').slice(1).map(r => [r.n, r.ok, r.tries, r.end, r.dir])) === '[[3,3,4,"done",null]]', 'and it is recorded like any other session: 3 cards, 3 correct, 4 answers, forward');
 
   /* ── Cancel, once something has been played, only closes the popup ── */
-  $('retry-btn').click(); $('show-cat').click(); $('rev-btn').click(); slide('setup-rounds', 40);
-  ok(!$('show-cat').checked && d.querySelectorAll('#kb-area .kb-group').length === 1, 'unchecking "Show categories" in the popup flattens the keyboard at once');
+  $('retry-btn').click(); $('group-kb').click(); $('rev-btn').click(); slide('setup-rounds', 40);
+  ok(!$('group-kb').checked && layout(), 'unchecking "Group keyboard phonetically" in the popup lays the keyboard out as the Telugu keyboard at once');
   $('setup-cancel').click();
-  ok(!open() && $('show-cat').checked && d.querySelectorAll('#kb-area .kb-group').length > 1 && $('g-title').textContent === 'Telugu → IPA' && G().total === 3 && $('g-complete').classList.contains('show'), 'Cancel closes it and puts everything back: categories, direction, the finished session');
+  ok(!open() && $('group-kb').checked && grouped() && $('g-title').textContent === 'Telugu → IPA' && G().total === 3 && $('g-complete').classList.contains('show'), 'Cancel closes it and puts everything back: the grouping, direction, the finished session');
   $('retry-btn').click();
   ok($('setup-rounds').value === '3' && $('setup-dir').textContent === 'Telugu → IPA' && $('rev-btn').getAttribute('aria-pressed') === 'false', 'what was cancelled is not remembered');
   press('Escape');
@@ -115,30 +119,15 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
   $('retry-btn').click(); $('setup-start').click();
   ok(G().total === 51, 'a full session is in play');
   reopen();
-  $('include-extra').click();
-  ok($('setup-rounds').max === '56' && $('setup-rounds').value === '56' && $('setup-rounds-n').value === '56' && $('setup-rounds-n').max === '56' && G().total === 51, 'checking "Include extra letters": the slider runs to 56 and "all" stays all; the session in play is untouched');
-  $('include-extra').click();
-  ok($('setup-rounds').max === '51' && $('setup-rounds').value === '51', 'unchecking it: back to 51');
-  slide('setup-rounds', 10); $('include-extra').click();
-  ok($('setup-rounds').max === '56' && $('setup-rounds').value === '10' && $('setup-rounds-n').value === '10', 'a chosen number stays put when the top end moves: 10 of 56');
-  $('setup-start').click();
-  ok(G().total === 10 && keys() === 56 && $('include-extra').checked, 'Start: 10 rounds drawn from the 56, with all 56 keys');
-  reopen(); slide('setup-rounds', 56); $('setup-start').click();
-  ok(G().total === 56, 'the slider at its top end with the extras on: all 56');
-  // Cancel puts every checkbox back, and what follows them follows them back
-  reopen();
-  $('include-extra').click(); $('shuffle-kb').click(); $('highlight-correct').click();
-  ok(!$('show-cat').checked && $('show-cat').disabled && !$('cat-note').hidden && $('cat-note').closest('#setup') && $('show-cat').closest('.menu-opt').classList.contains('disabled') && d.querySelectorAll('#kb-area .kb-group').length === 1,
-    'checking "Shuffle keyboard" holds "Show categories" off, with its note, here in the popup');
+  ok($('setup-rounds').max === '51' && $('setup-rounds-n').max === '51', 'the most rounds is 51: there are no extra letters to add');
+  $('group-kb').click(); $('highlight-correct').click();
+  ok(!$('group-kb').checked && layout() && G().total === 51, 'unchecking "Group keyboard phonetically" lays the keyboard out at once; the session in play is untouched');
   $('setup-cancel').click();
-  ok(!open() && $('include-extra').checked && !$('shuffle-kb').checked && $('highlight-correct').checked && $('show-cat').checked && !$('show-cat').disabled && $('cat-note').hidden && d.querySelectorAll('#kb-area .kb-group').length > 1 && G().total === 56,
-    'Cancel: all four boxes are as they were (categories back on, keyboard grouped again), and the session in play is untouched');
-  reopen(); $('include-extra').click(); $('setup-start').click();
-  ok(G().total === 51 && keys() === 51, 'extras off again: 51');
-  reopen(); $('shuffle-kb').click(); $('setup-start').click();
-  ok($('shuffle-kb').checked && !$('show-cat').checked && d.querySelectorAll('#kb-area .kb-group').length === 1 && keys() === 51, 'Start with "Shuffle keyboard": one flat block of 51 keys');
-  reopen(); $('shuffle-kb').click(); $('show-cat').click(); $('setup-start').click();
-  ok(!$('shuffle-kb').checked && $('show-cat').checked && d.querySelectorAll('#kb-area .kb-group').length > 1, 'and back to grouped');
+  ok(!open() && $('group-kb').checked && $('highlight-correct').checked && grouped() && G().total === 51, 'Cancel: both boxes are as they were (the keyboard grouped again), and the session in play is untouched');
+  reopen(); $('group-kb').click(); $('setup-start').click();
+  ok(!$('group-kb').checked && layout() && keys() === 51, 'Start not grouped: the 51 keys laid out as the Telugu keyboard');
+  reopen(); $('group-kb').click(); $('setup-start').click();
+  ok($('group-kb').checked && grouped() && keys() === 51, 'and back to grouped');
 
   /* ── Tab stays inside ── */
   reopen();
@@ -208,20 +197,20 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     const PAGE = 'alphabet/02_diacritics.html', raw = fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8');
     const h = load(PAGE, { setup: 'open' }), { w, d, tick, $ } = h, G = h.game, P = w.TeluguProgress;
     const slide = (id, v) => { $(id).value = v; $(id).dispatchEvent(new w.Event('input', { bubbles: true })); };
-    const kb = k => [...d.querySelectorAll(`.kb-btn[data-kind="${k}"]`)], key = (k, ipa) => kb(k).find(b => b.dataset.ipa === ipa);
+    const kb = k => [...d.querySelectorAll(`#kb-area button.kb-btn[data-kind="${k}"]`)], key = (k, ipa) => kb(k).find(b => b.dataset.ipa === ipa);
+    const layout = () => d.querySelector('#kb-area .gkb').dataset.mode === 'layout', groups = () => d.querySelectorAll('#kb-area .kb-group').length;
     const right = () => { const c = G().current; key('c', c.c.ipa).click(); key('v', c.v.ipa).click(); };
     const wrong = () => { const c = G().current; kb('c').find(b => b.dataset.ipa !== c.c.ipa).click(); key('v', c.v.ipa).click(); };
     const lives = () => $('s-lives').hidden ? 'hidden' : $('s-lives').textContent;          // the mistakes left, as the header shows them
-    const rows = () => [...$('setup').querySelectorAll('.setup-label, .menu-opt')].map(e => e.textContent.replace('Off while keyboard is shuffled', '').trim()).join(' | ');
+    const rows = () => [...$('setup').querySelectorAll('.setup-label, .menu-opt')].map(e => e.textContent.trim()).join(' | ');
     ok(!$('setup').hidden && $('setup-title').textContent === 'Diacritics' && d.activeElement === $('setup-start') && raw.indexOf('GameSetup.create(') < raw.indexOf('GameMenu.init('), 'Diacritics: the popup is open as soon as the page is, titled "Diacritics", Start focused');
-    ok(rows() === 'Direction | Number of rounds | Game over | Show categories | Shuffle keyboard | Include extra letters | Missed guesses reappear', 'Diacritics: its options, in order: ' + rows());
+    ok(rows() === 'Direction | Number of rounds | Game over | Group keyboard phonetically | Missed guesses reappear', 'Diacritics: its options, in order: ' + rows());
     ok(!$('menu-btn') && !$('opts-menu') && !$('menu-wrap') && !/class="menu"|menu-btn/.test(raw) && !d.querySelector('.g-header .rev-btn') && $('rev-btn').closest('#setup'), 'Diacritics: no ⋮ menu and no 🔀 in the header; the 🔀 button is in the popup');
-    ok($('setup-dir').textContent === 'Diacritics → IPA' && $('setup-rounds').max === '51' && $('setup-rounds').value === '51' && $('setup-rounds-n').value === '51' && $('setup-misses-out').textContent === 'Unlimited' && !$('show-cat').checked && !$('shuffle-kb').checked && !$('include-extra').checked && d.querySelectorAll('.kb-col[data-kind="c"] .kb-group').length === 1,
-      'Diacritics: forward, 51 rounds (all: 17 signs × 3), no game over, categories off (plain keyboards)');
-    $('show-cat').click();                                  // on for the rest of this page
-    $('include-extra').click();
-    ok($('setup-rounds').max === '57' && $('setup-rounds').value === '57' && G().total === 51 && kb('c').length === 35, 'Diacritics: "Include extra letters" takes the slider to 57; nothing is dealt until Start');
-    $('include-extra').click(); $('rev-btn').click(); slide('setup-rounds', 6); slide('setup-misses', 3);
+    ok($('setup-dir').textContent === 'Diacritics → IPA' && $('setup-rounds').max === '51' && $('setup-rounds').value === '51' && $('setup-rounds-n').value === '51' && $('setup-misses-out').textContent === 'Unlimited' && !$('group-kb').checked && layout() && groups() === 0,
+      'Diacritics: forward, 51 rounds (all: 17 signs × 3), no game over, not grouped (the Telugu keyboard\'s layout)');
+    $('group-kb').click();                                  // on for the rest of this page
+    ok(!layout() && groups() > 2 && G().total === 51 && kb('c').length === 35, 'Diacritics: "Group keyboard phonetically" groups the keys at once; nothing is dealt until Start');
+    $('rev-btn').click(); slide('setup-rounds', 6); slide('setup-misses', 3);
     $('setup-start').click();
     ok($('setup').hidden && $('g-title').textContent === 'IPA → Diacritics' && G().total === 6 && G().limit === 3 && lives() === L3 && kb('c').length === 35 && kb('v').length === 17 && kb('c').every(b => b.classList.contains('te')),
       'Diacritics: Start deals 6 rounds, reversed, with game over at 3 (three hearts); both keyboards are whole (35 + 17 Telugu keys)');
@@ -231,16 +220,15 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     ok(G().over && lives() === RING && $('g-complete').classList.contains('show') && $('c-title').textContent === 'Game Over' && $('c-sub').textContent === '1 of 6 cleared. Game over at 3 mistakes.' && P.runs('diacritics').at(-1).end === 'out' && P.runs('diacritics').at(-1).dir === 'reverse', 'Diacritics: the third mistake is game over (recorded as ended early, reversed): ' + $('c-sub').textContent);
     $('retry-btn').click();
     ok(!$('setup').hidden && $('setup-rounds').value === '6' && $('setup-misses-out').textContent === '3' && $('setup-dir').textContent === 'IPA → Diacritics', 'Diacritics: "Practice Again" opens the popup with the last choices');
-    $('rev-btn').click(); slide('setup-rounds', 51); slide('setup-misses', w.GameSetup.MISS_STOPS + 1); $('include-extra').click(); $('shuffle-kb').click();
-    ok($('setup-rounds').max === '57' && $('setup-rounds').value === '57' && !$('show-cat').checked && $('show-cat').disabled && !$('cat-note').hidden, 'Diacritics: extras on with the slider at its top keeps "all" (57); "Shuffle keyboard" holds categories off');
+    $('rev-btn').click(); slide('setup-rounds', 51); slide('setup-misses', w.GameSetup.MISS_STOPS + 1); $('group-kb').click();
     $('setup-start').click();
-    ok(G().total === 57 && G().limit === null && lives() === EVER && kb('c').length === 38 && kb('v').length === 19 && d.querySelectorAll('.kb-col[data-kind="c"] .kb-group').length === 1 && $('g-title').textContent === 'Diacritics → IPA',
-      'Diacritics: Start deals all 57, forward, unlimited, on a shuffled keyboard with the extras (38 + 19 keys)');
-    w.GameSetup.current.open(); $('include-extra').click(); $('shuffle-kb').click(); $('show-cat').click(); $('setup-start').click();
+    ok(G().total === 51 && G().limit === null && lives() === EVER && kb('c').length === 35 && kb('v').length === 17 && layout() && $('g-title').textContent === 'Diacritics → IPA',
+      'Diacritics: Start deals all 51, forward, unlimited, on the Telugu keyboard\'s layout (35 + 17 keys)');
+    w.GameSetup.current.open(); $('group-kb').click(); $('setup-start').click();
     let n = 0; while (G().deck.length && n++ < 200) { right(); await tick(); await tick(); }
     ok(G().total === 51 && $('g-complete').classList.contains('show') && $('c-title').textContent === 'Session Complete!' && P.runs('diacritics').at(-1).end === 'done' && P.runs('diacritics').at(-1).n === 51 && !P.runs('diacritics').at(-1).dir, 'Diacritics: a full session of 51 is recorded for the Profile page');
-    w.GameSetup.current.open(); $('include-extra').click(); $('shuffle-kb').click(); $('setup-cancel').click();
-    ok($('setup').hidden && !$('include-extra').checked && !$('shuffle-kb').checked && $('show-cat').checked && !$('show-cat').disabled, 'Diacritics: Cancel puts the checkboxes back');
+    w.GameSetup.current.open(); $('group-kb').click(); $('missed-again').click(); $('setup-cancel').click();
+    ok($('setup').hidden && $('group-kb').checked && $('missed-again').checked && !layout(), 'Diacritics: Cancel puts the checkboxes back');
     w.GameSetup.current.open();
     ok($('missed-again').checked && $('missed-again').closest('#setup-opts') && G().again === true, 'Diacritics: "Missed guesses reappear" is on to begin with');
     $('missed-again').click(); slide('setup-rounds', 3); $('setup-start').click();
@@ -259,13 +247,13 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     const PAGE = 'alphabet/03_conjuncts.html', raw = fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8');
     const h = load(PAGE, { setup: 'open' }), { w, d, tick, $ } = h, G = h.game, P = w.TeluguProgress;
     const slide = (id, v) => { $(id).value = v; $(id).dispatchEvent(new w.Event('input', { bubbles: true })); };
-    const kb = () => [...d.querySelectorAll('#kb-area .kb-btn')], key = ipa => kb().find(b => b.dataset.ipa === ipa);
+    const kb = () => [...d.querySelectorAll('#kb-area button.kb-btn[data-ipa]')], key = ipa => kb().find(b => b.dataset.ipa === ipa);
     const right = () => G().current.parts.forEach(p => key(p.ipa).click());
     const wrong = () => { const c = G().current, bad = kb().find(b => b.dataset.ipa !== c.parts[0].ipa); c.parts.forEach(() => bad.click()); };
     const lives = () => $('s-lives').hidden ? 'hidden' : $('s-lives').textContent;          // the mistakes left, as the header shows them
-    const rows = () => [...$('setup').querySelectorAll('.setup-label, .menu-opt')].map(e => e.textContent.replace('Off while keyboard is shuffled', '').trim()).join(' | ');
+    const rows = () => [...$('setup').querySelectorAll('.setup-label, .menu-opt')].map(e => e.textContent.trim()).join(' | ');
     ok(!$('setup').hidden && $('setup-title').textContent === 'Conjuncts' && d.activeElement === $('setup-start') && raw.indexOf('GameSetup.create(') < raw.indexOf('GameMenu.init('), 'Conjuncts: the popup is open as soon as the page is, titled "Conjuncts", Start focused');
-    ok(rows() === 'Direction | Number of rounds | Game over | Show categories | Shuffle keyboard | Include uncommon clusters | Missed guesses reappear', 'Conjuncts: its options, in order: ' + rows());
+    ok(rows() === 'Direction | Number of rounds | Game over | Group keyboard phonetically | Include uncommon clusters | Missed guesses reappear', 'Conjuncts: its options, in order: ' + rows());
     ok(!$('menu-btn') && !$('opts-menu') && !$('menu-wrap') && !/class="menu"|menu-btn/.test(raw) && !d.querySelector('.g-header .rev-btn') && $('rev-btn').closest('#setup'), 'Conjuncts: no ⋮ menu and no 🔀 in the header; the 🔀 button is in the popup');
     ok($('setup-dir').textContent === 'Conjuncts → IPA' && $('setup-rounds').max === '83' && $('setup-rounds').value === '40' && $('setup-rounds-n').value === '40' && $('setup-misses-out').textContent === 'Unlimited' && G().total === 40,
       'Conjuncts: the rounds slider starts at the usual 40 and runs to 83 (every common cluster)');
@@ -285,7 +273,7 @@ const H = '\u2764\uFE0F', L3 = '\u{1F49A}\u{1F90D}\u{1F9E1}', L2 = '\u{1F90D}\u{
     $('include-uncommon').click();
     ok($('setup-rounds').max === '92' && $('setup-rounds').value === '92', 'Conjuncts: at the top end, "all" stays all when the uncommon clusters join: 92');
     $('setup-start').click();
-    ok(G().total === 92 && kb().length === 37 && !!key('ɽ'), 'Conjuncts: all 92, with ఱ ౘ ౙ on the keyboard');
+    ok(G().total === 92 && kb().length === 34 && !key('ɽ') && G().deck.every(c => c.parts.every(p => p.inBook)), 'Conjuncts: all 92, on the same 34 keys: no uncommon cluster uses a letter out of use (ఱ ౘ ౙ)');
     w.GameSetup.current.open(); $('include-uncommon').click(); $('rev-btn').click(); slide('setup-rounds', 5); slide('setup-misses', 3); $('setup-start').click();
     ok(G().total === 5 && G().limit === 3 && $('g-title').textContent === 'IPA → Conjuncts' && lives() === L3 && kb().length === 34 && kb().every(b => b.classList.contains('te')), 'Conjuncts: 5 rounds, reversed, game over at 3 (three hearts): the whole keyboard (34 Telugu keys)');
     wrong(); await tick(); await tick(); wrong(); await tick(); await tick();

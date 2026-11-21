@@ -9,7 +9,7 @@ const HEARTS = { none: '❤️×♾️', two: '\u{1F90D}\u{1F9E1}', one: '\u{1F9
 // What a page under test offers, the same for every part of this suite
 function tools(h) {
   const { w, d, $ } = h, G = h.game, W = w.TeluguWords;
-  const keys  = () => [...d.querySelectorAll('.kb-btn')];
+  const keys  = () => [...d.querySelectorAll('#kb-area button.kb-btn[data-ipa]')];      // the game's keys (not ౧౨౩, not the dimmed ones)
   const keyOf = p => keys().find(b => b.dataset.kind === p.kind && b.dataset.ipa === p.key);
   const parts = () => G().current.syllables.flatMap(s => s.parts);
   const want  = () => parts()[[...d.querySelectorAll('.sp-slot')].findIndex(b => b.classList.contains('cur'))];      // the sound being asked for
@@ -32,11 +32,11 @@ function tools(h) {
     const { w, d, $ } = first, { G, W, slide } = tools(first);
     ok(d.title === 'Words' && $('g-title').textContent === 'Words → IPA' && !$('setup').hidden && $('setup-title').textContent === 'Words', 'the page is "Words → IPA" and opens with the session popup');
     const rows = [...$('setup').querySelectorAll('.setup-label, .setup-opt .menu-txt > span:first-child')].map(e => e.textContent).join(' | ');
-    ok(rows === 'Number of rounds | Game over | Show categories | Shuffle keyboard | Highlight correct answer | Missed guesses reappear', 'its options, in order: ' + rows);
+    ok(rows === 'Number of rounds | Game over | Group keyboard phonetically | Highlight correct answer | Missed guesses reappear', 'its options, in order: ' + rows);
     ok(!$('setup-dir-row') && !$('rev-btn') && !d.querySelector('.menu-btn') && !$('opts-menu'), 'the game plays one way (word → sounds): no direction row, no 🔀, and no ⋮ menu');
     ok($('setup-rounds').value === '20' && $('setup-rounds').max === '250' && $('setup-rounds-n').value === '20' && $('setup-misses-out').textContent === 'Unlimited',
       'a session is 20 words by default, of the 250 in the list; no game over');
-    ok(!$('show-cat').checked && !$('shuffle-kb').checked && $('highlight-correct').checked && $('missed-again').checked, 'highlight and "Missed guesses reappear" on; categories and shuffle off');
+    ok(!$('group-kb').checked && $('highlight-correct').checked && $('missed-again').checked && !$('show-cat') && !$('shuffle-kb'), 'highlight and "Missed guesses reappear" on; not grouped (no "Show categories" or "Shuffle keyboard")');
     ok(G().total === 20 && G().deck.every(c => W.words.includes(c)) && new Set(G().deck).size === 20, 'behind the popup 20 different words are already dealt');
     slide('setup-rounds', 250); $('setup-start').click();
     ok($('setup').hidden && G().total === 250 && new Set(G().deck.map(c => c.te)).size === 250, 'the rounds slider at its top end deals every word, each once');
@@ -46,27 +46,22 @@ function tools(h) {
   const h = load(PAGE), { w, d, $, tick } = h, { G, W, P, keys, keyOf, want, right, wrong, spell, card, put, slide, fb } = tools(h);
   const D = w.TeluguData, N = D.notation;
   {
-    const col = k => [...d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-btn`)];
-    ok(d.querySelectorAll('.kb-cols .kb-col').length === 2 && [...d.querySelectorAll('.kb-col-title')].map(e => e.textContent).join() === 'Consonant,Vowel' && keys().length === 50, 'two keyboards side by side, Consonant and Vowel: 50 keys');
-    ok(col('c').map(b => b.dataset.ipa).join(' ') === D.pool(D.consonants, false).map(c => c.ipa).join(' ') && col('c').length === 34 && col('c').every(b => b.dataset.kind === 'c' && b.textContent === b.dataset.ipa) && !keys().some(b => b.dataset.ipa === 'kʂ' || b.dataset.ipa === 'ɽ'),
-      'the 34 usual consonants in alphabet order, each key its sound; క్ష has no key of its own (it is k, then ʂ), nor has ఱ');
-    ok(col('v').map(b => b.textContent).join(' ') === 'ɐ aː i iː u uː e eː o oː ai au ru ruː ṁ ◌ʰ' && col('v').map(b => b.dataset.kind).join('') === 'vvvvvvvvvvvvvvmm',
-      'the 14 vowel sounds, each long one beside its short one, then ం (ṁ, whichever nasal it is said as) and ః on a dotted circle: ' + col('v').map(b => b.textContent).join(' '));
-    ok(col('v').slice(-2).map(b => b.getAttribute('aria-label')).join() === 'anusvara (ం),visarga (ః)' && !keys().some(b => b.dataset.ipa === '∅' || b.textContent === '∅'), 'the two marks are named for a screen reader; there is no "no vowel" key');
-    const pairs = [...d.querySelectorAll('.kb-col[data-kind="v"] .kb-pair')].map(p => [...p.children].map(b => b.textContent));
-    ok(pairs.length === 6 && pairs.every(p => p.length === 2 && p[1] === D.longOf(p[0])) && !d.querySelector('.kb-col[data-kind="c"] .kb-pair'), 'a vowel and its long form are one unit in the row (six pairs)');
-    ok(d.querySelectorAll('.kb-col[data-kind="c"] .kb-group').length === 1 && d.querySelectorAll('.kb-label').length === 0, 'categories off: each keyboard is one plain block');
-    $('show-cat').click();
-    const labels = k => [...d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-label`)].map(e => e.textContent).join(' | ');
-    ok(labels('c') === 'Velar | Palatal | Retroflex | Dental | Labial | Approx. | Fricative' && labels('v') === 'Short · long | Diphthong | Vocalic | Nasal · aspirate' && keys().length === 50 && d.querySelectorAll('.kb-pair').length === 6,
-      '"Show categories" groups both keyboards: ' + labels('c') + ' / ' + labels('v'));
-    const before = G().current, order0 = col('c').map(b => b.dataset.ipa).join(' ');
-    $('shuffle-kb').click();
-    ok(!$('show-cat').checked && $('show-cat').disabled && !$('cat-note').hidden && d.querySelectorAll('.kb-label').length === 0 && col('c').length === 34 && col('v').length === 16
-      && [...col('c').map(b => b.dataset.ipa)].sort().join(' ') === order0.split(' ').sort().join(' ') && G().current === before,
-      '"Shuffle keyboard" turns categories off and mixes each keyboard\'s own keys, without restarting the word');
-    $('shuffle-kb').click();
-    ok(col('c').map(b => b.dataset.ipa).join(' ') === order0 && !$('show-cat').disabled, 'unchecked, the keys are back in alphabet order');
+    const faces = (page, n) => [...d.querySelectorAll(`#kb-area .gkb-${page} > .kb-row`)[n].children].map(b => (b.classList.contains('gkb-off') ? '·' : '') + b.textContent).join(' ');
+    const cons = () => keys().filter(b => b.dataset.kind === 'c'), vows = () => keys().filter(b => b.dataset.kind !== 'c');
+    ok(!d.querySelector('.kb-cols, .kb-col, .kb-col-title, .kb-pair') && d.querySelector('#kb-area .gkb').dataset.mode === 'layout' && keys().length === 50, 'one keyboard, laid out as the Telugu keyboard: 50 keys');
+    ok(faces('letters', 0) === 'ɐ aː i iː u uː ru ruː e eː' && faces('letters', 1) === 'ai o oː au ṁ ◌ʰ k kʰ ɡ ɡʱ' && faces('letters', 4) === 'j ɾ l ʋ ɭ ʃ ʂ s ɦ ·⌫' && faces('digits', 2).startsWith('ɲ ·◌ఁ ·@'),
+      'each vowel sound where its vowel sits, ం (ṁ, whichever nasal it is said as) and ః on a dotted circle on theirs, each consonant on its letter (ఞ on the second page); ⌫ dimmed: ' + faces('letters', 1));
+    ok(cons().map(b => b.dataset.ipa).sort().join(' ') === D.pool(D.consonants, false).map(c => c.ipa).sort().join(' ') && cons().length === 34 && cons().every(b => b.textContent === b.dataset.ipa) && !keys().some(b => b.dataset.ipa === 'kʂ' || b.dataset.ipa === 'ɽ'),
+      'the 34 usual consonants, each key its sound; క్ష has no key of its own (it is k, then ʂ), nor has ఱ');
+    ok(vows().map(b => b.textContent).join(' ') === 'ɐ aː i iː u uː ru ruː e eː ai o oː au ṁ ◌ʰ' && vows().map(b => b.dataset.kind).join('') === 'vvvvvvvvvvvvvvmm', 'the 14 vowel sounds and the two marks: ' + vows().map(b => b.textContent).join(' '));
+    ok(vows().slice(-2).map(b => b.getAttribute('aria-label')).join() === 'anusvara (ం),visarga (ః)' && !keys().some(b => b.dataset.ipa === '∅' || b.textContent === '∅'), 'the two marks are named for a screen reader; there is no "no vowel" key');
+    $('group-kb').click();
+    const labels = () => [...d.querySelectorAll('#kb-area .kb-label')].map(e => e.textContent).join(' | ');
+    ok(labels() === 'Short · long | Diphthong | Vocalic | Nasal · aspirate | Velar | Palatal | Retroflex | Dental | Labial | Approx. | Fricative' && keys().length === 50 && [...d.querySelectorAll('#kb-area .kb-group')][0].textContent.includes('ɐaːiiːuuːeeːooː'),
+      '"Group keyboard phonetically" groups the keys, each long vowel beside its short one: ' + labels());
+    const before = G().current;
+    $('group-kb').click();
+    ok(d.querySelector('#kb-area .gkb').dataset.mode === 'layout' && keys().length === 50 && G().current === before, 'and unchecked lays them out again, without restarting the word');
   }
 
   /* ══ the card ══ */
@@ -97,9 +92,9 @@ function tools(h) {
   ok(keyOf({ kind: 'c', key: 'k' }).classList.contains('err') && keyOf({ kind: 'c', key: 't̪' }).classList.contains('ok') && d.querySelectorAll('.kb-btn.ok, .kb-btn.err').length === 2, 'the key pressed turns red and the right key is lit');
   { const a = G().attempts; keyOf({ kind: 'c', key: 'k' }).click(); keyOf({ kind: 'v', key: 'ɐ' }).click();
     ok(G().locked && G().attempts === a && G().misses === m0 + 1, 'picks made while it is showing are ignored'); }
-  $('show-cat').click();
+  $('group-kb').click();
   ok(keyOf({ kind: 'c', key: 'k' }).classList.contains('err') && keyOf({ kind: 'c', key: 't̪' }).classList.contains('ok'), 'the two marks survive the keyboard being redrawn (an option changed)');
-  $('show-cat').click();
+  $('group-kb').click();
   await tick();
   ok(card() === 'పు{స్త}[కం]' && !G().locked && fb() === '' && d.querySelectorAll('.kb-btn.ok, .kb-btn.err').length === 0 && d.querySelector('.sp-slot.cur') && !$('char-card').classList.contains('wrong'),
     'then play goes on with the next character; the marks are gone, the missed character stays red: ' + card());
@@ -134,13 +129,14 @@ function tools(h) {
   $('highlight-correct').click();
 
   /* a clean word */
+  const dealt = () => G().deck.filter(c => c.te === 'పక్షి').length, had = dealt();      // the 20 dealt at random may hold పక్షి already
   put('పక్షి'); const c1 = G().completed, a1 = G().attempts;
   for (let i = 0; i < 4; i++) right();
   ok(card() === 'ప[క్షి]' && spell() === 'p ɐ | k ʂ _', 'క్షి asks for k, then ʂ, then i: ' + spell());
   right();
   ok(fb() === '✓  /pɐkʂi/' && $('feedback').classList.contains('ok') && $('char-card').classList.contains('correct') && card() === 'పక్షి' && G().locked, 'a word spelled without a mistake: the card turns green and the line gives its sound: ' + fb());
   await tick();
-  ok(G().completed === c1 + 1 && G().attempts === a1 + 5 && $('s-done').textContent === String(c1 + 1) && !G().deck.some(c => c.te === 'పక్షి'), 'it is cleared: one more correct, five answers');
+  ok(G().completed === c1 + 1 && G().attempts === a1 + 5 && $('s-done').textContent === String(c1 + 1) && dealt() === had, 'it is cleared: one more correct, five answers');
   ok(/okMs:\s*800/.test(fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8')) && /errMs:\s*1500/.test(fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8')), 'a finished word stays up 0.8 s; a wrong pick shows for 1.5 s');
 
   /* every word in the list can be spelled on these keyboards */
@@ -194,8 +190,8 @@ function tools(h) {
   /* ══ in ISO ══ */
   {
     const i = load(PAGE, { notation: 'iso' }), t = tools(i), $i = i.$;
-    const col = k => [...i.d.querySelectorAll(`.kb-col[data-kind="${k}"] .kb-btn`)].map(b => b.textContent).join(' ');
-    ok($i('g-title').textContent === 'Words → ISO' && col('v') === 'a ā i ī u ū e ē o ō ai au r̥ r̥̄ ṁ ḥ' && col('c').startsWith('k kh g gh ṅ c ch j jh ñ ṭ'), 'for a reader who chose ISO: "Words → ISO", keys in ISO, ం and ః as ṁ and ḥ');
+    const row = n => [...i.d.querySelectorAll('#kb-area .gkb-letters > .kb-row')][n].textContent.length && [...[...i.d.querySelectorAll('#kb-area .gkb-letters > .kb-row')][n].children].map(b => b.textContent).join(' ');
+    ok($i('g-title').textContent === 'Words → ISO' && row(0) === 'a ā i ī u ū r̥ r̥̄ e ē' && row(1) === 'ai o ō au ṁ ḥ k kh g gh' && row(2).startsWith('ṅ c ch j jh ṭ'), 'for a reader who chose ISO: "Words → ISO", keys in ISO, ం and ః as ṁ and ḥ');
     t.put('పుస్తకం'); t.right(); t.right(); t.right(); t.wrong('c', 'k');
     ok(t.fb() === '✗  k' && t.spell() === 'p u | s t! a~ | _ _ _', 'a wrong pick is named without slashes, and the boxes are in ISO: ' + t.fb() + '  ' + t.spell());
     await i.tick(); t.put('కొంచెం'); for (let n = 0; n < 6; n++) t.right();

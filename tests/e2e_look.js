@@ -14,7 +14,7 @@ const upload = (text, name = 'mine.csv') => new Promise(res => { w.eval('onFile'
 (async () => {
   /* ── built-in baseline ── */
   ok($('use-builtin').checked && !$('use-custom').checked && $('use-custom').disabled, 'built-in groups on; "My CSV groups" off and disabled until uploaded');
-  ok($('shuffle-kb').checked && !$('include-extra').checked, 'choices shuffled by default; extras off');
+  ok($('shuffle-kb').checked && !$('include-extra'), 'choices shuffled by default; no "Include extra letters" (the letters out of use are on the Bookish Telugu page)');
   ok(total() === 40 && G().deck.every(c => c.item.core), 'baseline: 40 cards (every character of the 12 groups), none extra');
   let c0 = cur();
   ok(/^\/.+\/$/.test($('tel-char').textContent) && $('tel-char').textContent === `/${c0.item.ipa}/`, 'card shows the sound as /ipa/: ' + $('tel-char').textContent);
@@ -63,15 +63,9 @@ const upload = (text, name = 'mine.csv') => new Promise(res => { w.eval('onFile'
   ok(w.eval('localStorage.getItem(STORE)') === CSV, 'CSV text remembered in the browser');
   ok(G().deck.every(c => w.eval('custom').some(g => g.items.includes(c.item))) && total() === 40, 'cards now come from your groups (sampled to 40)');
   front('ఖ');
-  ok(G().current.options.length === 30 && !key('ఱ'), 'default: the 31-character group has its extra ఱ hidden → 30 choices');
-  $('include-extra').checked = true; $('include-extra').dispatchEvent(new w.Event('change', { bubbles: true }));
-  front('ఖ');
-  ok(G().current.options.length === 31 && !!key('ఱ') && key('ఱ').classList.contains('te'), 'Include extra letters → 31 choices with ఱ');
-  front('ఱ');
-  ok($('rare-badge').style.display === '' && $('tel-char').textContent === '/ɽ/', 'ఱ card: /ɽ/ with the rare pip');
+  ok(G().current.options.length === 30 && !key('ఱ') && !G().deck.some(c => c.item.text === 'ఱ'), 'the 31-character group leaves out its ఱ, a letter out of use: 30 choices, and no ఱ card');
   front('ఙౌ');
   ok($('tel-char').textContent === '/ŋau/' && key('ఙ') && key('ఙౌ').classList.contains('long'), 'syllable ఙౌ: /ŋau/ (wide key)');
-  $('include-extra').checked = false; $('include-extra').dispatchEvent(new w.Event('change', { bubbles: true }));
 
   /* ── sets ── */
   $('use-custom').checked = false; $('use-custom').dispatchEvent(new w.Event('change', { bubbles: true }));

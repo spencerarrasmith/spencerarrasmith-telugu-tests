@@ -1,7 +1,9 @@
 const h = require('./harness')('alphabet/03_conjuncts.html');
 const { w, d, tick, ok, front, $ } = h;
 const G = h.game;                                          // the round: G().deck, .current, .total, .completed
-const btn = ipa => [...d.querySelectorAll('.kb-btn')].find(b => b.dataset.ipa === ipa);
+const live = () => [...d.querySelectorAll('#kb-area button.kb-btn[data-ipa]')];      // the game's keys (not ౧౨౩ or ⌫, not the dimmed ones)
+const btn = ipa => live().find(b => b.dataset.ipa === ipa);
+const faces = (page, i) => [...d.querySelectorAll(`#kb-area .gkb-${page} > .kb-row`)[i].children].map(b => (b.classList.contains('gkb-off') ? '·' : '') + b.textContent).join(' ');
 const cur = () => G().current;
 const slots = () => [...d.querySelectorAll('#slots .slot')];
 const val = i => slots()[i].querySelector('.slot-val').textContent;
@@ -9,7 +11,10 @@ const inject = glyphEscaped => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.gly
 (async () => {
   ok(!$('include-uncommon').checked && $('include-uncommon').parentElement.textContent.includes('Include uncommon clusters'), 'unchecked by default, labeled "Include uncommon clusters"');
   ok(G().total === 40 && G().deck.every(c => !c.uncommon), 'default session: 40 cards, no uncommon clusters');
-  ok(d.querySelectorAll('.kb-btn').length === 34 && !btn('ɽ') && !!btn('ŋ') && !!btn('ɲ'), '34 keys: ఱ hidden, ఙ ఞ kept');
+  ok(live().length === 34 && !btn('ɽ') && !!btn('ŋ') && !!btn('ɲ'), '34 keys: the book\'s consonants, ఙ ఞ among them; no ఱ');
+  ok(faces('letters', 0) === '·ɐ ·aː ·i ·iː ·u ·uː ·ru ·ruː ·e ·eː' && faces('letters', 1) === '·ai ·o ·oː ·au ·ɐm ·ɐʰ k kʰ ɡ ɡʱ' && faces('digits', 2).startsWith('ɲ ·◌ఁ ·@'),
+    'the whole Telugu keyboard, each consonant where it sits (ఞ on the second page); the vowels are there too, dimmed, written as sounds as the keys are: no conjunct asks for one');
+  ok(d.querySelectorAll('#kb-area .gkb-letters .gkb-off').length === 16 + 4 && !d.querySelector('#kb-area .gkb-letters .gkb-off.gkb-back'), 'on the first page: the 16 vowel keys and , space . ⏎ dimmed; ⌫ is a key of the game\'s here');
 
   // జ్ఞ with its note
   inject('జ్ఞ');
@@ -48,7 +53,7 @@ const inject = glyphEscaped => w.eval(`(()=>{const i=CLUSTERS.findIndex(c=>c.gly
   $('retry-btn').click();
   ok(!$('setup').hidden && $('g-complete').classList.contains('show'), '"Practice Again" opens the session popup');
   $('include-uncommon').click(); $('setup-start').click();
-  ok(d.querySelectorAll('.kb-btn').length === 37 && !!btn('ɽ'), 'checked: 37 keys, ఱ appears');
+  ok(live().length === 34 && !btn('ɽ') && G().deck.every(c => c.parts.every(p => p.inBook)), 'checked: the same 34 keys: no uncommon cluster uses a letter out of use (ఱ ౘ ౙ are on the Bookish Telugu page)');
   ok(w.eval('CLUSTERS.filter(c=>!c.core).length') === 9, '9 uncommon clusters available when checked');
   h.done();
 })();
