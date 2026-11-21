@@ -137,18 +137,49 @@ function tools(h) {
   ok(fb() === '✓  /pɐkʂi/' && $('feedback').classList.contains('ok') && $('char-card').classList.contains('correct') && card() === 'పక్షి' && G().locked, 'a word spelled without a mistake: the card turns green and the line gives its sound: ' + fb());
   await tick();
   ok(G().completed === c1 + 1 && G().attempts === a1 + 5 && $('s-done').textContent === String(c1 + 1) && dealt() === had, 'it is cleared: one more correct, five answers');
+
+  /* ── ం: its own key, or the nasal it is said as ── */
+  { const nasal = ipa => keyOf({ kind: 'c', key: ipa }), mark = () => keyOf({ kind: 'm', key: D.signs.find(g => g.sign === '\u0C02').ipa });      // ṁ, ం's own key
+    const spellTo = n => { for (let i = 0; i < n; i++) right(); };
+    await tick();
+    const ms = G().misses;
+    put('కొంచెం'); spellTo(2);
+    ok(want().kind === 'm' && want().sound === 'ɲ', 'కొంచెం: after k o the ం of కొం is asked; it is said ɲ (before చ)');
+    nasal('ɲ').click();
+    ok(G().misses === ms && fb() === '', 'the ɲ key answers it: no mistake');
+    ok(card() === 'కొం[చెం]' && spell().startsWith('k o ɲ |'), 'the box shows the nasal it is said as: ' + spell());
+    spellTo(2); nasal('m').click();
+    ok(fb() === '✓  /koɲtʃem/' && $('char-card').classList.contains('correct'), 'the last ం, at the end of the word, is answered by m: ✓ /koɲtʃem/');
+    await tick();
+    put('బంగారం'); spellTo(2); mark().click();
+    ok(card() === 'బం[గా]రం', 'its own key (ṁ) still answers it (బం, said bɐŋ)');
+    spellTo(4); nasal('m').click(); await tick();
+    put('పండు'); spellTo(2); nasal('ɳ').click(); ok(card() === 'పం[డు]', 'పండు: ɳ (before డ)');
+    spellTo(2); await tick();
+    put('సంతోషం'); spellTo(2); nasal('n').click(); ok(card() === 'సం[తో]షం', 'సంతోషం: n (before త)');
+    spellTo(5); await tick();
+    put('సింహం'); spellTo(2); nasal('m').click(); ok(card() === 'సిం[హం]', 'సింహం: m (before హ, as at the end of a word)');
+    spellTo(3); await tick();
+    const m0 = G().misses;
+    put('పండు'); spellTo(2); nasal('n').click();
+    ok(G().misses === m0 + 1 && fb() === '✗  /n/' && nasal('n').classList.contains('err') && nasal('ɳ').classList.contains('ok') && mark().classList.contains('ok') && d.querySelectorAll('.kb-btn.ok').length === 2,
+      'the wrong nasal (n before డ) is a mistake; both right keys are lit, ṁ and ɳ');
+    await tick(); await tick();
+    put('అమ్మ'); right(); const before = G().misses; mark().click();
+    ok(G().misses === before + 1, 'ṁ answers only ం: the m of అమ్మ, written with మ, is not answered by it');
+    await tick(); await tick(); }
   ok(/okMs:\s*800/.test(fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8')) && /errMs:\s*1500/.test(fs.readFileSync(path.join(SITE_DIR, PAGE), 'utf8')), 'a finished word stays up 0.8 s; a wrong pick shows for 1.5 s');
 
   /* every word in the list can be spelled on these keyboards */
   {
-    let bad = [];
+    let bad = []; const m2 = G().misses;
     for (const wd of W.words) {
       G().put(wd);
       for (let i = 0; i < wd.sounds; i++) right();
       if (fb() !== '✓  ' + N.wrap(N.word(wd.syllables)) || !$('char-card').classList.contains('correct')) bad.push(wd.te);
       await tick();
     }
-    ok(bad.length === 0 && G().misses === m1 + 3 + 2 + 0, 'all 250 words can be spelled, key by key, to a ✓ ' + bad.slice(0, 8).join(' '));
+    ok(bad.length === 0 && G().misses === m2, 'all 250 words can be spelled, key by key, to a ✓ ' + bad.slice(0, 8).join(' '));
   }
 
   /* ══ game over, in the middle of a word ══ */
@@ -196,6 +227,9 @@ function tools(h) {
     ok(t.fb() === '✗  k' && t.spell() === 'p u | s t! a~ | _ _ _', 'a wrong pick is named without slashes, and the boxes are in ISO: ' + t.fb() + '  ' + t.spell());
     await i.tick(); t.put('కొంచెం'); for (let n = 0; n < 6; n++) t.right();
     ok(t.fb() === '✓  koṁceṁ' && t.spell() === 'k o ṁ | c e ṁ', 'a finished word gives its ISO spelling: ' + t.fb());
+    await i.tick(); t.put('కొంచెం'); t.right(); t.right(); t.keyOf({ kind: 'c', key: 'ɲ' }).click();
+    ok(t.keyOf({ kind: 'c', key: 'ɲ' }).textContent === 'ñ' && t.spell().startsWith('k o ṁ |') && t.card() === 'కొం[చెం]', 'in ISO the ñ key answers the ం of కొం too; its box shows it as written (ṁ)');
+    for (let n = 0; n < 3; n++) t.right();
     await i.tick(); t.put('పక్షి'); t.wrong('c', 'k'); await i.tick();
     ok(i.shown(t.P.misses().find(m => m.key === 'పక్షి')).answer === 'pakṣi', 'and Review will show the missed word in ISO: pakṣi');
   }
