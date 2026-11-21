@@ -33,19 +33,20 @@ const ANSWER = { query: {
   ok(d.title === 'External Links' && /<link rel="stylesheet" href="\.\.\/home\.css">/.test(raw) && !/<style/.test(raw), 'uses the home page stylesheet, with no styles of its own');
   ok(!/<script src=/.test(raw), 'loads no shared script: it needs no letters, progress, or settings');
   ok(d.querySelector('main.tile-page > .home-inner > #sections') && /#home, \.tile-page \{/.test(home), 'the page scrolls and is centered as the home page is');
-  ok(all('.section').length === 2 && all('.section-title').map(e => e.textContent).join() === 'Wikipedia,Other Sites' && all('.section-count').map(e => e.textContent).join() === '3 links,4 links', 'sections with a heading and a count: ' + all('.section-title').map(e => e.textContent).join(', '));
-  ok(all('.section > .tiles').length === 2 && all('.tiles > a.tile.link').length === 7 && tiles.length === 7, 'seven tiles in the home page grid');
+  ok(all('.section').length === 3 && all('.section-title').map(e => e.textContent).join() === 'Wikipedia,Other Sites,Dictionaries' && all('.section-count').map(e => e.textContent).join() === '3 links,4 links,2 links', 'sections with a heading and a count: ' + all('.section-title').map(e => e.textContent).join(', '));
+  ok(all('.section > .tiles').length === 3 && all('.tiles > a.tile.link').length === 9 && tiles.length === 9, 'nine tiles in the home page grid');
   ok(tiles.every(t => t.querySelector('.tile-thumb') && t.querySelector('.tile-body .tile-title').textContent.length > 3 && t.querySelector('.tile-body .tile-host')), 'each tile has a thumbnail, a title, and the site it leads to');
   ok(['.tile.link', '.tile-thumb', '.tile-thumb img', '.tile-thumb img.ok', '.tile-host', '.page-note'].every(sel => home.includes(sel + ' {') || home.includes(sel + '  {')), 'home.css styles the link tile, its thumbnail, and the note');
 
   /* ── the links ── */
   const WANT = ['https://en.wikipedia.org/wiki/International_Phonetic_Alphabet', 'https://en.wikipedia.org/wiki/Help:IPA/Telugu', 'https://en.wikipedia.org/wiki/Telugu_script',
                 'https://www.omniglot.com/writing/telugu.htm', 'https://telugu.earth/', 'https://learn101.org/telugu.php',
-                'https://docs.google.com/document/d/1OHqWFBpQA4yOoNP1sIEi2QsfUQj1cmOZcD673BLdD1k/edit'];
-  ok(tiles.map(t => t.getAttribute('href')).join(' ') === WANT.join(' '), 'the seven links, in order');
+                'https://docs.google.com/document/d/1OHqWFBpQA4yOoNP1sIEi2QsfUQj1cmOZcD673BLdD1k/edit',
+                'https://andhrabharati.com/dictionary/', 'https://dsal.uchicago.edu/dictionaries/brown/'];
+  ok(tiles.map(t => t.getAttribute('href')).join(' ') === WANT.join(' '), 'the nine links, in order');
   ok(tiles.every(t => t.target === '_blank' && /noopener/.test(t.rel) && /noreferrer/.test(t.rel)), 'every link opens in a new tab (the page sits in a frame) without handing over this page');
   ok(tiles.every(t => /^https:\/\//.test(t.href)), 'every link is https');
-  ok(all('.tile-host').map(e => e.textContent).join() === 'en.wikipedia.org,en.wikipedia.org,en.wikipedia.org,omniglot.com,telugu.earth,learn101.org,docs.google.com', 'each tile names its site: ' + all('.tile-host').map(e => e.textContent).join(', '));
+  ok(all('.tile-host').map(e => e.textContent).join() === 'en.wikipedia.org,en.wikipedia.org,en.wikipedia.org,omniglot.com,telugu.earth,learn101.org,docs.google.com,andhrabharati.com,dsal.uchicago.edu', 'each tile names its site: ' + all('.tile-host').map(e => e.textContent).join(', '));
   ok(tiles.every(t => t.querySelector('.tile-badge').textContent === '↗' && t.querySelector('.tile-badge').title === 'Opens in a new tab'), 'each tile is marked as leaving the app');
   ok(!/Wikiepdia/.test(raw) && all('.tile-title').every(e => !/Wiki[^p]/.test(e.textContent)), 'no misspelled site name');
   ok(all('.tile-desc').every(e => e.textContent.length > 20 && !/\.$/.test(e.textContent)), 'descriptions, where given, are one line with no closing period (as on the home page)');
@@ -61,7 +62,7 @@ const ANSWER = { query: {
   ok(tiles.every(t => img(t).getAttribute('referrerpolicy') === 'no-referrer' && img(t).alt === ''), 'images are requested without a referrer and are decorative (empty alt)');
 
   /* ── an image that arrives, and one that does not ── */
-  ok(tiles.map(letter).join('') === 'WWWOTLG' && tiles.every(t => !img(t).classList.contains('ok')), 'until its image arrives a tile shows the site\'s initial: ' + tiles.map(letter).join(' '));
+  ok(tiles.map(letter).join('') === 'WWWOTLGAU' && tiles.every(t => !img(t).classList.contains('ok')), 'until its image arrives a tile shows the site\'s initial: ' + tiles.map(letter).join(' '));
   fire(img(tiles[0]), 'load');
   ok(img(tiles[0]).classList.contains('ok'), 'an image that loads is shown');
   fire(img(tiles[4]), 'error');
@@ -75,7 +76,7 @@ const ANSWER = { query: {
   for (const [what, before] of [['Wikipedia cannot be reached', wikipedia(new Error('offline'))], ['the API answers with nothing usable', wikipedia({ error: { code: 'x' } })], ['the browser has no fetch', win => { delete win.fetch; }]]) {
     const o = load(PAGE, { before }); await o.tick(); await o.tick();
     const t = [...o.d.querySelectorAll('a.tile.link')];
-    ok(o.d.querySelectorAll('a.tile.link').length === 7 && t.slice(0, 3).every(x => img(x) && img(x).src === 'https://en.wikipedia.org/static/apple-touch/wikipedia.png') && img(t[3]).src === 'https://www.omniglot.com/favicon.ico',
+    ok(o.d.querySelectorAll('a.tile.link').length === 9 && t.slice(0, 3).every(x => img(x) && img(x).src === 'https://en.wikipedia.org/static/apple-touch/wikipedia.png') && img(t[3]).src === 'https://www.omniglot.com/favicon.ico',
       'when ' + what + ', the Wikipedia tiles show Wikipedia\'s icon and the page is otherwise the same');
   }
 
@@ -85,7 +86,7 @@ const ANSWER = { query: {
 
   /* ── the list is easy to edit ── */
   const script = raw.split('<script>').pop();
-  ok(/const SECTIONS = \[/.test(script) && /CONFIG/.test(script) && (script.match(/href: 'https:/g) || []).length === 7, 'the links are one list at the top of the page\'s script');
+  ok(/const SECTIONS = \[/.test(script) && /CONFIG/.test(script) && (script.match(/href: 'https:/g) || []).length === 9, 'the links are one list at the top of the page\'s script');
   ok(!/thumb: '/.test(script.split('const WIKIPEDIA_ICON')[0]), 'no link needs a hand-written thumbnail address: the rule finds one');
   h.done();
 })();
