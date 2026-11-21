@@ -36,6 +36,27 @@ ok(JSON.parse(keep.store[KEY]).future === 'kept', 'setting one value keeps the o
 w = boot(true); S = w.TeluguSettings;
 ok(S.get('notation') === 'ipa' && S.set('notation', 'iso') && S.get('notation') === 'iso' && S.persistent === false, 'blocked storage: the choice holds for this page view, and persistent is false');
 
+// syncing: each change is stamped (_t); of two copies, the choices made later win
+{ const w = boot(), S = w.TeluguSettings; let ev = 0; S.onChange(() => ev++);
+  const t0 = Date.now(); S.set('notation', 'iso');
+  const st = JSON.parse(w.store[KEY]);
+  ok(st._t >= t0 && st.notation === 'iso' && S.get('notation') === 'iso' && S.options('notation').length === 2, 'a choice is stored with when it was made (_t), which changes nothing else');
+  const snap = S.snapshot(); snap.notation = 'ipa';
+  ok(S.get('notation') === 'iso' && S.snapshot().notation === 'iso' && S.snapshot()._t === st._t, 'snapshot() hands out a copy of every stored choice');
+  ev = 0;
+  ok(S.absorb({ notation: 'ipa', _t: st._t - 1 }) === false && S.get('notation') === 'iso' && ev === 0, 'an older copy from another device is ignored');
+  ok(S.absorb({ notation: 'ipa', _t: st._t + 1 }) === true && S.get('notation') === 'ipa' && ev === 1, 'a newer one is taken, and announced');
+  ok(S.absorb({ notation: 'iso', _t: st._t + 1 }) === false && S.get('notation') === 'ipa', 'one made at the same moment is not');
+  ok([null, 'iso', [1], 5, {}].every(x => S.absorb(x) === false) && S.get('notation') === 'ipa' && ev === 1, 'anything that is not a store, or holds no choice, changes nothing');
+  ok(S.absorb({ notation: 'klingon', _t: Date.now() + 99 }) === true && S.get('notation') === 'ipa', 'an unknown value taken from a copy still reads as the default');
+  S.forget();
+  ok(JSON.parse(w.store[KEY]) && Object.keys(JSON.parse(w.store[KEY])).length === 0 && S.get('notation') === 'ipa' && ev === 3, 'forget() goes back to the defaults in this browser, and announces it'); }
+{ const old = boot(false, { [KEY]: '{"notation":"iso"}' }).TeluguSettings;      // stored before _t was kept
+  ok(old.absorb({}) === false && old.absorb({ notation: 'ipa' }) === false && old.get('notation') === 'iso', 'a choice stored before _t was kept still beats a copy with no time on it');
+  ok(old.absorb({ notation: 'ipa', _t: 2 }) === true && old.get('notation') === 'ipa', 'and loses to any copy that has one');
+  const fresh = boot().TeluguSettings;
+  ok(fresh.absorb({ notation: 'iso' }) === true && fresh.get('notation') === 'iso', 'a browser that never chose takes even an unstamped choice'); }
+
 // load order and coverage
 const walk = d => fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]);
 const pages = walk(SITE_DIR).filter(f => f.endsWith('.html')).map(f => [path.relative(SITE_DIR, f), fs.readFileSync(f, 'utf8')]);

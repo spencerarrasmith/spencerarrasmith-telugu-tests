@@ -66,7 +66,10 @@ ok(P2.missCount() === 2 && P2.runs('phonemes').length === 3 && P2.runCount() ===
 P.miss({ game: 'x', key: '', prompt: 'p', answer: 'a' }); ok(P.missCount() === 2, 'empty key is ignored');
 P.clearMisses(); ok(P.missCount() === 0 && P.runs('phonemes').length === 3, 'clearMisses keeps the runs');
 P.miss({ game: 'phonemes', key: 'క', ask: 'telugu' });
-P.reset(); ok(P.runCount() === 0 && P.missCount() === 0 && JSON.stringify(P.runs()) === '{}' && JSON.stringify(Object.keys(JSON.parse(w.store['telugu.progress.v1'])).sort()) === '["misses","runs","v"]', 'reset erases every record of earlier attempts: runs and misses alike');
+P.reset(); { const s = JSON.parse(w.store['telugu.progress.v1']);
+  ok(P.runCount() === 0 && P.missCount() === 0 && JSON.stringify(P.runs()) === '{}' && JSON.stringify(Object.keys(s).sort()) === '["cut","gone","misses","runs","v"]' && JSON.stringify(s.misses) === '{}' && JSON.stringify(s.gone) === '{}',
+    'reset erases every record of earlier attempts: runs and misses alike');
+  ok(s.cut.misses > 0 && s.cut.misses === s.cut.runs, 'and remembers when, for both (cut), so a synced copy from before then is erased too'); }
 w.localStorage.setItem('telugu.progress.v1', '{not json'); ok(P.missCount() === 0, 'corrupt storage is treated as empty');
 /* ── what a miss stores (v2): the character and what was asked, not the text on screen ── */
 w = fakeWin(false); P = load(w);
@@ -75,8 +78,8 @@ P.miss({ game: 'diacritics-reverse', key: 'కా', ask: 'sound', syllable: true
 P.miss({ game: 'grammar-nouns', key: 'boy', prompt: 'boy', answer: 'అబ్బాయి', note: 'n.' });
 const stored = () => JSON.parse(w.store['telugu.progress.v1']);
 let ms = stored().misses;
-ok(stored().v === 2, 'a new store is version 2');
-ok(JSON.stringify(Object.keys(ms['phonemes|క']).sort()) === '["ask","count","game","key","last","note","streak"]' && ms['phonemes|క'].ask === 'telugu', 'a character miss stores key + ask, and no prompt/answer text');
+ok(stored().v === 3, 'a new store is version 3');
+ok(JSON.stringify(Object.keys(ms['phonemes|క']).sort()) === '["ask","count","game","key","last","note","streak","t"]' && ms['phonemes|క'].ask === 'telugu', 'a character miss stores key + ask (and t, when it last changed), and no prompt/answer text');
 ok(ms['diacritics-reverse|కా'].ask === 'sound' && ms['diacritics-reverse|కా'].syllable === true && !('syllable' in ms['phonemes|క']), 'syllable is stored only when set');
 ok(ms['grammar-nouns|boy'].prompt === 'boy' && ms['grammar-nouns|boy'].answer === 'అబ్బాయి' && !('ask' in ms['grammar-nouns|boy']), 'any other miss stores its two texts, as before');
 P.miss({ game: 'x', key: 'k', ask: 'sideways', prompt: 'p', answer: 'a' });
@@ -98,7 +101,7 @@ const V1 = { v: 1, done: { phonemes: { at: 1, runs: 2, best: 90 } }, misses: {
 w = fakeWin(false); w.store['telugu.progress.v1'] = JSON.stringify(V1); P = load(w);
 let seen = 0; P.onChange(() => seen++);
 const up = Object.fromEntries(P.misses().map(m => [m.game, m]));
-ok(P.missCount() === 8 && stored().v === 2 && !('done' in stored()) && JSON.stringify(stored().runs) === '{}' && P.runCount() === 0, 'a v1 store is upgraded to v2 on first read: every miss kept, its old "done" record dropped, no runs yet');
+ok(P.missCount() === 8 && stored().v === 3 && !('done' in stored()) && JSON.stringify(stored().runs) === '{}' && P.runCount() === 0, 'a v1 store is upgraded to v3 on first read: every miss kept, its old "done" record dropped, no runs yet');
 ok(['phonemes', 'diacritics', 'conjuncts'].every(g => up[g].ask === 'telugu') && ['phonemes-reverse', 'diacritics-reverse', 'conjuncts-reverse', 'lookalikes'].every(g => up[g].ask === 'sound'), 'each script game\'s misses get the direction they were asked in');
 ok(['diacritics', 'diacritics-reverse', 'conjuncts', 'conjuncts-reverse'].every(g => up[g].syllable === true) && ['phonemes', 'phonemes-reverse', 'lookalikes'].every(g => !('syllable' in up[g])), 'Diacritics and Conjuncts misses are marked as syllables; Phonemes and Lookalikes as letters');
 ok(Object.values(up).filter(m => m.ask).every(m => !('prompt' in m) && !('answer' in m)), 'the old IPA text is dropped from converted misses');
@@ -117,4 +120,82 @@ w = fakeWin(false); w.store['telugu.progress.v1'] = JSON.stringify({ v: 2, done:
 ok(P.runCount() === 0 && P.runs('phonemes').length === 0 && P.missCount() === 0, 'an older store (a "done" record, no runs) reads as no runs');
 P.run('phonemes', { total: 1, correct: 1, attempts: 1 });
 ok(!('done' in JSON.parse(w.store['telugu.progress.v1'])) && P.runs('phonemes').length === 1, 'and its "done" record is gone at the next save');
+/* ── syncing (v3): every change carries its time; copies merge without losing anything ── */
+{ // a v2 store gets t, gone, and cut the first time it is read
+  w = fakeWin(false);
+  w.store['telugu.progress.v1'] = JSON.stringify({ v: 2, misses: { 'phonemes|క': { game: 'phonemes', key: 'క', ask: 'telugu', note: '', count: 2, streak: 1, last: 777 } }, runs: { phonemes: [{ t: 5, n: 1, ok: 1, tries: 1, end: 'done' }] } });
+  P = load(w); P.missCount();
+  const s = stored();
+  ok(s.v === 3 && s.misses['phonemes|క'].t === 777 && s.misses['phonemes|క'].count === 2 && JSON.stringify(s.gone) === '{}' && JSON.stringify(s.cut) === '{"misses":0,"runs":0}' && P.runs('phonemes').length === 1,
+    'a v2 store is upgraded to v3 on first read: each miss\'s t is its last miss, nothing gone or cut, runs kept');
+}
+w = fakeWin(false); P = load(w);
+{ // the clock never repeats, so changes made in one millisecond still have an order
+  P.miss({ game: 'g', key: 'a', ask: 'telugu' }); P.miss({ game: 'g', key: 'b', ask: 'telugu' });
+  for (let i = 0; i < 20; i++) P.run('fast', { total: 1, correct: 1, attempts: 1 });
+  const ts = P.runs('fast').map(r => r.t);
+  ok(stored().misses['g|b'].t > stored().misses['g|a'].t && ts.every((t, i) => !i || t > ts[i - 1]), 'times never repeat: 20 runs in a row have 20 different times, each after the last');
+  const t0 = stored().misses['g|a'].t; P.review('g', 'a', true);
+  ok(stored().misses['g|a'].t > t0 && stored().misses['g|a'].streak === 1, 'a Review answer is a change to the miss: its t moves on');
+  P.review('g', 'a', true);
+  ok(!stored().misses['g|a'] && stored().gone['g|a'] > t0, 'a miss Review clears is remembered as cleared (gone), with when');
+  P.miss({ game: 'g', key: 'a', ask: 'telugu' });
+  ok(P.missCount() === 2 && stored().misses['g|a'].t > stored().gone['g|a'], 'missed again later, it is back, and newer than the clearing');
+  P.clearMisses();
+  ok(P.missCount() === 0 && JSON.stringify(stored().gone) === '{}' && stored().cut.misses > 0 && stored().cut.runs === 0 && P.runs('fast').length === 20, 'clearMisses sets cut.misses (the tombstones are no longer needed), and leaves the runs and cut.runs alone');
+}
+{ // snapshot, forget
+  const snap = P.snapshot(); snap.runs.fast.length = 0;
+  ok(P.runs('fast').length === 20, 'snapshot() hands out a copy');
+  let ev = 0; P.onChange(() => ev++); P.forget();
+  ok(ev === 1 && P.runCount() === 0 && JSON.stringify(stored()) === JSON.stringify({ v: 3, misses: {}, runs: {}, gone: {}, cut: { misses: 0, runs: 0 } }), 'forget() empties this browser only: a blank store with no cut, so nothing is erased on another device');
+}
+{ // merge
+  const M = P.merge, NOW = Date.now();
+  const miss = (key, t, extra = {}) => Object.assign({ game: 'g', key, ask: 'telugu', note: '', count: 1, streak: 0, last: t, t }, extra);
+  const st = (o = {}) => Object.assign({ v: 3, misses: {}, runs: {}, gone: {}, cut: { misses: 0, runs: 0 } }, o);
+  const run = (t, n = 5) => ({ t, n, ok: n, tries: n, end: 'done' });
+  const A = st({ misses: { 'g|a': miss('a', NOW - 50, { count: 3 }), 'g|b': miss('b', NOW - 40) }, runs: { pho: [run(NOW - 30), run(NOW - 10)] } });
+  const B = st({ misses: { 'g|a': miss('a', NOW - 20, { streak: 1 }), 'g|c': miss('c', NOW - 5) }, runs: { pho: [run(NOW - 30), run(NOW - 20)], dia: [run(NOW - 15)] } });
+  const ab = M(A, B), ba = M(B, A), same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  ok(same(ab, ba), 'merge(a, b) is merge(b, a)');
+  ok(same(M(ab, B), ab) && same(M(ab, A), ab) && same(M(ab, ab), ab), 'merging a copy in again changes nothing');
+  ok(Object.keys(ab.misses).sort().join() === 'g|a,g|b,g|c' && ab.misses['g|a'].streak === 1 && ab.misses['g|a'].t === NOW - 20, 'misses from both are kept; of two copies of one, the later');
+  ok(ab.runs.pho.map(r => r.t).join() === [NOW - 30, NOW - 20, NOW - 10].join() && ab.runs.dia.length === 1, 'runs from both are kept, oldest first, a run both copies hold counted once');
+  ok(same(A, st({ misses: { 'g|a': miss('a', NOW - 50, { count: 3 }), 'g|b': miss('b', NOW - 40) }, runs: { pho: [run(NOW - 30), run(NOW - 10)] } })), 'merge changes neither input');
+  // something cleared in Review on one device stays cleared against the other's older copy …
+  const cleared = st({ gone: { 'g|b': NOW - 30 } });
+  ok(!M(A, cleared).misses['g|b'] && M(A, cleared).gone['g|b'] === NOW - 30, 'a miss cleared in Review on one device stays cleared against an older copy from another');
+  // … but not against a miss made after it
+  ok(!!M(st({ misses: { 'g|b': miss('b', NOW - 10) } }), cleared).misses['g|b'], 'but a miss made after the clearing survives it');
+  // Reset statistics on one device erases the other's older records, not newer ones
+  const wiped = st({ cut: { misses: NOW - 25, runs: NOW - 25 } }), m = M(A, M(B, wiped));
+  ok(Object.keys(m.misses).sort().join() === 'g|a,g|c' && !m.misses['g|b'] && m.runs.pho.map(r => r.t).join() === [NOW - 20, NOW - 10].join() && m.runs.dia.length === 1 && m.cut.runs === NOW - 25,
+    'a reset (cut) erases every miss and run from before it, on every copy; later ones stay');
+  const onlyMisses = M(A, st({ cut: { misses: NOW - 25, runs: 0 } }));
+  ok(Object.keys(onlyMisses.misses).length === 0 && onlyMisses.runs.pho.length === 2, 'clearMisses (cut.misses only) leaves the runs');
+  // housekeeping
+  const old = M(st({ gone: { 'g|x': NOW - 200 * 864e5, 'g|y': NOW - 100 } }), st({ cut: { misses: NOW - 1000, runs: 0 } }));
+  ok(JSON.stringify(Object.keys(old.gone)) === '["g|y"]', 'a clearing older than 180 days, or older than a cut, is no longer remembered');
+  const cap = st({ runs: { pho: Array.from({ length: 80 }, (_, i) => run(NOW - 1000 + i)) } }), cap2 = st({ runs: { pho: Array.from({ length: 80 }, (_, i) => run(NOW - 500 + i)) } });
+  ok(M(cap, cap2).runs.pho.length === P.RUN_CAP && M(cap, cap2).runs.pho[P.RUN_CAP - 1].t === NOW - 421, 'merged runs keep the last ' + P.RUN_CAP + ' of a game');
+  // junk from outside
+  ok(same(M(A, null), M(A, A)) && same(M(A, 'nope'), M(A, A)) && same(M(A, { misses: 5 }), M(A, A)) && same(M(A, [1, 2]), M(A, A)), 'anything that is not a store is treated as an empty one');
+  const junk = M(st(), { v: 3, misses: { 'g|q': 7, 'g|r': miss('r', NOW) }, runs: { pho: [null, { t: 'x' }, 'r', run(NOW)], bad: 5 } });
+  ok(Object.keys(junk.misses).join() === 'g|r' && junk.runs.pho.length === 1 && !('bad' in junk.runs), 'broken misses and runs in a copy are dropped, the rest kept');
+  const v1 = M(st(), { v: 1, misses: { 'phonemes|క': { game: 'phonemes', key: 'క', prompt: 'క', answer: '/k/', note: '', count: 1, streak: 0, last: 9 } } });
+  ok(v1.misses['phonemes|క'].ask === 'telugu' && !('prompt' in v1.misses['phonemes|క']) && v1.misses['phonemes|క'].t === 9, 'a copy in an older format is upgraded before it is merged');
+}
+{ // absorb: another device's copy merged into this browser's
+  w = fakeWin(false); P = load(w); let ev = 0; P.onChange(() => ev++);
+  P.miss({ game: 'g', key: 'a', ask: 'telugu' }); P.run('pho', { total: 2, correct: 2, attempts: 2 }); ev = 0;
+  const mine = P.snapshot();
+  ok(P.absorb(mine) === false && P.absorb(null) === false && ev === 0, 'absorbing a copy that adds nothing changes nothing, and announces nothing');
+  const other = { v: 3, misses: { 'g|z': { game: 'g', key: 'z', ask: 'telugu', note: '', count: 1, streak: 0, last: 1, t: Date.now() + 5 } }, runs: { dia: [{ t: Date.now() + 6, n: 3, ok: 3, tries: 3, end: 'done' }] }, gone: {}, cut: { misses: 0, runs: 0 } };
+  ok(P.absorb(other) === true && ev === 1 && P.missCount() === 2 && P.runs('dia').length === 1 && P.runs('pho').length === 1, 'absorbing a copy with something new merges it in and announces the change (pages redraw)');
+  ok(P.absorb(other) === false && ev === 1, 'and absorbing it again does nothing');
+  ok(P.absorb({ v: 3, misses: {}, runs: {}, gone: {}, cut: { misses: Date.now() + 10, runs: Date.now() + 10 } }) === true && P.runCount() === 0 && P.missCount() === 0, 'a reset on another device reaches this one');
+  const Bk = load(fakeWin(true)); Bk.miss({ game: 'g', key: 'k', ask: 'telugu' });
+  ok(Bk.absorb(other) === true && Bk.missCount() === 2 && Bk.persistent === false, 'blocked storage: absorb works in memory');
+}
 console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);

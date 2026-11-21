@@ -116,7 +116,7 @@ const P = w.TeluguProgress, $ = s => d.querySelector(s), click = s => $(s).click
   const C = mk('iso', V1), E = mk(null, V1);
   ok(C.play('phonemes') === 'క → ka [Velar]' && C.play('diacritics-reverse') === 'kā → కా [Long]' && C.play('conjuncts') === 'క్ష → kṣa [Velar + Fricative]', 'old misses, read in ISO: క → ka, kā → కా, క్ష → kṣa');
   ok(E.play('phonemes') === 'క → /k/ [Velar]' && E.play('diacritics-reverse') === '/kaː/ → కా [Long]' && E.play('conjuncts') === 'క్ష → /kʂɐ/ [Velar + Fricative]', 'old misses, read in IPA: rebuilt from the character with today\'s sounds (క్ష is now /kʂɐ/)');
-  ok(JSON.parse(C.win.localStorage.getItem('telugu.progress.v1')).v === 2, 'the old store is now version 2');
+  ok(JSON.parse(C.win.localStorage.getItem('telugu.progress.v1')).v === 3, 'the old store is now version 3');
 
   /* ── a character the app can no longer read ── */
   const F = mk(null); F.P.miss({ game: 'phonemes', key: 'zz', ask: 'telugu' });

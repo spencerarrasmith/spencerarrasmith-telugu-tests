@@ -129,7 +129,9 @@ const MISS = { 'phonemes|క': { game: 'phonemes', key: 'క', ask: 'telugu', no
     ok(P.runCount() === 55 && $('reset').textContent === 'Click again to erase all history', 'a second click more than 5 seconds later does not count: it asks again');
     $('reset').click(); w.Date.now = now;
     ok(P.runCount() === 0 && P.missCount() === 0 && JSON.stringify(P.runs()) === '{}', 'clicked twice in a row, it erases every record of earlier attempts: the sessions and the Review list');
-    ok(JSON.stringify(Object.keys(JSON.parse(w.localStorage.getItem(KEY))).sort()) === '["misses","runs","v"]' && w.localStorage.getItem(KEY).length < 40, 'nothing of them is left in the browser\'s storage');
+    { const s = JSON.parse(w.localStorage.getItem(KEY));
+      ok(JSON.stringify(Object.keys(s).sort()) === '["cut","gone","misses","runs","v"]' && JSON.stringify([s.misses, s.runs, s.gone]) === '[{},{},{}]' && s.cut.misses > 0 && s.cut.misses === s.cut.runs,
+        'nothing of them is left in the browser\'s storage, only when they were erased'); }
     ok($('stat').textContent === '0 sessions' && d.querySelectorAll('.pf-empty').length === 4 && !d.querySelector('[data-chart]') && $('reset').disabled && $('reset').textContent === 'Reset statistics' && !$('reset').classList.contains('armed'), 'the page redraws empty, and the button goes back to rest with nothing left to erase');
   }
 
